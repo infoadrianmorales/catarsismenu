@@ -1,5 +1,6 @@
 import { Currency } from '@/types/menu';
-import { CurrencyToggle } from './CurrencyToggle';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 interface MenuHeaderProps {
   currency: Currency;
@@ -8,16 +9,40 @@ interface MenuHeaderProps {
 
 export const MenuHeader = ({ currency, onCurrencyToggle }: MenuHeaderProps) => {
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-      <div className="container flex h-16 items-center justify-between px-4">
+    <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md border-b border-border/50">
+      <div className="container px-4 h-16 flex items-center justify-between">
+        {/* Logo */}
         <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-display font-bold tracking-tight">
-            <span className="text-primary">CATARSIS</span>
-            <span className="text-foreground text-lg ml-2">Drinks & Food</span>
-          </h1>
+          <span className="font-display text-xl md:text-2xl font-black text-primary">
+            CATARSIS
+          </span>
         </div>
         
-        <CurrencyToggle currency={currency} onToggle={onCurrencyToggle} />
+        {/* Currency Toggle - Hidden on mobile (shown in sticky bar) */}
+        <div className="hidden md:flex items-center gap-3 bg-card/50 rounded-full px-4 py-2 border border-border/50">
+          <Label 
+            htmlFor="currency-desktop" 
+            className={`text-sm font-medium cursor-pointer transition-colors ${
+              currency === 'USD' ? 'text-secondary' : 'text-muted-foreground'
+            }`}
+          >
+            USD
+          </Label>
+          <Switch
+            id="currency-desktop"
+            checked={currency === 'VES'}
+            onCheckedChange={onCurrencyToggle}
+            className="data-[state=checked]:bg-secondary"
+          />
+          <Label 
+            htmlFor="currency-desktop" 
+            className={`text-sm font-medium cursor-pointer transition-colors ${
+              currency === 'VES' ? 'text-secondary' : 'text-muted-foreground'
+            }`}
+          >
+            VES
+          </Label>
+        </div>
       </div>
     </header>
   );
