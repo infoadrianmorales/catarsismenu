@@ -1,13 +1,39 @@
-export type MenuCategory = 'todos' | 'burgers' | 'pizzas' | 'cocktails' | 'entradas';
+export type MenuCategory = 
+  | 'todos' 
+  | 'entradas' 
+  | 'hamburguesas' 
+  | 'emparedados' 
+  | 'pizzas' 
+  | 'parrilla' 
+  | 'ensaladas' 
+  | 'cocteleria' 
+  | 'postres';
 
 export interface MenuItem {
   id: string;
-  name: string;
-  description: string;
-  priceUSD: number;
-  category: MenuCategory;
-  image: string;
-  featured?: boolean;
+  nombre: string;
+  slug: string;
+  descripcion_corta: string;
+  precio_usd: number;
+  categoria: Exclude<MenuCategory, 'todos'>;
+  imagen: string;
+  ratio: '1x1' | '4x5';
+  tags: string[];
+  orden: number;
 }
 
 export type Currency = 'USD' | 'VES';
+
+export interface AppConfig {
+  tasa_ves: number;
+  whatsapp: string;
+  instagram_url: string;
+  tiktok_url?: string;
+  maps_url: string;
+}
+
+export interface CartItem {
+  producto: MenuItem;
+  cantidad: number;
+  comentarios?: string;
+}

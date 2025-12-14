@@ -1,32 +1,37 @@
-import { useState } from 'react';
-import { Currency, MenuCategory } from '@/types/menu';
 import { menuItems } from '@/data/menuItems';
 import { MenuHeader } from '@/components/MenuHeader';
 import { HeroSection } from '@/components/HeroSection';
+import { SearchBar } from '@/components/SearchBar';
 import { CategoryFilter } from '@/components/CategoryFilter';
 import { MenuGrid } from '@/components/MenuGrid';
-import { WhatsAppFAB } from '@/components/WhatsAppFAB';
 import { Footer } from '@/components/Footer';
+import { StickyActionBar } from '@/components/StickyActionBar';
+import { useCurrency } from '@/hooks/useCurrency';
+import { useSearch } from '@/hooks/useSearch';
 
 const Index = () => {
-  const [currency, setCurrency] = useState<Currency>('USD');
-  const [selectedCategory, setSelectedCategory] = useState<MenuCategory>('todos');
-  
-  // Exchange rate: 1 USD = 50 VES (adjust as needed)
-  const exchangeRate = 50;
-
-  const handleCurrencyToggle = () => {
-    setCurrency(prev => prev === 'USD' ? 'VES' : 'USD');
-  };
+  const { currency, toggleCurrency } = useCurrency();
+  const { 
+    searchQuery, 
+    setSearchQuery, 
+    selectedCategory, 
+    setSelectedCategory, 
+    filteredItems 
+  } = useSearch(menuItems);
 
   return (
     <div className="min-h-screen bg-background">
       <MenuHeader 
         currency={currency} 
-        onCurrencyToggle={handleCurrencyToggle}
+        onCurrencyToggle={toggleCurrency}
       />
       
       <HeroSection />
+      
+      <SearchBar 
+        value={searchQuery}
+        onChange={setSearchQuery}
+      />
       
       <CategoryFilter 
         selectedCategory={selectedCategory}
@@ -34,15 +39,17 @@ const Index = () => {
       />
       
       <MenuGrid 
-        items={menuItems}
+        items={filteredItems}
         currency={currency}
-        exchangeRate={exchangeRate}
         selectedCategory={selectedCategory}
       />
       
       <Footer />
       
-      <WhatsAppFAB />
+      <StickyActionBar 
+        currency={currency}
+        onCurrencyToggle={toggleCurrency}
+      />
     </div>
   );
 };
