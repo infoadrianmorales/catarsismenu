@@ -1,44 +1,69 @@
 import { MenuCategory } from '@/types/menu';
 import { Button } from '@/components/ui/button';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { 
+  UtensilsCrossed, 
+  Beef, 
+  Sandwich, 
+  Pizza, 
+  Flame, 
+  Salad, 
+  Wine, 
+  Cake,
+  LayoutGrid
+} from 'lucide-react';
 
 interface CategoryFilterProps {
   selectedCategory: MenuCategory;
   onCategoryChange: (category: MenuCategory) => void;
 }
 
-const categories: { value: MenuCategory; label: string }[] = [
-  { value: 'todos', label: 'Todos' },
-  { value: 'burgers', label: 'Burgers' },
-  { value: 'pizzas', label: 'Pizzas' },
-  { value: 'cocktails', label: 'Cocktails' },
-  { value: 'entradas', label: 'Entradas' },
+interface CategoryOption {
+  id: MenuCategory;
+  label: string;
+  icon: React.ReactNode;
+}
+
+const categories: CategoryOption[] = [
+  { id: 'todos', label: 'Todos', icon: <LayoutGrid className="h-4 w-4" /> },
+  { id: 'entradas', label: 'Entradas', icon: <UtensilsCrossed className="h-4 w-4" /> },
+  { id: 'hamburguesas', label: 'Hamburguesas', icon: <Beef className="h-4 w-4" /> },
+  { id: 'emparedados', label: 'Emparedados', icon: <Sandwich className="h-4 w-4" /> },
+  { id: 'pizzas', label: 'Pizzas', icon: <Pizza className="h-4 w-4" /> },
+  { id: 'parrilla', label: 'Parrilla', icon: <Flame className="h-4 w-4" /> },
+  { id: 'ensaladas', label: 'Ensaladas', icon: <Salad className="h-4 w-4" /> },
+  { id: 'cocteleria', label: 'Coctelería', icon: <Wine className="h-4 w-4" /> },
+  { id: 'postres', label: 'Postres', icon: <Cake className="h-4 w-4" /> },
 ];
 
 export const CategoryFilter = ({ selectedCategory, onCategoryChange }: CategoryFilterProps) => {
   return (
-    <div className="w-full border-y border-border/40 bg-card/50 backdrop-blur-sm">
-      <ScrollArea className="w-full">
-        <div className="container flex gap-2 px-4 py-4">
-          {categories.map((category) => (
-            <Button
-              key={category.value}
-              variant={selectedCategory === category.value ? 'default' : 'outline'}
-              onClick={() => onCategoryChange(category.value)}
-              className={`
-                whitespace-nowrap rounded-full px-6 py-2 font-medium transition-all
-                ${selectedCategory === category.value 
-                  ? 'bg-primary text-primary-foreground shadow-glow scale-105' 
-                  : 'hover:bg-primary/10 hover:border-primary/50'
-                }
-              `}
-            >
-              {category.label}
-            </Button>
-          ))}
-        </div>
-        <ScrollBar orientation="horizontal" />
-      </ScrollArea>
+    <div className="sticky top-16 z-30 bg-background/95 backdrop-blur-sm border-b border-border/50 py-3">
+      <div className="container px-4">
+        <ScrollArea className="w-full whitespace-nowrap">
+          <div className="flex gap-2">
+            {categories.map((category) => (
+              <Button
+                key={category.id}
+                variant={selectedCategory === category.id ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => onCategoryChange(category.id)}
+                className={`
+                  flex-shrink-0 gap-2 rounded-full transition-all duration-200
+                  ${selectedCategory === category.id 
+                    ? 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-glow' 
+                    : 'bg-card border-border/50 hover:bg-secondary hover:text-secondary-foreground hover:border-secondary'
+                  }
+                `}
+              >
+                {category.icon}
+                {category.label}
+              </Button>
+            ))}
+          </div>
+          <ScrollBar orientation="horizontal" className="invisible" />
+        </ScrollArea>
+      </div>
     </div>
   );
 };
