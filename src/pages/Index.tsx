@@ -1,4 +1,3 @@
-import { menuItems } from '@/data/menuItems';
 import { MenuHeader } from '@/components/MenuHeader';
 import { HeroSection } from '@/components/HeroSection';
 import { SearchBar } from '@/components/SearchBar';
@@ -8,16 +7,18 @@ import { Footer } from '@/components/Footer';
 import { StickyActionBar } from '@/components/StickyActionBar';
 import { useCurrency } from '@/hooks/useCurrency';
 import { useSearch } from '@/hooks/useSearch';
+import { useProducts } from '@/hooks/useProducts';
 
 const Index = () => {
   const { currency, toggleCurrency } = useCurrency();
+  const { products } = useProducts();
   const { 
     searchQuery, 
     setSearchQuery, 
     selectedCategory, 
     setSelectedCategory, 
     filteredItems 
-  } = useSearch(menuItems);
+  } = useSearch(products);
 
   return (
     <div className="min-h-screen bg-background">
