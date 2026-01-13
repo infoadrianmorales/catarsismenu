@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Currency } from '@/types/menu';
-import { appConfig } from '@/data/config';
+import { supabase } from '@/integrations/supabase/client';
 
 const STORAGE_KEY = 'moneda_activa';
 
@@ -12,6 +12,25 @@ export const useCurrency = () => {
     }
     return 'USD';
   });
+
+  const [exchangeRate, setExchangeRate] = useState<number>(50);
+
+  // Fetch exchange rate from database
+  useEffect(() => {
+    const fetchExchangeRate = async () => {
+      const { data, error } = await supabase
+        .from('config')
+        .select('value')
+        .eq('key', 'tasa_ves')
+        .maybeSingle();
+
+      if (!error && data) {
+        setExchangeRate(parseFloat(data.value));
+      }
+    };
+
+    fetchExchangeRate();
+  }, []);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, currency);
@@ -26,7 +45,7 @@ export const useCurrency = () => {
   }, [currency]);
 
   const formatPrice = useCallback((priceUSD: number, showBoth = false) => {
-    const priceVES = priceUSD * appConfig.tasa_ves;
+    const priceVES = priceUSD * exchangeRate;
     
     if (showBoth) {
       return {
@@ -39,22 +58,22 @@ export const useCurrency = () => {
       return `$${priceUSD.toFixed(2)}`;
     }
     return `Bs ${priceVES.toFixed(2)}`;
-  }, [currency]);
+  }, [currency, exchangeRate]);
 
   const getPrices = useCallback((priceUSD: number) => {
     return {
       usd: priceUSD,
-      ves: priceUSD * appConfig.tasa_ves,
+      ves: priceUSD * exchangeRate,
       formattedUSD: `$${priceUSD.toFixed(2)}`,
-      formattedVES: `Bs ${(priceUSD * appConfig.tasa_ves).toFixed(2)}`,
+      formattedVES: `Bs ${(priceUSD * exchangeRate).toFixed(2)}`,
     };
-  }, []);
+  }, [exchangeRate]);
 
   return {
     currency,
     toggleCurrency,
     formatPrice,
     getPrices,
-    exchangeRate: appConfig.tasa_ves,
+    exchangeRate,
   };
 };
