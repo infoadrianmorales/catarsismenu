@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useConfig } from '@/hooks/useConfig';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -20,7 +20,7 @@ export const ConfigPanel = () => {
   });
 
   // Sync form values with config on load
-  useState(() => {
+  useEffect(() => {
     if (!loading) {
       setFormValues({
         tasa_ves: config.tasa_ves.toString(),
@@ -30,7 +30,7 @@ export const ConfigPanel = () => {
         maps_url: config.maps_url,
       });
     }
-  });
+  }, [loading, config]);
 
   const handleSave = async (key: string, value: string) => {
     setSaving(key);
