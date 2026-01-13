@@ -191,6 +191,11 @@ export type Database = {
         | "postres"
         | "acompanantes"
         | "cocktails"
+        | "entradas"
+        | "ensaladas"
+        | "emparedados"
+        | "parrilla"
+        | "cocteleria"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -327,6 +332,11 @@ export const Constants = {
         "postres",
         "acompanantes",
         "cocktails",
+        "entradas",
+        "ensaladas",
+        "emparedados",
+        "parrilla",
+        "cocteleria",
       ],
     },
   },
