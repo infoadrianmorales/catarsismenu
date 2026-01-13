@@ -38,6 +38,51 @@ export type Database = {
         }
         Relationships: []
       }
+      products: {
+        Row: {
+          activo: boolean | null
+          categoria: Database["public"]["Enums"]["product_category"]
+          created_at: string | null
+          descripcion_corta: string | null
+          id: string
+          imagen_url: string | null
+          nombre: string
+          orden: number | null
+          precio_usd: number
+          slug: string
+          tags: string[] | null
+          updated_at: string | null
+        }
+        Insert: {
+          activo?: boolean | null
+          categoria: Database["public"]["Enums"]["product_category"]
+          created_at?: string | null
+          descripcion_corta?: string | null
+          id?: string
+          imagen_url?: string | null
+          nombre: string
+          orden?: number | null
+          precio_usd: number
+          slug: string
+          tags?: string[] | null
+          updated_at?: string | null
+        }
+        Update: {
+          activo?: boolean | null
+          categoria?: Database["public"]["Enums"]["product_category"]
+          created_at?: string | null
+          descripcion_corta?: string | null
+          id?: string
+          imagen_url?: string | null
+          nombre?: string
+          orden?: number | null
+          precio_usd?: number
+          slug?: string
+          tags?: string[] | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string | null
@@ -56,6 +101,48 @@ export type Database = {
           email?: string
           full_name?: string | null
           id?: string
+        }
+        Relationships: []
+      }
+      promotions: {
+        Row: {
+          activo: boolean | null
+          created_at: string | null
+          descripcion: string | null
+          id: string
+          imagen_url: string | null
+          orden: number | null
+          subtitulo: string | null
+          titulo: string
+          updated_at: string | null
+          vigencia_fin: string | null
+          vigencia_inicio: string | null
+        }
+        Insert: {
+          activo?: boolean | null
+          created_at?: string | null
+          descripcion?: string | null
+          id?: string
+          imagen_url?: string | null
+          orden?: number | null
+          subtitulo?: string | null
+          titulo: string
+          updated_at?: string | null
+          vigencia_fin?: string | null
+          vigencia_inicio?: string | null
+        }
+        Update: {
+          activo?: boolean | null
+          created_at?: string | null
+          descripcion?: string | null
+          id?: string
+          imagen_url?: string | null
+          orden?: number | null
+          subtitulo?: string | null
+          titulo?: string
+          updated_at?: string | null
+          vigencia_fin?: string | null
+          vigencia_inicio?: string | null
         }
         Relationships: []
       }
@@ -96,6 +183,14 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "editor"
+      product_category:
+        | "hamburguesas"
+        | "pizzas"
+        | "alitas"
+        | "bebidas"
+        | "postres"
+        | "acompanantes"
+        | "cocktails"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -224,6 +319,15 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "editor"],
+      product_category: [
+        "hamburguesas",
+        "pizzas",
+        "alitas",
+        "bebidas",
+        "postres",
+        "acompanantes",
+        "cocktails",
+      ],
     },
   },
 } as const
