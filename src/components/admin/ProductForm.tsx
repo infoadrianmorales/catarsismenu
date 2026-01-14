@@ -10,7 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2, Upload, X, Sparkles, Crop } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Database } from '@/integrations/supabase/types';
-import { resizeImageTo4x5, blobToBase64, base64ToBlob, blobToFile } from '@/lib/imageProcessor';
+import { resizeImageTo1x1, blobToBase64, base64ToBlob, blobToFile } from '@/lib/imageProcessor';
 
 type ProductCategory = Database['public']['Enums']['product_category'];
 
@@ -100,10 +100,10 @@ export const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) 
     try {
       let processedFile: File = file;
       
-      // Step 1: Resize to 4:5 if enabled
+      // Step 1: Resize to 1:1 (square) if enabled
       if (autoResize) {
-        toast.info('Redimensionando imagen a 4:5...');
-        const resizedBlob = await resizeImageTo4x5(file);
+        toast.info('Redimensionando imagen a 1:1...');
+        const resizedBlob = await resizeImageTo1x1(file);
         processedFile = blobToFile(resizedBlob, `${formData.slug || Date.now()}.jpg`);
       }
       
@@ -326,7 +326,7 @@ export const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) 
             />
             <label htmlFor="autoResize" className="flex items-center gap-2 text-sm cursor-pointer">
               <Crop className="h-4 w-4 text-primary" />
-              Redimensionar automáticamente a 4:5
+              Redimensionar automáticamente a 1:1 (cuadrado)
             </label>
           </div>
           <div className="flex items-center space-x-2">
@@ -337,7 +337,7 @@ export const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) 
             />
             <label htmlFor="autoEnhance" className="flex items-center gap-2 text-sm cursor-pointer">
               <Sparkles className="h-4 w-4 text-amber-500" />
-              Mejorar imagen con IA (fondo blanco, iluminación)
+              Retoque profesional con IA (sutil, respeta el producto)
             </label>
           </div>
           <p className="text-xs text-muted-foreground">
@@ -347,7 +347,7 @@ export const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) 
 
         <div className="flex items-start gap-4">
           {imagePreview ? (
-            <div className="relative w-32 h-40 rounded-lg overflow-hidden border border-border bg-white">
+            <div className="relative w-32 h-32 rounded-lg overflow-hidden border border-border bg-white">
               <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
               <button
                 type="button"
@@ -361,7 +361,7 @@ export const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) 
               </button>
             </div>
           ) : (
-            <label className="flex flex-col items-center justify-center w-32 h-40 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary transition-colors">
+            <label className="flex flex-col items-center justify-center w-32 h-32 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary transition-colors">
               <input
                 type="file"
                 accept="image/*"
@@ -373,7 +373,7 @@ export const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) 
                 <div className="flex flex-col items-center gap-2">
                   <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                   <span className="text-xs text-muted-foreground text-center px-2">
-                    {enhancing ? 'Mejorando con IA...' : 'Procesando...'}
+                    {enhancing ? 'Retocando...' : 'Procesando...'}
                   </span>
                 </div>
               ) : (
@@ -382,7 +382,7 @@ export const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) 
                   <span className="text-xs text-muted-foreground mt-1 text-center">
                     Subir imagen
                   </span>
-                  <span className="text-xs text-muted-foreground/60">4:5</span>
+                  <span className="text-xs text-muted-foreground/60">1:1</span>
                 </>
               )}
             </label>

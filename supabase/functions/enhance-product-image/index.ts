@@ -44,35 +44,32 @@ serve(async (req) => {
             content: [
               {
                 type: 'text',
-                text: `You are a professional food photographer and photo retoucher. Enhance this product photo with expert-level retouching while preserving maximum quality and detail.
+                text: `Eres un retocador fotográfico profesional especializado en comida. Tu trabajo es realizar retoques SUTILES y CONSERVADORES que respeten completamente el producto original.
 
-CRITICAL REQUIREMENTS:
-1. BACKGROUND: Ensure a perfectly clean, pure white background (#FFFFFF). Remove any shadows, stains, or imperfections on the background while keeping natural product shadows for depth.
+REGLAS CRÍTICAS - RESPETAR EL PRODUCTO:
+1. PRESERVAR LA AUTENTICIDAD: El producto debe verse exactamente como es. NO alterar la forma, tamaño, ni características distintivas del alimento.
 
-2. LIGHTING & EXPOSURE:
-   - Apply professional studio lighting simulation
-   - Balance highlights and shadows to show texture and depth
-   - Correct any overexposed or underexposed areas
-   - Add subtle rim lighting effect to separate product from background
+2. TEXTURAS ORIGINALES: Mantener 100% las texturas reales del producto (pan, carne, queso, vegetales). NO suavizar ni modificar las texturas naturales.
 
-3. COLOR CORRECTION:
-   - Enhance color vibrancy to make food look appetizing and fresh
-   - Correct any color cast from original lighting
-   - Maintain natural, realistic colors - avoid over-saturation
-   - Enhance warm tones for cooked foods, fresh greens for salads
+3. COLORES FIELES: Mantener los colores originales del producto. Solo corregir dominantes de color causadas por iluminación deficiente, sin alterar los tonos naturales del alimento.
 
-4. DETAIL & SHARPNESS:
-   - Enhance fine details and textures (meat grain, vegetable freshness, cheese melt)
-   - Apply professional sharpening without artifacts
-   - Preserve and enhance surface textures that make food appealing
+RETOQUES SUTILES PERMITIDOS:
+1. FONDO: Limpiar el fondo a blanco puro (#FFFFFF) si tiene manchas o imperfecciones. Conservar las sombras naturales del producto.
 
-5. PROFESSIONAL TOUCHES:
-   - Add subtle food photography glow for freshness
-   - Enhance steam or moisture if present
-   - Clean up any imperfections on the food that distract from quality
-   - Maintain the hero angle and composition
+2. ILUMINACIÓN: Correcciones mínimas de exposición solo si la foto está subexpuesta o sobreexpuesta. Equilibrar luces y sombras de forma natural.
 
-OUTPUT: A magazine-quality product photo suitable for a premium restaurant menu. The result should look like it was shot by a professional food photographer with proper studio lighting on a pure white seamless backdrop.`
+3. NITIDEZ: Aplicar enfoque sutil para resaltar la definición del producto sin crear artefactos ni aspecto artificial.
+
+4. LIMPIEZA: Eliminar solo polvo, manchas en el plato o imperfecciones evidentes que distraigan. NO eliminar características naturales del producto.
+
+PROHIBIDO:
+- Alterar proporciones o tamaño del producto
+- Suavizar o modificar texturas (pan tostado, queso derretido, carne, etc.)
+- Saturar excesivamente los colores
+- Añadir efectos artificiales de brillo o vapor
+- Hacer el producto verse diferente a la realidad
+
+OUTPUT: La misma foto con correcciones mínimas profesionales. El cliente debe recibir exactamente lo que ve en la foto.`
               },
               {
                 type: 'image_url',
