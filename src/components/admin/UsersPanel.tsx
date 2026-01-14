@@ -1,27 +1,74 @@
-import { useState } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, UserPlus, Shield } from 'lucide-react';
+import { Loader2, UserPlus, Shield, Trash2, ShieldCheck } from 'lucide-react';
 import { z } from 'zod';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 const userSchema = z.object({
   email: z.string().email('Email inválido').max(255),
   password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres').max(72),
 });
 
+interface AdminUser {
+  id: string;
+  email: string;
+  role: string;
+  created_at: string;
+  is_protected: boolean;
+}
+
 export const UsersPanel = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingUsers, setIsLoadingUsers] = useState(true);
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
+  const [users, setUsers] = useState<AdminUser[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   
-  const { session } = useAuth();
   const { toast } = useToast();
+
+  const fetchUsers = async () => {
+    setIsLoadingUsers(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-admin-user', {
+        body: { action: 'list' },
+      });
+
+      if (error) throw new Error(error.message);
+      if (data?.error) throw new Error(data.error);
+
+      setUsers(data.users || []);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Error desconocido';
+      toast({
+        title: 'Error al cargar usuarios',
+        description: message,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoadingUsers(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
   const validateForm = () => {
     try {
@@ -50,25 +97,20 @@ export const UsersPanel = () => {
 
     try {
       const { data, error } = await supabase.functions.invoke('create-admin-user', {
-        body: { email, password },
+        body: { action: 'create', email, password },
       });
 
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      if (data?.error) {
-        throw new Error(data.error);
-      }
+      if (error) throw new Error(error.message);
+      if (data?.error) throw new Error(data.error);
 
       toast({
         title: 'Usuario creado',
         description: `El administrador ${email} ha sido creado exitosamente`,
       });
 
-      // Clear form
       setEmail('');
       setPassword('');
+      fetchUsers();
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Error desconocido';
       toast({
@@ -81,12 +123,42 @@ export const UsersPanel = () => {
     }
   };
 
+  const handleDeleteUser = async (userId: string, userEmail: string) => {
+    setDeletingUserId(userId);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('create-admin-user', {
+        body: { action: 'delete', user_id: userId },
+      });
+
+      if (error) throw new Error(error.message);
+      if (data?.error) throw new Error(data.error);
+
+      toast({
+        title: 'Usuario eliminado',
+        description: `El administrador ${userEmail} ha sido eliminado`,
+      });
+
+      fetchUsers();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Error desconocido';
+      toast({
+        title: 'Error al eliminar usuario',
+        description: message,
+        variant: 'destructive',
+      });
+    } finally {
+      setDeletingUserId(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
+      {/* Create User Form */}
       <Card className="bg-card border-border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-foreground">
-            <Shield className="h-5 w-5 text-primary" />
+            <UserPlus className="h-5 w-5 text-primary" />
             Crear Administrador
           </CardTitle>
           <CardDescription>
@@ -141,14 +213,88 @@ export const UsersPanel = () => {
         </CardContent>
       </Card>
 
+      {/* Users List */}
       <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle className="text-foreground text-base">Información</CardTitle>
+          <CardTitle className="flex items-center gap-2 text-foreground">
+            <Shield className="h-5 w-5 text-primary" />
+            Usuarios Administradores
+          </CardTitle>
+          <CardDescription>
+            Lista de usuarios con acceso al panel
+          </CardDescription>
         </CardHeader>
-        <CardContent className="text-sm text-muted-foreground space-y-2">
-          <p>• Los nuevos usuarios tendrán acceso completo al panel de administración.</p>
-          <p>• La contraseña debe tener al menos 6 caracteres.</p>
-          <p>• El email debe ser único y válido.</p>
+        <CardContent>
+          {isLoadingUsers ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : users.length === 0 ? (
+            <p className="text-muted-foreground text-center py-8">
+              No hay usuarios administradores
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {users.map((user) => (
+                <div
+                  key={user.id}
+                  className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border"
+                >
+                  <div className="flex items-center gap-3">
+                    {user.is_protected ? (
+                      <ShieldCheck className="h-5 w-5 text-primary" />
+                    ) : (
+                      <Shield className="h-5 w-5 text-muted-foreground" />
+                    )}
+                    <div>
+                      <p className="font-medium text-foreground">{user.email}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {user.role} • {new Date(user.created_at).toLocaleDateString('es-ES')}
+                        {user.is_protected && ' • Protegido'}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {!user.is_protected && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          disabled={deletingUserId === user.id}
+                        >
+                          {deletingUserId === user.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>¿Eliminar administrador?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Esta acción eliminará permanentemente al usuario <strong>{user.email}</strong> y
+                            no podrá acceder más al panel de administración.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleDeleteUser(user.id, user.email)}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            Eliminar
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
