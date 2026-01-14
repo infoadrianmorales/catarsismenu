@@ -20,17 +20,15 @@ const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   
-  const { user, isAdmin, loading, signIn } = useAuth();
+  const { user, isAdmin, loading, roleLoading, signIn } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    console.log('Auth useEffect - loading:', loading, 'user:', !!user, 'isAdmin:', isAdmin);
-    if (!loading && user && isAdmin) {
-      console.log('Redirecting to /admin');
+    if (!loading && !roleLoading && user && isAdmin) {
       navigate('/admin');
     }
-  }, [user, isAdmin, loading, navigate]);
+  }, [user, isAdmin, loading, roleLoading, navigate]);
 
   const validateForm = () => {
     try {
@@ -75,7 +73,7 @@ const Auth = () => {
     }
   };
 
-  if (loading) {
+  if (loading || (user && roleLoading)) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
