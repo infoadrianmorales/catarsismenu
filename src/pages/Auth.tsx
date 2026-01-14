@@ -25,7 +25,9 @@ const Auth = () => {
   const { toast } = useToast();
 
   useEffect(() => {
+    console.log('Auth useEffect - loading:', loading, 'user:', !!user, 'isAdmin:', isAdmin);
     if (!loading && user && isAdmin) {
+      console.log('Redirecting to /admin');
       navigate('/admin');
     }
   }, [user, isAdmin, loading, navigate]);

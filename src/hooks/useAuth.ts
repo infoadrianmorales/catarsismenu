@@ -41,7 +41,9 @@ export const useAuth = () => {
   }, []);
 
   const checkAdminRole = async (userId: string) => {
-    const { data } = await supabase.rpc('is_admin', { _user_id: userId });
+    console.log('Checking admin role for user:', userId);
+    const { data, error } = await supabase.rpc('is_admin', { _user_id: userId });
+    console.log('Admin check result:', data, 'Error:', error);
     setIsAdmin(data === true);
   };
 
