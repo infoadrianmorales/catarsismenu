@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, Plus, Package, Pencil, Trash2 } from 'lucide-react';
 import { ProductForm } from './ProductForm';
 import { toast } from 'sonner';
@@ -24,12 +25,29 @@ interface Product {
   activo: boolean;
 }
 
+const CATEGORIES = [
+  { value: 'todos', label: 'Todas las categorías' },
+  { value: 'entradas', label: 'Entradas' },
+  { value: 'hamburguesas', label: 'Hamburguesas' },
+  { value: 'emparedados', label: 'Emparedados' },
+  { value: 'pizzas', label: 'Pizzas' },
+  { value: 'parrilla', label: 'Parrilla' },
+  { value: 'ensaladas', label: 'Ensaladas' },
+  { value: 'cocteleria', label: 'Coctelería' },
+  { value: 'postres', label: 'Postres' },
+];
+
 export const ProductsPanel = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>('todos');
+
+  const filteredProducts = selectedCategory === 'todos' 
+    ? products 
+    : products.filter(p => p.categoria === selectedCategory);
 
   const fetchProducts = async () => {
     setLoading(true);
@@ -89,20 +107,8 @@ export const ProductsPanel = () => {
   };
 
   const getCategoryLabel = (categoria: string) => {
-    const labels: Record<string, string> = {
-      entradas: 'Entradas',
-      hamburguesas: 'Hamburguesas',
-      emparedados: 'Emparedados',
-      pizzas: 'Pizzas',
-      parrilla: 'Parrilla',
-      ensaladas: 'Ensaladas',
-      alitas: 'Alitas',
-      cocktails: 'Coctelería',
-      postres: 'Postres',
-      bebidas: 'Bebidas',
-      acompanantes: 'Acompañantes',
-    };
-    return labels[categoria] || categoria;
+    const found = CATEGORIES.find(c => c.value === categoria);
+    return found?.label || categoria;
   };
 
   if (loading) {
@@ -115,17 +121,31 @@ export const ProductsPanel = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-lg font-semibold">Productos</h2>
           <p className="text-sm text-muted-foreground">
-            {products.length} productos en el menú
+            {filteredProducts.length} de {products.length} productos
           </p>
         </div>
-        <Button onClick={handleAddProduct} className="gap-2 bg-primary hover:bg-primary/90">
-          <Plus className="h-4 w-4" />
-          Agregar Producto
-        </Button>
+        <div className="flex gap-3">
+          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filtrar categoría" />
+            </SelectTrigger>
+            <SelectContent>
+              {CATEGORIES.map(cat => (
+                <SelectItem key={cat.value} value={cat.value}>
+                  {cat.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button onClick={handleAddProduct} className="gap-2 bg-primary hover:bg-primary/90">
+            <Plus className="h-4 w-4" />
+            Agregar
+          </Button>
+        </div>
       </div>
 
       {products.length === 0 ? (
@@ -141,7 +161,7 @@ export const ProductsPanel = () => {
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {products.map((product) => (
+          {filteredProducts.map((product) => (
             <Card key={product.id} className="bg-card border-border overflow-hidden">
               {product.imagen_url && (
                 <div className="aspect-video bg-white">
