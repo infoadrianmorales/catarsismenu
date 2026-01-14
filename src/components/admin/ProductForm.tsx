@@ -44,7 +44,7 @@ const CATEGORIES = [
   { value: 'postres', label: 'Postres' },
 ];
 
-const AVAILABLE_TAGS = ['Popular', 'Nuevo', 'Vegetariano', '2x1'];
+
 
 export const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
   const [loading, setLoading] = useState(false);
@@ -164,14 +164,6 @@ export const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) 
     }
   };
 
-  const handleTagToggle = (tag: string) => {
-    setFormData(prev => ({
-      ...prev,
-      tags: prev.tags.includes(tag)
-        ? prev.tags.filter(t => t !== tag)
-        : [...prev.tags, tag]
-    }));
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -319,26 +311,6 @@ export const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) 
         <p className="text-xs text-muted-foreground">{formData.descripcion_corta.length}/120</p>
       </div>
 
-      {/* Tags */}
-      <div className="space-y-2">
-        <Label>Etiquetas</Label>
-        <div className="flex flex-wrap gap-2">
-          {AVAILABLE_TAGS.map(tag => (
-            <button
-              key={tag}
-              type="button"
-              onClick={() => handleTagToggle(tag)}
-              className={`px-3 py-1 rounded-full text-sm transition-colors ${
-                formData.tags.includes(tag)
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
-              }`}
-            >
-              {tag}
-            </button>
-          ))}
-        </div>
-      </div>
 
       {/* Imagen */}
       <div className="space-y-4">
