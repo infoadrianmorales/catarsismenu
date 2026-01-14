@@ -9,21 +9,21 @@ import { ProductsPanel } from '@/components/admin/ProductsPanel';
 import { PromotionsPanel } from '@/components/admin/PromotionsPanel';
 import { UsersPanel } from '@/components/admin/UsersPanel';
 const Admin = () => {
-  const { user, isAdmin, loading, signOut } = useAuth();
+  const { user, isAdmin, loading, roleLoading, signOut } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!loading && (!user || !isAdmin)) {
+    if (!loading && !roleLoading && (!user || !isAdmin)) {
       navigate('/auth');
     }
-  }, [user, isAdmin, loading, navigate]);
+  }, [user, isAdmin, loading, roleLoading, navigate]);
 
   const handleSignOut = async () => {
     await signOut();
     navigate('/auth');
   };
 
-  if (loading) {
+  if (loading || roleLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
