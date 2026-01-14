@@ -1,17 +1,16 @@
 /**
  * Image processing utilities for product photos
- * - Resize to 4:5 aspect ratio
+ * - Resize to 1:1 aspect ratio (square)
  * - AI enhancement for product photography
  */
 
-const TARGET_ASPECT_RATIO = 4 / 5; // 4:5 aspect ratio
-const MAX_WIDTH = 800; // Max width in pixels
-const MAX_HEIGHT = 1000; // Max height in pixels (800 * 5/4)
+const TARGET_ASPECT_RATIO = 1; // 1:1 aspect ratio (square)
+const MAX_SIZE = 800; // Max width/height in pixels
 
 /**
- * Resize and crop image to 4:5 aspect ratio
+ * Resize and crop image to 1:1 aspect ratio (square)
  */
-export const resizeImageTo4x5 = (file: File): Promise<Blob> => {
+export const resizeImageTo1x1 = (file: File): Promise<Blob> => {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
@@ -42,18 +41,16 @@ export const resizeImageTo4x5 = (file: File): Promise<Blob> => {
           sourceY = (img.height - sourceHeight) / 2;
         }
         
-        // Calculate output dimensions
-        let outputWidth = sourceWidth;
-        let outputHeight = sourceHeight;
+        // Calculate output dimensions (square, so width = height)
+        let outputSize = Math.min(sourceWidth, sourceHeight);
         
         // Scale down if too large
-        if (outputWidth > MAX_WIDTH) {
-          outputWidth = MAX_WIDTH;
-          outputHeight = MAX_WIDTH / TARGET_ASPECT_RATIO;
+        if (outputSize > MAX_SIZE) {
+          outputSize = MAX_SIZE;
         }
         
-        canvas.width = outputWidth;
-        canvas.height = outputHeight;
+        canvas.width = outputSize;
+        canvas.height = outputSize;
         
         // Use high-quality image scaling
         ctx.imageSmoothingEnabled = true;
@@ -63,7 +60,7 @@ export const resizeImageTo4x5 = (file: File): Promise<Blob> => {
         ctx.drawImage(
           img,
           sourceX, sourceY, sourceWidth, sourceHeight,
-          0, 0, outputWidth, outputHeight
+          0, 0, outputSize, outputSize
         );
         
         canvas.toBlob(
