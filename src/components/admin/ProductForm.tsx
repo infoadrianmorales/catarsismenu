@@ -38,11 +38,8 @@ const CATEGORIES = [
   { value: 'pizzas', label: 'Pizzas' },
   { value: 'parrilla', label: 'Parrilla' },
   { value: 'ensaladas', label: 'Ensaladas' },
-  { value: 'alitas', label: 'Alitas' },
-  { value: 'cocktails', label: 'Coctelería' },
+  { value: 'cocteleria', label: 'Coctelería' },
   { value: 'postres', label: 'Postres' },
-  { value: 'bebidas', label: 'Bebidas' },
-  { value: 'acompanantes', label: 'Acompañantes' },
 ];
 
 const AVAILABLE_TAGS = ['Popular', 'Nuevo', 'Vegetariano', '2x1'];
