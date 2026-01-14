@@ -6,9 +6,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Loader2, Upload, X } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Loader2, Upload, X, Sparkles, Crop } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Database } from '@/integrations/supabase/types';
+import { resizeImageTo4x5, blobToBase64, base64ToBlob, blobToFile } from '@/lib/imageProcessor';
 
 type ProductCategory = Database['public']['Enums']['product_category'];
 
@@ -47,6 +49,9 @@ const AVAILABLE_TAGS = ['Popular', 'Nuevo', 'Vegetariano', '2x1'];
 export const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [enhancing, setEnhancing] = useState(false);
+  const [autoResize, setAutoResize] = useState(true);
+  const [autoEnhance, setAutoEnhance] = useState(true);
   const [imagePreview, setImagePreview] = useState<string | null>(product?.imagen_url || null);
   
   const [formData, setFormData] = useState<Product>({
@@ -84,21 +89,59 @@ export const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) 
       return;
     }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('La imagen no debe superar 5MB');
+    // Validate file size (max 10MB for processing)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('La imagen no debe superar 10MB');
       return;
     }
 
     setUploading(true);
+    
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${formData.slug || Date.now()}.${fileExt}`;
+      let processedFile: File = file;
+      
+      // Step 1: Resize to 4:5 if enabled
+      if (autoResize) {
+        toast.info('Redimensionando imagen a 4:5...');
+        const resizedBlob = await resizeImageTo4x5(file);
+        processedFile = blobToFile(resizedBlob, `${formData.slug || Date.now()}.jpg`);
+      }
+      
+      // Step 2: AI Enhancement if enabled
+      if (autoEnhance) {
+        setEnhancing(true);
+        toast.info('Mejorando imagen con IA...');
+        
+        try {
+          const base64 = await blobToBase64(processedFile);
+          
+          const { data, error } = await supabase.functions.invoke('enhance-product-image', {
+            body: { imageBase64: base64 }
+          });
+          
+          if (error) {
+            console.error('AI enhancement error:', error);
+            toast.warning('No se pudo mejorar con IA, usando imagen redimensionada');
+          } else if (data?.enhancedImageUrl) {
+            const enhancedBlob = await base64ToBlob(data.enhancedImageUrl);
+            processedFile = blobToFile(enhancedBlob, `${formData.slug || Date.now()}.jpg`);
+            toast.success('Imagen mejorada con IA');
+          }
+        } catch (aiError) {
+          console.error('AI enhancement failed:', aiError);
+          toast.warning('No se pudo mejorar con IA, usando imagen procesada');
+        } finally {
+          setEnhancing(false);
+        }
+      }
+      
+      // Step 3: Upload to storage
+      const fileName = `${formData.slug || Date.now()}.jpg`;
       const filePath = `products/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from('product-images')
-        .upload(filePath, file, { upsert: true });
+        .upload(filePath, processedFile, { upsert: true });
 
       if (uploadError) throw uploadError;
 
@@ -106,14 +149,18 @@ export const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) 
         .from('product-images')
         .getPublicUrl(filePath);
 
-      setFormData(prev => ({ ...prev, imagen_url: publicUrl }));
-      setImagePreview(publicUrl);
+      // Add cache buster to force reload
+      const urlWithCacheBuster = `${publicUrl}?t=${Date.now()}`;
+      
+      setFormData(prev => ({ ...prev, imagen_url: urlWithCacheBuster }));
+      setImagePreview(urlWithCacheBuster);
       toast.success('Imagen subida correctamente');
     } catch (error) {
       console.error('Error uploading image:', error);
-      toast.error('Error al subir la imagen');
+      toast.error('Error al procesar la imagen');
     } finally {
       setUploading(false);
+      setEnhancing(false);
     }
   };
 
@@ -294,11 +341,41 @@ export const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) 
       </div>
 
       {/* Imagen */}
-      <div className="space-y-2">
+      <div className="space-y-4">
         <Label>Imagen del producto</Label>
+        
+        {/* Opciones de procesamiento automático */}
+        <div className="flex flex-col gap-3 p-4 bg-muted/50 rounded-lg border border-border">
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="autoResize"
+              checked={autoResize}
+              onCheckedChange={(checked) => setAutoResize(checked === true)}
+            />
+            <label htmlFor="autoResize" className="flex items-center gap-2 text-sm cursor-pointer">
+              <Crop className="h-4 w-4 text-primary" />
+              Redimensionar automáticamente a 4:5
+            </label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="autoEnhance"
+              checked={autoEnhance}
+              onCheckedChange={(checked) => setAutoEnhance(checked === true)}
+            />
+            <label htmlFor="autoEnhance" className="flex items-center gap-2 text-sm cursor-pointer">
+              <Sparkles className="h-4 w-4 text-amber-500" />
+              Mejorar imagen con IA (fondo blanco, iluminación)
+            </label>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Estas opciones procesan la imagen antes de subirla para optimizarla para el menú.
+          </p>
+        </div>
+
         <div className="flex items-start gap-4">
           {imagePreview ? (
-            <div className="relative w-32 h-32 rounded-lg overflow-hidden border border-border">
+            <div className="relative w-32 h-40 rounded-lg overflow-hidden border border-border bg-white">
               <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
               <button
                 type="button"
@@ -312,20 +389,28 @@ export const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) 
               </button>
             </div>
           ) : (
-            <label className="flex flex-col items-center justify-center w-32 h-32 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary transition-colors">
+            <label className="flex flex-col items-center justify-center w-32 h-40 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary transition-colors">
               <input
                 type="file"
                 accept="image/*"
                 onChange={handleImageUpload}
                 className="hidden"
-                disabled={uploading}
+                disabled={uploading || enhancing}
               />
-              {uploading ? (
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              {uploading || enhancing ? (
+                <div className="flex flex-col items-center gap-2">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground text-center px-2">
+                    {enhancing ? 'Mejorando con IA...' : 'Procesando...'}
+                  </span>
+                </div>
               ) : (
                 <>
                   <Upload className="h-6 w-6 text-muted-foreground" />
-                  <span className="text-xs text-muted-foreground mt-1">Subir imagen</span>
+                  <span className="text-xs text-muted-foreground mt-1 text-center">
+                    Subir imagen
+                  </span>
+                  <span className="text-xs text-muted-foreground/60">4:5</span>
                 </>
               )}
             </label>
