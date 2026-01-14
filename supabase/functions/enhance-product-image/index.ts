@@ -29,7 +29,7 @@ serve(async (req) => {
       );
     }
 
-    // Use AI to enhance the product image
+    // Use AI to enhance the product image with professional food photography techniques
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -44,7 +44,35 @@ serve(async (req) => {
             content: [
               {
                 type: 'text',
-                text: 'Enhance this product photo for a restaurant menu. Make it look more appetizing and professional: improve lighting, enhance colors to make food look more appealing, ensure the background is clean white (#FFFFFF), add subtle professional food photography styling. Keep the same food item, just make it look more premium and appetizing.'
+                text: `You are a professional food photographer and photo retoucher. Enhance this product photo with expert-level retouching while preserving maximum quality and detail.
+
+CRITICAL REQUIREMENTS:
+1. BACKGROUND: Ensure a perfectly clean, pure white background (#FFFFFF). Remove any shadows, stains, or imperfections on the background while keeping natural product shadows for depth.
+
+2. LIGHTING & EXPOSURE:
+   - Apply professional studio lighting simulation
+   - Balance highlights and shadows to show texture and depth
+   - Correct any overexposed or underexposed areas
+   - Add subtle rim lighting effect to separate product from background
+
+3. COLOR CORRECTION:
+   - Enhance color vibrancy to make food look appetizing and fresh
+   - Correct any color cast from original lighting
+   - Maintain natural, realistic colors - avoid over-saturation
+   - Enhance warm tones for cooked foods, fresh greens for salads
+
+4. DETAIL & SHARPNESS:
+   - Enhance fine details and textures (meat grain, vegetable freshness, cheese melt)
+   - Apply professional sharpening without artifacts
+   - Preserve and enhance surface textures that make food appealing
+
+5. PROFESSIONAL TOUCHES:
+   - Add subtle food photography glow for freshness
+   - Enhance steam or moisture if present
+   - Clean up any imperfections on the food that distract from quality
+   - Maintain the hero angle and composition
+
+OUTPUT: A magazine-quality product photo suitable for a premium restaurant menu. The result should look like it was shot by a professional food photographer with proper studio lighting on a pure white seamless backdrop.`
               },
               {
                 type: 'image_url',
