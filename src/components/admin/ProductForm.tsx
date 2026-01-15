@@ -269,8 +269,9 @@ export const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) 
             type="number"
             step="0.01"
             min="0"
-            value={formData.precio_usd}
-            onChange={e => setFormData(prev => ({ ...prev, precio_usd: parseFloat(e.target.value) || 0 }))}
+            value={formData.precio_usd === 0 ? '' : formData.precio_usd}
+            onChange={e => setFormData(prev => ({ ...prev, precio_usd: e.target.value === '' ? 0 : parseFloat(e.target.value) }))}
+            placeholder="0.00"
             required
           />
         </div>
@@ -282,8 +283,9 @@ export const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) 
             id="orden"
             type="number"
             min="0"
-            value={formData.orden}
-            onChange={e => setFormData(prev => ({ ...prev, orden: parseInt(e.target.value) || 0 }))}
+            value={formData.orden === 0 ? '' : formData.orden}
+            onChange={e => setFormData(prev => ({ ...prev, orden: e.target.value === '' ? 0 : parseInt(e.target.value) }))}
+            placeholder="0"
           />
         </div>
 
