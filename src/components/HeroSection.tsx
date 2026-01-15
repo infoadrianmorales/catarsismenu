@@ -48,10 +48,6 @@ export const HeroSection = () => {
           </h1>
         </div>
         
-        {/* Subtitle */}
-        <p className="text-base md:text-lg text-muted-foreground max-w-xl mx-auto">
-          Explora el menú, mira precios en USD o VES y pide por WhatsApp en segundos.
-        </p>
         
         {/* CTA Buttons */}
         <div className="flex flex-wrap items-center justify-center gap-3">
