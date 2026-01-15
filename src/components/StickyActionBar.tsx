@@ -4,13 +4,17 @@ import { MessageCircle, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { PriceDisplayMode } from '@/hooks/useCurrency';
 
 interface StickyActionBarProps {
   currency: Currency;
   onCurrencyToggle: () => void;
+  displayMode?: PriceDisplayMode;
 }
 
-export const StickyActionBar = ({ currency, onCurrencyToggle }: StickyActionBarProps) => {
+export const StickyActionBar = ({ currency, onCurrencyToggle, displayMode = 'ambas' }: StickyActionBarProps) => {
+  const showCurrencyToggle = displayMode === 'ambas';
+
   const handleWhatsAppClick = () => {
     const message = encodeURIComponent('Hola, vengo del menú web de Catarsis. Quiero hacer un pedido.');
     window.open(`https://wa.me/${appConfig.whatsapp}?text=${message}`, '_blank');
@@ -47,27 +51,33 @@ export const StickyActionBar = ({ currency, onCurrencyToggle }: StickyActionBarP
     <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden">
       <div className="bg-card/95 backdrop-blur-md border-t border-border/50 px-4 py-3 shadow-lg">
         <div className="flex items-center justify-between gap-3">
-          {/* Currency Toggle */}
-          <div className="flex items-center gap-2">
-            <Label 
-              htmlFor="currency-mobile" 
-              className={`text-xs font-medium ${currency === 'USD' ? 'text-secondary' : 'text-muted-foreground'}`}
-            >
-              USD
-            </Label>
-            <Switch
-              id="currency-mobile"
-              checked={currency === 'VES'}
-              onCheckedChange={onCurrencyToggle}
-              className="data-[state=checked]:bg-secondary"
-            />
-            <Label 
-              htmlFor="currency-mobile" 
-              className={`text-xs font-medium ${currency === 'VES' ? 'text-secondary' : 'text-muted-foreground'}`}
-            >
-              VES
-            </Label>
-          </div>
+          {/* Currency Toggle or Label */}
+          {showCurrencyToggle ? (
+            <div className="flex items-center gap-2">
+              <Label 
+                htmlFor="currency-mobile" 
+                className={`text-xs font-medium ${currency === 'USD' ? 'text-secondary' : 'text-muted-foreground'}`}
+              >
+                USD
+              </Label>
+              <Switch
+                id="currency-mobile"
+                checked={currency === 'VES'}
+                onCheckedChange={onCurrencyToggle}
+                className="data-[state=checked]:bg-secondary"
+              />
+              <Label 
+                htmlFor="currency-mobile" 
+                className={`text-xs font-medium ${currency === 'VES' ? 'text-secondary' : 'text-muted-foreground'}`}
+              >
+                VES
+              </Label>
+            </div>
+          ) : (
+            <span className="text-xs font-medium text-secondary">
+              {displayMode === 'solo_usd' ? 'USD' : 'Bs'}
+            </span>
+          )}
           
           {/* Action Buttons */}
           <div className="flex items-center gap-2">
