@@ -2,3 +2,9 @@ project_id = "qucqigemdbyclxqjzkbs"
 
 [functions.create-admin-user]
 verify_jwt = false
+
+[functions.enhance-product-image]
+verify_jwt = false
+
+[functions.sync-bcv-rate]
+verify_jwt = false
