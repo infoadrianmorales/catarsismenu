@@ -28,11 +28,17 @@ export const HeroSection = () => {
       
       {/* Content */}
       <div className="relative z-10 container px-4 py-12 text-center space-y-6">
-        <div className="space-y-3">
+        <div className="space-y-4">
+          <p className="text-sm md:text-base font-body uppercase tracking-[0.3em] text-accent">
+            Tu spot para desconectar
+          </p>
           <h1 className="text-3xl md:text-5xl lg:text-6xl font-display font-black text-foreground leading-tight">
             Catarsis — Drinks & Food
           </h1>
-          <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-lg md:text-xl lg:text-2xl font-display text-primary max-w-2xl mx-auto leading-relaxed">
+            Sabores que liberan, momentos que conectan
+          </p>
+          <p className="text-sm md:text-base text-muted-foreground max-w-xl mx-auto">
             Explora el menú, mira precios en USD o VES y pide por WhatsApp en segundos.
           </p>
         </div>
