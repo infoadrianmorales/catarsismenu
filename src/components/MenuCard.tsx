@@ -1,13 +1,14 @@
 import { MenuItem, Currency } from '@/types/menu';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { useCurrency } from '@/hooks/useCurrency';
+import { useCurrency, PriceDisplayMode } from '@/hooks/useCurrency';
 import { appConfig } from '@/data/config';
 import { MessageCircle } from 'lucide-react';
 
 interface MenuCardProps {
   item: MenuItem;
   currency: Currency;
+  displayMode?: PriceDisplayMode;
 }
 
 const tagStyles: Record<string, string> = {
@@ -17,7 +18,7 @@ const tagStyles: Record<string, string> = {
   '2x1': 'bg-secondary text-secondary-foreground',
 };
 
-export const MenuCard = ({ item, currency }: MenuCardProps) => {
+export const MenuCard = ({ item, currency, displayMode = 'ambas' }: MenuCardProps) => {
   const { getPrices } = useCurrency();
   const prices = getPrices(item.precio_usd);
 
@@ -31,6 +32,36 @@ export const MenuCard = ({ item, currency }: MenuCardProps) => {
     window.dispatchEvent(new CustomEvent('analytics', {
       detail: { event: 'click_whatsapp', product: item.slug, currency }
     }));
+  };
+
+  const renderPrices = () => {
+    if (displayMode === 'solo_usd') {
+      return (
+        <span className="text-xl font-display font-black text-secondary">
+          {prices.formattedUSD}
+        </span>
+      );
+    }
+    
+    if (displayMode === 'solo_ves') {
+      return (
+        <span className="text-xl font-display font-black text-secondary">
+          {prices.formattedVES}
+        </span>
+      );
+    }
+    
+    // Display mode: ambas
+    return (
+      <div className="flex flex-col">
+        <span className={`text-xl font-display font-black ${currency === 'USD' ? 'text-secondary' : 'text-muted-foreground text-sm'}`}>
+          {prices.formattedUSD}
+        </span>
+        <span className={`text-sm ${currency === 'VES' ? 'text-secondary font-bold' : 'text-muted-foreground'}`}>
+          {prices.formattedVES}
+        </span>
+      </div>
+    );
   };
 
   return (
@@ -75,14 +106,7 @@ export const MenuCard = ({ item, currency }: MenuCardProps) => {
           
           {/* Prices */}
           <div className="flex items-center justify-between gap-2">
-            <div className="flex flex-col">
-              <span className={`text-xl font-display font-black ${currency === 'USD' ? 'text-secondary' : 'text-muted-foreground text-sm'}`}>
-                {prices.formattedUSD}
-              </span>
-              <span className={`text-sm ${currency === 'VES' ? 'text-secondary font-bold' : 'text-muted-foreground'}`}>
-                {prices.formattedVES}
-              </span>
-            </div>
+            {renderPrices()}
             
             {/* Quick WhatsApp button */}
             <button

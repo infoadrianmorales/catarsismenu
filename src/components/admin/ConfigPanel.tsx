@@ -4,9 +4,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Save, DollarSign, MessageCircle, Instagram, MapPin, RefreshCw, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Loader2, Save, DollarSign, MessageCircle, Instagram, MapPin, RefreshCw, CheckCircle2, Eye } from 'lucide-react';
+
+type PriceDisplayMode = 'solo_usd' | 'solo_ves' | 'ambas';
 
 export const ConfigPanel = () => {
   const { config, loading, updateConfig, refetch } = useConfig();
@@ -14,6 +17,7 @@ export const ConfigPanel = () => {
   const [saving, setSaving] = useState<string | null>(null);
   const [syncingBcv, setSyncingBcv] = useState(false);
   const [lastSync, setLastSync] = useState<string | null>(null);
+  const [priceDisplayMode, setPriceDisplayMode] = useState<PriceDisplayMode>('ambas');
   const [formValues, setFormValues] = useState({
     tasa_ves: '',
     whatsapp: '',
@@ -35,20 +39,25 @@ export const ConfigPanel = () => {
     }
   }, [loading, config]);
 
-  // Fetch last sync time
+  // Fetch last sync time and display mode
   useEffect(() => {
-    const fetchLastSync = async () => {
+    const fetchConfigData = async () => {
       const { data } = await supabase
         .from('config')
-        .select('value')
-        .eq('key', 'bcv_last_sync')
-        .single();
+        .select('key, value')
+        .in('key', ['bcv_last_sync', 'price_display_mode']);
       
-      if (data?.value) {
-        setLastSync(data.value);
+      if (data) {
+        data.forEach(item => {
+          if (item.key === 'bcv_last_sync') {
+            setLastSync(item.value);
+          } else if (item.key === 'price_display_mode') {
+            setPriceDisplayMode(item.value as PriceDisplayMode);
+          }
+        });
       }
     };
-    fetchLastSync();
+    fetchConfigData();
   }, []);
 
   const handleSave = async (key: string, value: string) => {
@@ -209,6 +218,67 @@ export const ConfigPanel = () => {
               <span className="ml-2">Guardar</span>
             </Button>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Price Display Mode */}
+      <Card className="bg-card border-border">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Eye className="h-5 w-5" />
+            Visualización de Precios
+          </CardTitle>
+          <CardDescription>
+            Elige cómo se muestran los precios en el menú público
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <RadioGroup
+            value={priceDisplayMode}
+            onValueChange={(value) => setPriceDisplayMode(value as PriceDisplayMode)}
+            className="space-y-3"
+          >
+            <div className="flex items-center space-x-3 p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors">
+              <RadioGroupItem value="ambas" id="ambas" />
+              <Label htmlFor="ambas" className="flex-1 cursor-pointer">
+                <span className="font-medium">Ambas monedas</span>
+                <p className="text-xs text-muted-foreground">
+                  Muestra USD y Bs simultáneamente. El usuario puede alternar cuál resaltar.
+                </p>
+              </Label>
+            </div>
+            <div className="flex items-center space-x-3 p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors">
+              <RadioGroupItem value="solo_usd" id="solo_usd" />
+              <Label htmlFor="solo_usd" className="flex-1 cursor-pointer">
+                <span className="font-medium">Solo Dólares (USD)</span>
+                <p className="text-xs text-muted-foreground">
+                  Muestra únicamente precios en dólares americanos.
+                </p>
+              </Label>
+            </div>
+            <div className="flex items-center space-x-3 p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors">
+              <RadioGroupItem value="solo_ves" id="solo_ves" />
+              <Label htmlFor="solo_ves" className="flex-1 cursor-pointer">
+                <span className="font-medium">Solo Bolívares (VES)</span>
+                <p className="text-xs text-muted-foreground">
+                  Muestra únicamente precios en bolívares, calculados con la tasa actual.
+                </p>
+              </Label>
+            </div>
+          </RadioGroup>
+          
+          <Button
+            onClick={() => handleSave('price_display_mode', priceDisplayMode)}
+            disabled={saving === 'price_display_mode'}
+            className="w-full gap-2"
+          >
+            {saving === 'price_display_mode' ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="h-4 w-4" />
+            )}
+            Guardar preferencia
+          </Button>
         </CardContent>
       </Card>
 

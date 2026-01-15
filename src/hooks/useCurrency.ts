@@ -4,6 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 
 const STORAGE_KEY = 'moneda_activa';
 
+export type PriceDisplayMode = 'solo_usd' | 'solo_ves' | 'ambas';
+
 export const useCurrency = () => {
   const [currency, setCurrency] = useState<Currency>(() => {
     if (typeof window !== 'undefined') {
@@ -14,22 +16,28 @@ export const useCurrency = () => {
   });
 
   const [exchangeRate, setExchangeRate] = useState<number>(50);
+  const [displayMode, setDisplayMode] = useState<PriceDisplayMode>('ambas');
 
-  // Fetch exchange rate from database
+  // Fetch exchange rate and display mode from database
   useEffect(() => {
-    const fetchExchangeRate = async () => {
+    const fetchConfig = async () => {
       const { data, error } = await supabase
         .from('config')
-        .select('value')
-        .eq('key', 'tasa_ves')
-        .maybeSingle();
+        .select('key, value')
+        .in('key', ['tasa_ves', 'price_display_mode']);
 
       if (!error && data) {
-        setExchangeRate(parseFloat(data.value));
+        data.forEach(item => {
+          if (item.key === 'tasa_ves') {
+            setExchangeRate(parseFloat(item.value));
+          } else if (item.key === 'price_display_mode') {
+            setDisplayMode(item.value as PriceDisplayMode);
+          }
+        });
       }
     };
 
-    fetchExchangeRate();
+    fetchConfig();
   }, []);
 
   useEffect(() => {
@@ -37,12 +45,15 @@ export const useCurrency = () => {
   }, [currency]);
 
   const toggleCurrency = useCallback(() => {
+    // Only allow toggle if display mode is 'ambas'
+    if (displayMode !== 'ambas') return;
+    
     setCurrency(prev => prev === 'USD' ? 'VES' : 'USD');
     // Analytics event
     window.dispatchEvent(new CustomEvent('analytics', {
       detail: { event: 'toggle_moneda', currency: currency === 'USD' ? 'VES' : 'USD' }
     }));
-  }, [currency]);
+  }, [currency, displayMode]);
 
   const formatPrice = useCallback((priceUSD: number, showBoth = false) => {
     const priceVES = priceUSD * exchangeRate;
@@ -75,5 +86,6 @@ export const useCurrency = () => {
     formatPrice,
     getPrices,
     exchangeRate,
+    displayMode,
   };
 };

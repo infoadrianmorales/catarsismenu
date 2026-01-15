@@ -10,7 +10,7 @@ import { useSearch } from '@/hooks/useSearch';
 import { useProducts } from '@/hooks/useProducts';
 
 const Index = () => {
-  const { currency, toggleCurrency } = useCurrency();
+  const { currency, toggleCurrency, displayMode } = useCurrency();
   const { products } = useProducts();
   const { 
     searchQuery, 
@@ -25,6 +25,7 @@ const Index = () => {
       <MenuHeader 
         currency={currency} 
         onCurrencyToggle={toggleCurrency}
+        displayMode={displayMode}
       />
       
       <HeroSection />
@@ -43,6 +44,7 @@ const Index = () => {
         items={filteredItems}
         currency={currency}
         selectedCategory={selectedCategory}
+        displayMode={displayMode}
       />
       
       <Footer />
@@ -50,6 +52,7 @@ const Index = () => {
       <StickyActionBar 
         currency={currency}
         onCurrencyToggle={toggleCurrency}
+        displayMode={displayMode}
       />
     </div>
   );

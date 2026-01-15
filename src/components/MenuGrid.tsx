@@ -1,10 +1,12 @@
 import { MenuItem, Currency, MenuCategory } from '@/types/menu';
 import { MenuCard } from './MenuCard';
+import { PriceDisplayMode } from '@/hooks/useCurrency';
 
 interface MenuGridProps {
   items: MenuItem[];
   currency: Currency;
   selectedCategory: MenuCategory;
+  displayMode?: PriceDisplayMode;
 }
 
 const categoryTitles: Record<Exclude<MenuCategory, 'todos'>, { title: string; subtitle: string }> = {
@@ -42,7 +44,7 @@ const categoryTitles: Record<Exclude<MenuCategory, 'todos'>, { title: string; su
   },
 };
 
-export const MenuGrid = ({ items, currency, selectedCategory }: MenuGridProps) => {
+export const MenuGrid = ({ items, currency, selectedCategory, displayMode = 'ambas' }: MenuGridProps) => {
   const filteredItems = selectedCategory === 'todos' 
     ? items 
     : items.filter(item => item.categoria === selectedCategory);
@@ -90,6 +92,7 @@ export const MenuGrid = ({ items, currency, selectedCategory }: MenuGridProps) =
               key={item.id} 
               item={item} 
               currency={currency}
+              displayMode={displayMode}
             />
           ))}
         </div>
@@ -121,6 +124,7 @@ export const MenuGrid = ({ items, currency, selectedCategory }: MenuGridProps) =
                   key={item.id} 
                   item={item} 
                   currency={currency}
+                  displayMode={displayMode}
                 />
               ))}
             </div>
