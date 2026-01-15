@@ -51,7 +51,7 @@ export const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) 
   const [uploading, setUploading] = useState(false);
   const [enhancing, setEnhancing] = useState(false);
   const [autoResize, setAutoResize] = useState(true);
-  const [autoEnhance, setAutoEnhance] = useState(true);
+  const [autoEnhance, setAutoEnhance] = useState(false); // Desactivado por defecto hasta agregar créditos de IA
   const [imagePreview, setImagePreview] = useState<string | null>(product?.imagen_url || null);
   
   const [formData, setFormData] = useState<Product>({
