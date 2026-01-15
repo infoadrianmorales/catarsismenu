@@ -5,12 +5,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, DollarSign, MessageCircle, Instagram, MapPin } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { Loader2, Save, DollarSign, MessageCircle, Instagram, MapPin, RefreshCw, CheckCircle2, AlertCircle } from 'lucide-react';
 
 export const ConfigPanel = () => {
-  const { config, loading, updateConfig } = useConfig();
+  const { config, loading, updateConfig, refetch } = useConfig();
   const { toast } = useToast();
   const [saving, setSaving] = useState<string | null>(null);
+  const [syncingBcv, setSyncingBcv] = useState(false);
+  const [lastSync, setLastSync] = useState<string | null>(null);
   const [formValues, setFormValues] = useState({
     tasa_ves: '',
     whatsapp: '',
@@ -32,6 +35,22 @@ export const ConfigPanel = () => {
     }
   }, [loading, config]);
 
+  // Fetch last sync time
+  useEffect(() => {
+    const fetchLastSync = async () => {
+      const { data } = await supabase
+        .from('config')
+        .select('value')
+        .eq('key', 'bcv_last_sync')
+        .single();
+      
+      if (data?.value) {
+        setLastSync(data.value);
+      }
+    };
+    fetchLastSync();
+  }, []);
+
   const handleSave = async (key: string, value: string) => {
     setSaving(key);
     try {
@@ -48,6 +67,49 @@ export const ConfigPanel = () => {
       });
     }
     setSaving(null);
+  };
+
+  const handleSyncBcv = async () => {
+    setSyncingBcv(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('sync-bcv-rate');
+      
+      if (error) throw error;
+      
+      if (data.success) {
+        toast({
+          title: 'Tasa sincronizada',
+          description: `Tasa BCV actualizada: Bs ${data.rate.toFixed(2)}`,
+        });
+        
+        // Refresh config to show new rate
+        refetch();
+        setLastSync(data.syncedAt);
+        setFormValues(prev => ({ ...prev, tasa_ves: data.rate.toString() }));
+      } else {
+        throw new Error(data.error || 'Error desconocido');
+      }
+    } catch (error: any) {
+      console.error('Error syncing BCV rate:', error);
+      toast({
+        title: 'Error al sincronizar',
+        description: error.message || 'No se pudo obtener la tasa del BCV',
+        variant: 'destructive',
+      });
+    } finally {
+      setSyncingBcv(false);
+    }
+  };
+
+  const formatLastSync = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleString('es-VE', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
   };
 
   if (loading) {
@@ -71,10 +133,52 @@ export const ConfigPanel = () => {
             Define la tasa de conversión de USD a Bolívares (VES)
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          {/* BCV Sync Section */}
+          <div className="p-4 bg-muted/50 rounded-lg border border-border">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">Sincronizar con BCV</span>
+                  <span className="text-xs px-2 py-0.5 bg-primary/20 text-primary rounded-full">
+                    Banco Central de Venezuela
+                  </span>
+                </div>
+                {lastSync && (
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <CheckCircle2 className="h-3 w-3 text-green-500" />
+                    Última sincronización: {formatLastSync(lastSync)}
+                  </p>
+                )}
+              </div>
+              <Button
+                onClick={handleSyncBcv}
+                disabled={syncingBcv}
+                variant="outline"
+                className="gap-2"
+              >
+                {syncingBcv ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Sincronizando...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="h-4 w-4" />
+                    Sincronizar tasa BCV
+                  </>
+                )}
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              Obtiene automáticamente la tasa oficial del Banco Central de Venezuela
+            </p>
+          </div>
+
+          {/* Manual Rate Input */}
           <div className="flex items-end gap-4">
             <div className="flex-1 space-y-2">
-              <Label htmlFor="tasa_ves">1 USD = X Bolívares</Label>
+              <Label htmlFor="tasa_ves">1 USD = X Bolívares (ajuste manual)</Label>
               <div className="flex items-center gap-2">
                 <span className="text-2xl font-bold text-secondary">Bs</span>
                 <Input
@@ -82,7 +186,7 @@ export const ConfigPanel = () => {
                   type="number"
                   step="0.01"
                   min="0"
-                  defaultValue={config.tasa_ves}
+                  value={formValues.tasa_ves === '0' ? '' : formValues.tasa_ves}
                   onChange={(e) => setFormValues(prev => ({ ...prev, tasa_ves: e.target.value }))}
                   className="text-2xl font-bold h-14 bg-input border-border"
                   placeholder="50.00"
