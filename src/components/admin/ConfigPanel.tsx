@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Save, DollarSign, MessageCircle, Instagram, MapPin, RefreshCw, CheckCircle2, Eye } from 'lucide-react';
 
 type PriceDisplayMode = 'solo_usd' | 'solo_ves' | 'ambas';
+type RateSource = 'bcv' | 'manual';
 
 export const ConfigPanel = () => {
   const { config, loading, updateConfig, refetch } = useConfig();
@@ -18,8 +19,10 @@ export const ConfigPanel = () => {
   const [syncingBcv, setSyncingBcv] = useState(false);
   const [lastSync, setLastSync] = useState<string | null>(null);
   const [priceDisplayMode, setPriceDisplayMode] = useState<PriceDisplayMode>('ambas');
+  const [rateSource, setRateSource] = useState<RateSource>('bcv');
   const [formValues, setFormValues] = useState({
     tasa_ves: '',
+    tasa_manual: '',
     whatsapp: '',
     instagram_url: '',
     tiktok_url: '',
@@ -31,6 +34,7 @@ export const ConfigPanel = () => {
     if (!loading) {
       setFormValues({
         tasa_ves: config.tasa_ves.toString(),
+        tasa_manual: '',
         whatsapp: config.whatsapp,
         instagram_url: config.instagram_url,
         tiktok_url: config.tiktok_url,
@@ -39,13 +43,13 @@ export const ConfigPanel = () => {
     }
   }, [loading, config]);
 
-  // Fetch last sync time and display mode
+  // Fetch last sync time, display mode, and rate source
   useEffect(() => {
     const fetchConfigData = async () => {
       const { data } = await supabase
         .from('config')
         .select('key, value')
-        .in('key', ['bcv_last_sync', 'price_display_mode']);
+        .in('key', ['bcv_last_sync', 'price_display_mode', 'rate_source', 'tasa_manual']);
       
       if (data) {
         data.forEach(item => {
@@ -53,6 +57,10 @@ export const ConfigPanel = () => {
             setLastSync(item.value);
           } else if (item.key === 'price_display_mode') {
             setPriceDisplayMode(item.value as PriceDisplayMode);
+          } else if (item.key === 'rate_source') {
+            setRateSource(item.value as RateSource);
+          } else if (item.key === 'tasa_manual') {
+            setFormValues(prev => ({ ...prev, tasa_manual: item.value }));
           }
         });
       }
@@ -142,17 +150,72 @@ export const ConfigPanel = () => {
             Define la tasa de conversión de USD a Bolívares (VES)
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {/* BCV Sync Section */}
-          <div className="p-4 bg-muted/50 rounded-lg border border-border">
+        <CardContent className="space-y-6">
+          {/* Rate Source Selector */}
+          <div className="space-y-3">
+            <Label className="text-sm font-medium">Fuente de la tasa</Label>
+            <RadioGroup
+              value={rateSource}
+              onValueChange={async (value) => {
+                const newSource = value as RateSource;
+                setRateSource(newSource);
+                await handleSave('rate_source', newSource);
+                
+                // If switching to BCV, sync immediately
+                if (newSource === 'bcv') {
+                  handleSyncBcv();
+                }
+              }}
+              className="grid grid-cols-2 gap-3"
+            >
+              <div className={`flex items-center space-x-3 p-4 rounded-lg border-2 transition-all cursor-pointer ${
+                rateSource === 'bcv' 
+                  ? 'border-primary bg-primary/10' 
+                  : 'border-border hover:border-muted-foreground'
+              }`}>
+                <RadioGroupItem value="bcv" id="rate-bcv" />
+                <Label htmlFor="rate-bcv" className="flex-1 cursor-pointer">
+                  <span className="font-medium">Tasa BCV</span>
+                  <p className="text-xs text-muted-foreground">
+                    Automática del Banco Central
+                  </p>
+                </Label>
+              </div>
+              <div className={`flex items-center space-x-3 p-4 rounded-lg border-2 transition-all cursor-pointer ${
+                rateSource === 'manual' 
+                  ? 'border-primary bg-primary/10' 
+                  : 'border-border hover:border-muted-foreground'
+              }`}>
+                <RadioGroupItem value="manual" id="rate-manual" />
+                <Label htmlFor="rate-manual" className="flex-1 cursor-pointer">
+                  <span className="font-medium">Tasa Manual</span>
+                  <p className="text-xs text-muted-foreground">
+                    Personalizada por ti
+                  </p>
+                </Label>
+              </div>
+            </RadioGroup>
+          </div>
+
+          {/* BCV Section - Only active when BCV is selected */}
+          <div className={`p-4 rounded-lg border transition-all ${
+            rateSource === 'bcv' 
+              ? 'bg-muted/50 border-primary/30' 
+              : 'bg-muted/20 border-border opacity-50'
+          }`}>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium">Sincronizar con BCV</span>
-                  <span className="text-xs px-2 py-0.5 bg-primary/20 text-primary rounded-full">
-                    Banco Central de Venezuela
-                  </span>
+                  <span className="text-sm font-medium">Tasa BCV Actual</span>
+                  {rateSource === 'bcv' && (
+                    <span className="text-xs px-2 py-0.5 bg-green-500/20 text-green-500 rounded-full">
+                      Activa
+                    </span>
+                  )}
                 </div>
+                <p className="text-2xl font-bold text-secondary">
+                  Bs {formValues.tasa_ves || '0.00'}
+                </p>
                 {lastSync && (
                   <p className="text-xs text-muted-foreground flex items-center gap-1">
                     <CheckCircle2 className="h-3 w-3 text-green-500" />
@@ -162,7 +225,7 @@ export const ConfigPanel = () => {
               </div>
               <Button
                 onClick={handleSyncBcv}
-                disabled={syncingBcv}
+                disabled={syncingBcv || rateSource !== 'bcv'}
                 variant="outline"
                 className="gap-2"
               >
@@ -174,49 +237,71 @@ export const ConfigPanel = () => {
                 ) : (
                   <>
                     <RefreshCw className="h-4 w-4" />
-                    Sincronizar tasa BCV
+                    Sincronizar ahora
                   </>
                 )}
               </Button>
             </div>
             <p className="text-xs text-muted-foreground mt-2">
-              Obtiene automáticamente la tasa oficial del Banco Central de Venezuela
+              Se actualiza automáticamente a las 8:00 AM y 5:00 PM
             </p>
           </div>
 
-          {/* Manual Rate Input */}
-          <div className="flex items-end gap-4">
-            <div className="flex-1 space-y-2">
-              <Label htmlFor="tasa_ves">1 USD = X Bolívares (ajuste manual)</Label>
+          {/* Manual Rate Section - Only active when Manual is selected */}
+          <div className={`p-4 rounded-lg border transition-all ${
+            rateSource === 'manual' 
+              ? 'bg-muted/50 border-primary/30' 
+              : 'bg-muted/20 border-border opacity-50'
+          }`}>
+            <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <span className="text-2xl font-bold text-secondary">Bs</span>
-                <Input
-                  id="tasa_ves"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={formValues.tasa_ves === '0' ? '' : formValues.tasa_ves}
-                  onChange={(e) => setFormValues(prev => ({ ...prev, tasa_ves: e.target.value }))}
-                  className="text-2xl font-bold h-14 bg-input border-border"
-                  placeholder="50.00"
-                />
+                <span className="text-sm font-medium">Tasa Manual</span>
+                {rateSource === 'manual' && (
+                  <span className="text-xs px-2 py-0.5 bg-green-500/20 text-green-500 rounded-full">
+                    Activa
+                  </span>
+                )}
+              </div>
+              <div className="flex items-end gap-4">
+                <div className="flex-1 space-y-2">
+                  <Label htmlFor="tasa_manual">1 USD = X Bolívares</Label>
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl font-bold text-secondary">Bs</span>
+                    <Input
+                      id="tasa_manual"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={formValues.tasa_manual === '0' ? '' : formValues.tasa_manual}
+                      onChange={(e) => setFormValues(prev => ({ ...prev, tasa_manual: e.target.value }))}
+                      className="text-2xl font-bold h-14 bg-input border-border"
+                      placeholder="50.00"
+                      disabled={rateSource !== 'manual'}
+                    />
+                  </div>
+                </div>
+                <Button
+                  onClick={async () => {
+                    await handleSave('tasa_manual', formValues.tasa_manual);
+                    // Also update tasa_ves to use this manual value
+                    await handleSave('tasa_ves', formValues.tasa_manual);
+                    refetch();
+                  }}
+                  disabled={saving === 'tasa_manual' || rateSource !== 'manual'}
+                  className="bg-primary hover:bg-primary/90 h-14"
+                >
+                  {saving === 'tasa_manual' ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="h-4 w-4" />
+                  )}
+                  <span className="ml-2">Guardar</span>
+                </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Ejemplo: Si 1 USD = 50 Bs, un producto de $10 costará Bs 500
+                Ingresa la tasa que deseas usar para calcular los precios en bolívares
               </p>
             </div>
-            <Button
-              onClick={() => handleSave('tasa_ves', formValues.tasa_ves || config.tasa_ves.toString())}
-              disabled={saving === 'tasa_ves'}
-              className="bg-primary hover:bg-primary/90 h-14"
-            >
-              {saving === 'tasa_ves' ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Save className="h-4 w-4" />
-              )}
-              <span className="ml-2">Guardar</span>
-            </Button>
           </div>
         </CardContent>
       </Card>
