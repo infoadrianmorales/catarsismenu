@@ -24,11 +24,16 @@ export const Footer = () => {
           
           {/* Info */}
           <div className="space-y-2 text-sm text-muted-foreground">
-            <p>Horario: Lun-Dom 12:00pm - 11:00pm</p>
-            <p className="flex items-center justify-center md:justify-start gap-1">
+            <p>Horario: Lun-Dom 12:00pm - 1:00am</p>
+            <a 
+              href="https://maps.google.com/?q=Catarsis+Lecheria"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center md:justify-start gap-1 hover:text-primary transition-colors"
+            >
               <MapPin className="h-4 w-4" />
               Lechería, Anzoátegui
-            </p>
+            </a>
           </div>
           
           {/* Social */}
