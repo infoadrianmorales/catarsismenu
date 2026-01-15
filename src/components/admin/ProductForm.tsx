@@ -121,7 +121,25 @@ export const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) 
           
           if (error) {
             console.error('AI enhancement error:', error);
-            toast.warning('No se pudo mejorar con IA, usando imagen redimensionada');
+            
+            // Parse the error response for specific messages
+            let errorMessage = 'No se pudo mejorar con IA';
+            try {
+              const errorData = typeof error === 'object' && error.context ? 
+                JSON.parse(error.context?.body || '{}') : {};
+              
+              if (errorData.error === 'credits_exhausted') {
+                errorMessage = 'Sin créditos de IA disponibles. Contacta al administrador.';
+                toast.error(errorMessage);
+              } else if (errorData.error === 'rate_limited') {
+                errorMessage = 'Demasiadas solicitudes. Intenta en unos segundos.';
+                toast.warning(errorMessage);
+              } else {
+                toast.warning(`${errorMessage}, usando imagen redimensionada`);
+              }
+            } catch {
+              toast.warning(`${errorMessage}, usando imagen redimensionada`);
+            }
           } else if (data?.enhancedImageUrl) {
             const enhancedBlob = await base64ToBlob(data.enhancedImageUrl);
             processedFile = blobToFile(enhancedBlob, `${formData.slug || Date.now()}.jpg`);

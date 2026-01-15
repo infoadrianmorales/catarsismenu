@@ -90,8 +90,24 @@ OUTPUT: Foto del producto con fondo blanco puro, sombra natural suave, y el prod
     if (!response.ok) {
       const errorText = await response.text();
       console.error('AI API error:', errorText);
+      
+      // Handle specific error codes
+      if (response.status === 402) {
+        return new Response(
+          JSON.stringify({ error: 'credits_exhausted', message: 'No hay créditos suficientes para la mejora con IA' }),
+          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      if (response.status === 429) {
+        return new Response(
+          JSON.stringify({ error: 'rate_limited', message: 'Demasiadas solicitudes, intenta de nuevo en unos segundos' }),
+          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
       return new Response(
-        JSON.stringify({ error: 'Failed to enhance image', details: errorText }),
+        JSON.stringify({ error: 'ai_error', message: 'Error al procesar la imagen con IA', details: errorText }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
