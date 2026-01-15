@@ -1,14 +1,31 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Plus, Package, Pencil, Trash2 } from 'lucide-react';
+import { Loader2, Plus, Package, Info } from 'lucide-react';
 import { ProductForm } from './ProductForm';
+import { SortableProductCard } from './SortableProductCard';
 import { toast } from 'sonner';
 import type { Database } from '@/integrations/supabase/types';
+
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  rectSortingStrategy,
+} from '@dnd-kit/sortable';
 
 type ProductCategory = Database['public']['Enums']['product_category'];
 
@@ -40,6 +57,7 @@ const CATEGORIES = [
 export const ProductsPanel = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
@@ -48,6 +66,17 @@ export const ProductsPanel = () => {
   const filteredProducts = selectedCategory === 'todos' 
     ? products 
     : products.filter(p => p.categoria === selectedCategory);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const fetchProducts = async () => {
     setLoading(true);
@@ -69,6 +98,63 @@ export const ProductsPanel = () => {
   useEffect(() => {
     fetchProducts();
   }, []);
+
+  const handleDragEnd = useCallback(async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = filteredProducts.findIndex(p => p.id === active.id);
+    const newIndex = filteredProducts.findIndex(p => p.id === over.id);
+
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    // Reorder the filtered list
+    const reorderedFiltered = arrayMove(filteredProducts, oldIndex, newIndex);
+    
+    // Update local state immediately for smooth UX
+    if (selectedCategory === 'todos') {
+      setProducts(reorderedFiltered);
+    } else {
+      // If filtering, we need to update the full products array
+      const newProducts = products.map(p => {
+        const filteredIndex = reorderedFiltered.findIndex(fp => fp.id === p.id);
+        if (filteredIndex !== -1) {
+          return { ...p, orden: filteredIndex };
+        }
+        return p;
+      });
+      setProducts(newProducts);
+    }
+
+    // Save new order to database
+    setSaving(true);
+    try {
+      const updates = reorderedFiltered.map((product, index) => ({
+        id: product.id,
+        orden: index,
+      }));
+
+      // Update each product's order
+      for (const update of updates) {
+        const { error } = await supabase
+          .from('products')
+          .update({ orden: update.orden })
+          .eq('id', update.id);
+
+        if (error) throw error;
+      }
+
+      toast.success('Orden actualizado');
+    } catch (error) {
+      console.error('Error updating order:', error);
+      toast.error('Error al guardar el orden');
+      // Revert on error
+      fetchProducts();
+    } finally {
+      setSaving(false);
+    }
+  }, [filteredProducts, products, selectedCategory]);
 
   const handleAddProduct = () => {
     setEditingProduct(null);
@@ -126,6 +212,7 @@ export const ProductsPanel = () => {
           <h2 className="text-lg font-semibold">Productos</h2>
           <p className="text-sm text-muted-foreground">
             {filteredProducts.length} de {products.length} productos
+            {saving && <span className="ml-2 text-primary">(Guardando...)</span>}
           </p>
         </div>
         <div className="flex gap-3">
@@ -148,6 +235,12 @@ export const ProductsPanel = () => {
         </div>
       </div>
 
+      {/* Drag & Drop hint */}
+      <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
+        <Info className="h-4 w-4 shrink-0" />
+        <span>Arrastra las tarjetas desde la barra superior para reordenar los productos.</span>
+      </div>
+
       {products.length === 0 ? (
         <Card className="bg-card border-border">
           <CardContent className="flex flex-col items-center justify-center py-12">
@@ -160,78 +253,28 @@ export const ProductsPanel = () => {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredProducts.map((product) => (
-            <Card key={product.id} className="bg-card border-border overflow-hidden">
-              {product.imagen_url && (
-                <div className="aspect-video bg-white">
-                  <img 
-                    src={product.imagen_url} 
-                    alt={product.nombre}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              )}
-              <CardHeader className="pb-2">
-                <div className="flex items-start justify-between">
-                  <CardTitle className="text-base">{product.nombre}</CardTitle>
-                  <span className={`text-xs px-2 py-1 rounded ${
-                    product.activo 
-                      ? 'bg-green-500/20 text-green-400' 
-                      : 'bg-red-500/20 text-red-400'
-                  }`}>
-                    {product.activo ? 'Activo' : 'Inactivo'}
-                  </span>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <p className="text-sm text-muted-foreground line-clamp-2">
-                  {product.descripcion_corta || 'Sin descripción'}
-                </p>
-                <div className="flex items-center justify-between">
-                  <span className="text-lg font-bold text-secondary">
-                    ${Number(product.precio_usd).toFixed(2)}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {getCategoryLabel(product.categoria)}
-                  </span>
-                </div>
-                
-                {/* Tags */}
-                {product.tags && product.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1">
-                    {product.tags.map(tag => (
-                      <span key={tag} className="text-xs px-2 py-0.5 bg-muted rounded-full">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
-                
-                {/* Actions */}
-                <div className="flex gap-2 pt-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="flex-1"
-                    onClick={() => handleEditProduct(product)}
-                  >
-                    <Pencil className="h-3 w-3 mr-1" />
-                    Editar
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    className="text-destructive hover:text-destructive"
-                    onClick={() => setDeletingProduct(product)}
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={filteredProducts.map(p => p.id)}
+            strategy={rectSortingStrategy}
+          >
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {filteredProducts.map((product) => (
+                <SortableProductCard
+                  key={product.id}
+                  product={product}
+                  categoryLabel={getCategoryLabel(product.categoria)}
+                  onEdit={handleEditProduct}
+                  onDelete={setDeletingProduct}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
       )}
 
       {/* Product Form Dialog */}
