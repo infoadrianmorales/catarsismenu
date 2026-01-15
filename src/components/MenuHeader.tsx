@@ -2,6 +2,7 @@ import { Currency } from '@/types/menu';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { PriceDisplayMode } from '@/hooks/useCurrency';
+import logoCatarsis from '@/assets/logo-catarsis.png';
 
 interface MenuHeaderProps {
   currency: Currency;
@@ -17,10 +18,12 @@ export const MenuHeader = ({ currency, onCurrencyToggle, displayMode = 'ambas' }
     <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md border-b border-border/50">
       <div className="container px-4 h-16 flex items-center justify-between">
         {/* Logo */}
-        <div className="flex items-center gap-2">
-          <span className="font-display text-xl md:text-2xl font-black text-primary">
-            CATARSIS
-          </span>
+        <div className="flex items-center">
+          <img 
+            src={logoCatarsis} 
+            alt="Catarsis" 
+            className="h-8 md:h-10 w-auto"
+          />
         </div>
         
         {/* Currency Toggle - Hidden on mobile (shown in sticky bar) */}

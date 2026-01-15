@@ -2,6 +2,7 @@ import { appConfig } from '@/data/config';
 import { Button } from '@/components/ui/button';
 import { MessageCircle, Instagram, MapPin } from 'lucide-react';
 import heroImage from '@/assets/hero-burger.jpg';
+import logoWhite from '@/assets/logo-catarsis-white.png';
 
 export const HeroSection = () => {
   const handleWhatsAppClick = () => {
@@ -14,34 +15,43 @@ export const HeroSection = () => {
   };
 
   return (
-    <section className="relative min-h-[50vh] md:min-h-[60vh] flex items-center justify-center overflow-hidden">
+    <section className="relative min-h-[60vh] md:min-h-[70vh] flex items-center justify-center overflow-hidden">
       {/* Background Image with Overlay */}
       <div className="absolute inset-0">
         <img 
           src={heroImage} 
-          alt="Catarsis Drinks & Food Hero"
+          alt="Catarsis Hero"
           className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-background/40" />
-        <div className="absolute inset-0 halftone-pattern opacity-30" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/85 to-background/50" />
+        <div className="absolute inset-0 halftone-pattern opacity-20" />
       </div>
       
       {/* Content */}
-      <div className="relative z-10 container px-4 py-12 text-center space-y-6">
-        <div className="space-y-4">
-          <p className="text-sm md:text-base font-body uppercase tracking-[0.3em] text-accent">
+      <div className="relative z-10 container px-4 py-16 text-center space-y-8">
+        {/* Logo */}
+        <div className="flex justify-center">
+          <img 
+            src={logoWhite} 
+            alt="Catarsis" 
+            className="h-16 md:h-24 lg:h-28 w-auto"
+          />
+        </div>
+        
+        {/* Slogans with prominence */}
+        <div className="space-y-6">
+          <p className="text-lg md:text-xl lg:text-2xl font-body uppercase tracking-[0.4em] text-accent font-medium">
             Tu spot para desconectar
           </p>
-          <h1 className="text-3xl md:text-5xl lg:text-6xl font-display font-black text-foreground leading-tight">
-            Catarsis — Drinks & Food
-          </h1>
-          <p className="text-lg md:text-xl lg:text-2xl font-display text-primary max-w-2xl mx-auto leading-relaxed">
+          <h1 className="text-2xl md:text-4xl lg:text-5xl font-display font-black text-foreground leading-tight max-w-3xl mx-auto">
             Sabores que liberan, momentos que conectan
-          </p>
-          <p className="text-sm md:text-base text-muted-foreground max-w-xl mx-auto">
-            Explora el menú, mira precios en USD o VES y pide por WhatsApp en segundos.
-          </p>
+          </h1>
         </div>
+        
+        {/* Subtitle */}
+        <p className="text-base md:text-lg text-muted-foreground max-w-xl mx-auto">
+          Explora el menú, mira precios en USD o VES y pide por WhatsApp en segundos.
+        </p>
         
         {/* CTA Buttons */}
         <div className="flex flex-wrap items-center justify-center gap-3">

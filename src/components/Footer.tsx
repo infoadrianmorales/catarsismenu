@@ -1,5 +1,6 @@
 import { appConfig } from '@/data/config';
 import { Instagram, MapPin } from 'lucide-react';
+import logoCatarsis from '@/assets/logo-catarsis.png';
 
 export const Footer = () => {
   return (
@@ -7,20 +8,19 @@ export const Footer = () => {
       {/* Tape Divider */}
       <div className="tape-divider overflow-hidden mb-8">
         <div className="tape-text whitespace-nowrap">
-          CATARSIS DRINKS & FOOD • CATARSIS DRINKS & FOOD • CATARSIS DRINKS & FOOD • CATARSIS DRINKS & FOOD •
+          CATARSIS • TU SPOT PARA DESCONECTAR • CATARSIS • TU SPOT PARA DESCONECTAR • CATARSIS • TU SPOT PARA DESCONECTAR •
         </div>
       </div>
       
       <div className="container px-4">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
           {/* Brand */}
-          <div className="space-y-2">
-            <span className="font-display text-2xl font-black text-primary">
-              CATARSIS
-            </span>
-            <p className="text-sm text-muted-foreground">
-              Drinks & Food
-            </p>
+          <div className="flex flex-col items-center md:items-start gap-2">
+            <img 
+              src={logoCatarsis} 
+              alt="Catarsis" 
+              className="h-10 md:h-12 w-auto"
+            />
           </div>
           
           {/* Info */}
