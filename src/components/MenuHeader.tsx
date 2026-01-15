@@ -22,7 +22,7 @@ export const MenuHeader = ({ currency, onCurrencyToggle, displayMode = 'ambas' }
           <img 
             src={logoCatarsis} 
             alt="Catarsis" 
-            className="h-8 md:h-10 w-auto"
+            className="h-10 md:h-14 w-auto"
           />
         </div>
         

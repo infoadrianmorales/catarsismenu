@@ -34,7 +34,7 @@ export const HeroSection = () => {
           <img 
             src={logoWhite} 
             alt="Catarsis" 
-            className="h-16 md:h-24 lg:h-28 w-auto"
+            className="h-24 md:h-36 lg:h-44 w-auto"
           />
         </div>
         
