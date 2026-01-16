@@ -20,6 +20,7 @@ export interface MenuItem {
   ratio: '1x1' | '4x5';
   tags: string[];
   orden: number;
+  destacado?: boolean;
 }
 
 export type Currency = 'USD' | 'VES';

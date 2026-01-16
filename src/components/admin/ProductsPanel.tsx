@@ -27,20 +27,9 @@ import {
   rectSortingStrategy,
 } from '@dnd-kit/sortable';
 
-type ProductCategory = Database['public']['Enums']['product_category'];
+import { Product } from './SortableProductCard';
 
-interface Product {
-  id: string;
-  nombre: string;
-  slug: string;
-  categoria: ProductCategory;
-  descripcion_corta: string | null;
-  precio_usd: number;
-  tags: string[];
-  imagen_url: string | null;
-  orden: number;
-  activo: boolean;
-}
+type ProductCategory = Database['public']['Enums']['product_category'];
 
 const CATEGORIES = [
   { value: 'todos', label: 'Todas las categorías' },
@@ -192,6 +181,32 @@ export const ProductsPanel = () => {
     fetchProducts();
   };
 
+  const handleToggleFeatured = async (product: Product) => {
+    const featuredCount = products.filter(p => p.destacado).length;
+    const isCurrentlyFeatured = product.destacado;
+    
+    // Check max 4 featured products
+    if (!isCurrentlyFeatured && featuredCount >= 4) {
+      toast.error('Máximo 4 productos destacados permitidos');
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('products')
+        .update({ destacado: !isCurrentlyFeatured })
+        .eq('id', product.id);
+
+      if (error) throw error;
+      
+      toast.success(isCurrentlyFeatured ? 'Producto quitado de destacados' : 'Producto marcado como destacado');
+      fetchProducts();
+    } catch (error) {
+      console.error('Error toggling featured:', error);
+      toast.error('Error al actualizar producto');
+    }
+  };
+
   const getCategoryLabel = (categoria: string) => {
     const found = CATEGORIES.find(c => c.value === categoria);
     return found?.label || categoria;
@@ -212,6 +227,8 @@ export const ProductsPanel = () => {
           <h2 className="text-lg font-semibold">Productos</h2>
           <p className="text-sm text-muted-foreground">
             {filteredProducts.length} de {products.length} productos
+            <span className="mx-2">•</span>
+            <span className="text-secondary">{products.filter(p => p.destacado).length}/4 destacados</span>
             {saving && <span className="ml-2 text-primary">(Guardando...)</span>}
           </p>
         </div>
@@ -270,6 +287,7 @@ export const ProductsPanel = () => {
                   categoryLabel={getCategoryLabel(product.categoria)}
                   onEdit={handleEditProduct}
                   onDelete={setDeletingProduct}
+                  onToggleFeatured={handleToggleFeatured}
                 />
               ))}
             </div>

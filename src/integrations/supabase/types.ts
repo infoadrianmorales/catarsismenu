@@ -44,6 +44,7 @@ export type Database = {
           categoria: Database["public"]["Enums"]["product_category"]
           created_at: string | null
           descripcion_corta: string | null
+          destacado: boolean | null
           id: string
           imagen_url: string | null
           nombre: string
@@ -58,6 +59,7 @@ export type Database = {
           categoria: Database["public"]["Enums"]["product_category"]
           created_at?: string | null
           descripcion_corta?: string | null
+          destacado?: boolean | null
           id?: string
           imagen_url?: string | null
           nombre: string
@@ -72,6 +74,7 @@ export type Database = {
           categoria?: Database["public"]["Enums"]["product_category"]
           created_at?: string | null
           descripcion_corta?: string | null
+          destacado?: boolean | null
           id?: string
           imagen_url?: string | null
           nombre?: string
