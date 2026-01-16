@@ -90,7 +90,7 @@ export const HeroSection = () => {
       <div className="absolute bottom-0 left-0 right-0">
         <div className="tape-divider overflow-hidden">
           <div className="tape-text whitespace-nowrap">
-            CATARSIS DRINKS & FOOD • CATARSIS DRINKS & FOOD • CATARSIS DRINKS & FOOD • CATARSIS DRINKS & FOOD •
+            CATARSIS • SABORES QUE LIBERAN, MOMENTOS QUE CONECTAN • CATARSIS • SABORES QUE LIBERAN, MOMENTOS QUE CONECTAN • CATARSIS • SABORES QUE LIBERAN, MOMENTOS QUE CONECTAN •
           </div>
         </div>
       </div>
