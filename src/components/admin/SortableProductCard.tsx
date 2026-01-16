@@ -2,12 +2,12 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { GripVertical, Pencil, Trash2 } from 'lucide-react';
+import { GripVertical, Pencil, Trash2, Star } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 
 type ProductCategory = Database['public']['Enums']['product_category'];
 
-interface Product {
+export interface Product {
   id: string;
   nombre: string;
   slug: string;
@@ -18,6 +18,7 @@ interface Product {
   imagen_url: string | null;
   orden: number;
   activo: boolean;
+  destacado?: boolean;
 }
 
 interface SortableProductCardProps {
@@ -25,6 +26,7 @@ interface SortableProductCardProps {
   categoryLabel: string;
   onEdit: (product: Product) => void;
   onDelete: (product: Product) => void;
+  onToggleFeatured?: (product: Product) => void;
   isDragDisabled?: boolean;
 }
 
@@ -33,6 +35,7 @@ export const SortableProductCard = ({
   categoryLabel,
   onEdit,
   onDelete,
+  onToggleFeatured,
   isDragDisabled = false,
 }: SortableProductCardProps) => {
   const {
@@ -86,7 +89,12 @@ export const SortableProductCard = ({
       
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between">
-          <CardTitle className="text-base">{product.nombre}</CardTitle>
+          <div className="flex items-center gap-2">
+            <CardTitle className="text-base">{product.nombre}</CardTitle>
+            {product.destacado && (
+              <Star className="h-4 w-4 text-secondary fill-secondary" />
+            )}
+          </div>
           <span className={`text-xs px-2 py-1 rounded ${
             product.activo 
               ? 'bg-green-500/20 text-green-400' 
@@ -124,6 +132,17 @@ export const SortableProductCard = ({
         
         {/* Actions */}
         <div className="flex gap-2 pt-2">
+          {onToggleFeatured && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              className={product.destacado ? 'text-secondary border-secondary' : ''}
+              onClick={() => onToggleFeatured(product)}
+              title={product.destacado ? 'Quitar de destacados' : 'Marcar como destacado'}
+            >
+              <Star className={`h-3 w-3 ${product.destacado ? 'fill-secondary' : ''}`} />
+            </Button>
+          )}
           <Button 
             variant="outline" 
             size="sm" 

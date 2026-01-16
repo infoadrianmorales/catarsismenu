@@ -1,5 +1,6 @@
 import { MenuHeader } from '@/components/MenuHeader';
 import { HeroSection } from '@/components/HeroSection';
+import { FeaturedProducts } from '@/components/FeaturedProducts';
 import { SearchBar } from '@/components/SearchBar';
 import { CategoryFilter } from '@/components/CategoryFilter';
 import { MenuGrid } from '@/components/MenuGrid';
@@ -11,7 +12,7 @@ import { useProducts } from '@/hooks/useProducts';
 
 const Index = () => {
   const { currency, toggleCurrency, displayMode } = useCurrency();
-  const { products } = useProducts();
+  const { products, featuredProducts } = useProducts();
   const { 
     searchQuery, 
     setSearchQuery, 
@@ -29,6 +30,12 @@ const Index = () => {
       />
       
       <HeroSection />
+      
+      <FeaturedProducts 
+        items={featuredProducts}
+        currency={currency}
+        displayMode={displayMode}
+      />
       
       <SearchBar 
         value={searchQuery}
