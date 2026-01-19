@@ -96,13 +96,7 @@ All colors MUST be HSL.
   /* Tape effect for dividers */
   .tape-divider {
     position: relative;
-    background: repeating-linear-gradient(
-      45deg,
-      hsl(var(--secondary)),
-      hsl(var(--secondary)) 20px,
-      hsl(var(--primary)) 20px,
-      hsl(var(--primary)) 40px
-    );
+    background: hsl(var(--secondary));
     padding: 0.5rem;
     transform: rotate(-1deg);
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
