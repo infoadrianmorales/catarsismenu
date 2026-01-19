@@ -7,10 +7,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, Upload, X, Sparkles, Crop } from 'lucide-react';
+import { Loader2, Upload, X, Crop } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Database } from '@/integrations/supabase/types';
-import { resizeImageTo1x1, blobToBase64, base64ToBlob, blobToFile } from '@/lib/imageProcessor';
+import { resizeImageTo1x1, blobToFile } from '@/lib/imageProcessor';
 
 type ProductCategory = Database['public']['Enums']['product_category'];
 
@@ -49,9 +49,7 @@ const CATEGORIES = [
 export const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [enhancing, setEnhancing] = useState(false);
   const [autoResize, setAutoResize] = useState(true);
-  const [autoEnhance, setAutoEnhance] = useState(false); // Desactivado por defecto hasta agregar créditos de IA
   const [imagePreview, setImagePreview] = useState<string | null>(product?.imagen_url || null);
   
   const [formData, setFormData] = useState<Product>({
@@ -100,57 +98,11 @@ export const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) 
     try {
       let processedFile: File = file;
       
-      // Step 1: Resize to 1:1 (square) if enabled
+      // Resize to 1:1 (square) if enabled
       if (autoResize) {
         toast.info('Redimensionando imagen a 1:1...');
         const resizedBlob = await resizeImageTo1x1(file);
         processedFile = blobToFile(resizedBlob, `${formData.slug || Date.now()}.jpg`);
-      }
-      
-      // Step 2: AI Enhancement if enabled
-      if (autoEnhance) {
-        setEnhancing(true);
-        toast.info('Mejorando imagen con IA...');
-        
-        try {
-          const base64 = await blobToBase64(processedFile);
-          
-          const { data, error } = await supabase.functions.invoke('enhance-product-image', {
-            body: { imageBase64: base64 }
-          });
-          
-          if (error) {
-            console.error('AI enhancement error:', error);
-            
-            // Parse the error response for specific messages
-            let errorMessage = 'No se pudo mejorar con IA';
-            try {
-              const errorData = typeof error === 'object' && error.context ? 
-                JSON.parse(error.context?.body || '{}') : {};
-              
-              if (errorData.error === 'credits_exhausted') {
-                errorMessage = 'Sin créditos de IA disponibles. Contacta al administrador.';
-                toast.error(errorMessage);
-              } else if (errorData.error === 'rate_limited') {
-                errorMessage = 'Demasiadas solicitudes. Intenta en unos segundos.';
-                toast.warning(errorMessage);
-              } else {
-                toast.warning(`${errorMessage}, usando imagen redimensionada`);
-              }
-            } catch {
-              toast.warning(`${errorMessage}, usando imagen redimensionada`);
-            }
-          } else if (data?.enhancedImageUrl) {
-            const enhancedBlob = await base64ToBlob(data.enhancedImageUrl);
-            processedFile = blobToFile(enhancedBlob, `${formData.slug || Date.now()}.jpg`);
-            toast.success('Imagen mejorada con IA');
-          }
-        } catch (aiError) {
-          console.error('AI enhancement failed:', aiError);
-          toast.warning('No se pudo mejorar con IA, usando imagen procesada');
-        } finally {
-          setEnhancing(false);
-        }
       }
       
       // Step 3: Upload to storage
@@ -178,7 +130,6 @@ export const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) 
       toast.error('Error al procesar la imagen');
     } finally {
       setUploading(false);
-      setEnhancing(false);
     }
   };
 
@@ -336,7 +287,7 @@ export const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) 
       <div className="space-y-4">
         <Label>Imagen del producto</Label>
         
-        {/* Opciones de procesamiento automático */}
+        {/* Opción de procesamiento automático */}
         <div className="flex flex-col gap-3 p-4 bg-muted/50 rounded-lg border border-border">
           <div className="flex items-center space-x-2">
             <Checkbox
@@ -349,19 +300,8 @@ export const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) 
               Redimensionar automáticamente a 1:1 (cuadrado)
             </label>
           </div>
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="autoEnhance"
-              checked={autoEnhance}
-              onCheckedChange={(checked) => setAutoEnhance(checked === true)}
-            />
-            <label htmlFor="autoEnhance" className="flex items-center gap-2 text-sm cursor-pointer">
-              <Sparkles className="h-4 w-4 text-amber-500" />
-              Retoque profesional con IA (sutil, respeta el producto)
-            </label>
-          </div>
           <p className="text-xs text-muted-foreground">
-            Estas opciones procesan la imagen antes de subirla para optimizarla para el menú.
+            Esta opción procesa la imagen antes de subirla para optimizarla para el menú.
           </p>
         </div>
 
@@ -387,16 +327,16 @@ export const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) 
                 accept="image/*"
                 onChange={handleImageUpload}
                 className="hidden"
-                disabled={uploading || enhancing}
-              />
-              {uploading || enhancing ? (
-                <div className="flex flex-col items-center gap-2">
-                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                  <span className="text-xs text-muted-foreground text-center px-2">
-                    {enhancing ? 'Retocando...' : 'Procesando...'}
-                  </span>
-                </div>
-              ) : (
+              disabled={uploading}
+            />
+            {uploading ? (
+              <div className="flex flex-col items-center gap-2">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                <span className="text-xs text-muted-foreground text-center px-2">
+                  Procesando...
+                </span>
+              </div>
+            ) : (
                 <>
                   <Upload className="h-6 w-6 text-muted-foreground" />
                   <span className="text-xs text-muted-foreground mt-1 text-center">
