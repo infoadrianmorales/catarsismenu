@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      categories: {
+        Row: {
+          activo: boolean
+          created_at: string | null
+          descripcion: string | null
+          icono: string
+          id: string
+          nombre: string
+          orden: number
+          slug: string
+          updated_at: string | null
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string | null
+          descripcion?: string | null
+          icono?: string
+          id?: string
+          nombre: string
+          orden?: number
+          slug: string
+          updated_at?: string | null
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string | null
+          descripcion?: string | null
+          icono?: string
+          id?: string
+          nombre?: string
+          orden?: number
+          slug?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       config: {
         Row: {
           id: string

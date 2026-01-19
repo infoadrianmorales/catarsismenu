@@ -3,11 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Loader2, LogOut, Settings, Package, Megaphone, Users } from 'lucide-react';
+import { Loader2, LogOut, Settings, Package, Megaphone, Users, Layers } from 'lucide-react';
 import { ConfigPanel } from '@/components/admin/ConfigPanel';
 import { ProductsPanel } from '@/components/admin/ProductsPanel';
 import { PromotionsPanel } from '@/components/admin/PromotionsPanel';
 import { UsersPanel } from '@/components/admin/UsersPanel';
+import { CategoriesPanel } from '@/components/admin/CategoriesPanel';
+
 const Admin = () => {
   const { user, isAdmin, loading, roleLoading, signOut } = useAuth();
   const navigate = useNavigate();
@@ -68,10 +70,14 @@ const Admin = () => {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6">
         <Tabs defaultValue="config" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-6">
+          <TabsList className="grid w-full grid-cols-5 mb-6">
             <TabsTrigger value="config" className="gap-2">
               <Settings className="h-4 w-4" />
-              <span className="hidden sm:inline">Configuración</span>
+              <span className="hidden sm:inline">Config</span>
+            </TabsTrigger>
+            <TabsTrigger value="categories" className="gap-2">
+              <Layers className="h-4 w-4" />
+              <span className="hidden sm:inline">Secciones</span>
             </TabsTrigger>
             <TabsTrigger value="products" className="gap-2">
               <Package className="h-4 w-4" />
@@ -79,7 +85,7 @@ const Admin = () => {
             </TabsTrigger>
             <TabsTrigger value="promotions" className="gap-2">
               <Megaphone className="h-4 w-4" />
-              <span className="hidden sm:inline">Promociones</span>
+              <span className="hidden sm:inline">Promos</span>
             </TabsTrigger>
             <TabsTrigger value="users" className="gap-2">
               <Users className="h-4 w-4" />
@@ -89,6 +95,10 @@ const Admin = () => {
 
           <TabsContent value="config">
             <ConfigPanel />
+          </TabsContent>
+
+          <TabsContent value="categories">
+            <CategoriesPanel />
           </TabsContent>
 
           <TabsContent value="products">
