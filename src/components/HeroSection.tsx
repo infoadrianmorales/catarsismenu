@@ -1,8 +1,7 @@
 import { appConfig } from '@/data/config';
 import { Button } from '@/components/ui/button';
 import { MessageCircle, Instagram, MapPin } from 'lucide-react';
-import heroImage from '@/assets/hero-burger.jpg';
-import logoWhite from '@/assets/logo-catarsis-white.png';
+import heroImage from '@/assets/banner-hero.png';
 
 export const HeroSection = () => {
   const handleWhatsAppClick = () => {
@@ -15,7 +14,7 @@ export const HeroSection = () => {
   };
 
   return (
-    <section className="relative min-h-[60vh] md:min-h-[70vh] flex items-center justify-center overflow-hidden">
+    <section className="relative min-h-[60vh] md:min-h-[70vh] flex items-end justify-center overflow-hidden">
       {/* Background Image with Overlay */}
       <div className="absolute inset-0">
         <img 
@@ -23,32 +22,11 @@ export const HeroSection = () => {
           alt="Catarsis Hero"
           className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/85 to-background/50" />
-        <div className="absolute inset-0 halftone-pattern opacity-20" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
       </div>
       
-      {/* Content */}
-      <div className="relative z-10 container px-4 py-16 text-center space-y-8">
-        {/* Logo */}
-        <div className="flex justify-center">
-          <img 
-            src={logoWhite} 
-            alt="Catarsis" 
-            className="h-24 md:h-36 lg:h-44 w-auto"
-          />
-        </div>
-        
-        {/* Slogans with prominence */}
-        <div className="space-y-6">
-          <p className="text-lg md:text-xl lg:text-2xl font-body uppercase tracking-[0.4em] text-accent font-medium">
-            Tu spot para desconectar
-          </p>
-          <h1 className="text-2xl md:text-4xl lg:text-5xl font-display font-black text-foreground leading-tight max-w-3xl mx-auto">
-            Sabores que liberan, momentos que conectan
-          </h1>
-        </div>
-        
-        
+      {/* Content - Only CTA Buttons */}
+      <div className="relative z-10 container px-4 pb-16 pt-8 text-center">
         {/* CTA Buttons */}
         <div className="flex flex-wrap items-center justify-center gap-3">
           <Button 
