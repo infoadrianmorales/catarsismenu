@@ -12,6 +12,7 @@ const OrderConfirmed = () => {
   const { currency, toggleCurrency, displayMode } = useCurrency();
   
   const orderId = location.state?.orderId;
+  const orderNumber = location.state?.orderNumber || sessionStorage.getItem('lastOrderNumber');
 
   return (
     <div className="min-h-screen bg-background">
@@ -35,10 +36,12 @@ const OrderConfirmed = () => {
               </p>
             </div>
 
-            {orderId && (
+            {(orderNumber || orderId) && (
               <div className="p-4 bg-muted rounded-lg">
                 <p className="text-sm text-muted-foreground">Número de orden</p>
-                <p className="font-mono font-bold text-lg">#{orderId.slice(0, 8).toUpperCase()}</p>
+                <p className="font-mono font-bold text-lg">
+                  {orderNumber || `#${orderId.slice(0, 8).toUpperCase()}`}
+                </p>
               </div>
             )}
 

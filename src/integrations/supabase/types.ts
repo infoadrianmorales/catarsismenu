@@ -189,6 +189,7 @@ export type Database = {
           id: string
           last_name: string
           notes: string | null
+          order_number: string | null
           payment_confirmed_at: string | null
           payment_currency: string
           payment_instructions_snapshot: string | null
@@ -214,6 +215,7 @@ export type Database = {
           id?: string
           last_name: string
           notes?: string | null
+          order_number?: string | null
           payment_confirmed_at?: string | null
           payment_currency?: string
           payment_instructions_snapshot?: string | null
@@ -239,6 +241,7 @@ export type Database = {
           id?: string
           last_name?: string
           notes?: string | null
+          order_number?: string | null
           payment_confirmed_at?: string | null
           payment_currency?: string
           payment_instructions_snapshot?: string | null

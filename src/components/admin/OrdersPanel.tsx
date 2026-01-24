@@ -13,6 +13,7 @@ import { es } from 'date-fns/locale';
 
 interface Order {
   id: string;
+  order_number: string | null;
   created_at: string;
   first_name: string;
   last_name: string;
@@ -184,8 +185,8 @@ export const OrdersPanel = () => {
               <TableBody>
                 {orders.map((order) => (
                   <TableRow key={order.id}>
-                    <TableCell className="font-mono text-xs">
-                      #{order.id.slice(0, 8).toUpperCase()}
+                    <TableCell className="font-mono text-xs font-semibold">
+                      {order.order_number || `#${order.id.slice(0, 8).toUpperCase()}`}
                     </TableCell>
                     <TableCell className="text-sm">
                       {format(new Date(order.created_at), 'dd/MM/yy HH:mm', { locale: es })}
@@ -241,7 +242,7 @@ export const OrdersPanel = () => {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-3">
-              Orden #{selectedOrder?.id.slice(0, 8).toUpperCase()}
+              Orden {selectedOrder?.order_number || `#${selectedOrder?.id.slice(0, 8).toUpperCase()}`}
               {selectedOrder && getStatusBadge(selectedOrder.status)}
             </DialogTitle>
           </DialogHeader>
