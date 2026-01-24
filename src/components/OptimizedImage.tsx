@@ -101,8 +101,18 @@ export const OptimizedImage = memo(({
       };
     }
 
-    const format = parsed.isWebP ? 'webp' : 'jpg';
-    const srcSet = generateSrcSet(parsed.basePath, format);
+    // For JPEG (legacy images), use original URL directly without variants
+    if (!parsed.isWebP) {
+      return { 
+        src, 
+        srcSet: undefined, 
+        sizes: undefined,
+        usesPicture: false,
+      };
+    }
+
+    // For WebP (new optimized images), use variants
+    const srcSet = generateSrcSet(parsed.basePath, 'webp');
     
     // Default sizes based on variant
     const defaultSizes = variant === 'thumb' 
@@ -114,15 +124,15 @@ export const OptimizedImage = memo(({
     // Get the appropriate variant URL
     const variantSize = IMAGE_SIZES[variant];
     const variantSrc = variantSize === 800 
-      ? `${parsed.basePath}.${format}`
-      : `${parsed.basePath}_${variantSize}.${format}`;
+      ? `${parsed.basePath}.webp`
+      : `${parsed.basePath}_${variantSize}.webp`;
 
     return {
       src: variantSrc,
       srcSet,
       sizes: sizes || defaultSizes,
       usesPicture: true,
-      format,
+      format: 'webp',
       basePath: parsed.basePath,
     };
   }, [src, variant, sizes]);
