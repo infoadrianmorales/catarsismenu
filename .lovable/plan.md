@@ -1,181 +1,260 @@
 
-# Plan: Segmentación de Órdenes y Exportación para Meta
+# Plan: Integración Completa de Meta Pixel (Facebook Pixel)
 
 ## Resumen
 
-Reorganizaremos el panel de órdenes para separar claramente tres segmentos de clientes según su estado en el embudo de compra, y habilitaremos la exportación de datos de clientes optimizada para subir a Meta Ads Manager.
+Implementaremos el Meta Pixel para rastrear conversiones y optimizar campañas publicitarias en Facebook/Instagram. La integración incluirá configuración dinámica desde el panel de administración y eventos avanzados de e-commerce.
 
 ---
 
-## Los 3 Segmentos de Clientes
+## Eventos a Implementar
 
-| Segmento | Definición | Cómo se detecta |
-|----------|------------|-----------------|
-| **Pagado** | Cliente completó el pago | Órdenes con status `PAID` o `DELIVERED` |
-| **Proceso Abierto** | Llegó a WhatsApp pero no pagó | Órdenes con status `NEW` o `IN_PROGRESS` (nunca marcadas como pagadas) |
-| **Carrito Abandonado** | Agregó productos pero no completó checkout | Carrito guardado sin orden asociada |
+| Evento | Descripción | Ubicación |
+|--------|-------------|-----------|
+| **PageView** | Cada vista de página | Global (cambio de ruta) |
+| **ViewContent** | Ver página de producto | `ProductPage.tsx` |
+| **AddToCart** | Agregar producto al carrito | `AddToCartButton.tsx` |
+| **InitiateCheckout** | Entrar al checkout | `Checkout.tsx` |
+| **Purchase** | Compra completada | `Checkout.tsx` (éxito) |
+| **Contact** | Clic en WhatsApp | Hero, StickyBar, FloatingWA |
+| **Search** | Búsqueda de productos | `useSearch.ts` |
 
 ---
 
-## Fase 1: Reorganización del Panel de Órdenes
+## Fase 1: Configuración en Base de Datos
 
-### 1.1 Tabs de Filtrado Rápido
+### 1.1 Nuevas claves en tabla `config`
 
-Se agregarán tabs en la parte superior del panel de órdenes:
+Se insertarán dos nuevas configuraciones:
+
+| Key | Valor Inicial | Descripción |
+|-----|---------------|-------------|
+| `meta_pixel_id` | `""` | ID del Pixel (15-16 dígitos) |
+| `meta_pixel_enabled` | `"false"` | Activa/desactiva el tracking |
+
+---
+
+## Fase 2: Servicio Centralizado de Meta Pixel
+
+### 2.1 Crear `src/lib/metaPixel.ts`
+
+Servicio que manejará todas las interacciones con el Pixel:
 
 ```text
-┌──────────────────────────────────────────────────────────────────┐
-│  [Pendientes de Pago (11)] [Pagadas (0)] [Entregadas] [Todas]   │
-└──────────────────────────────────────────────────────────────────┘
+Funciones:
+├── initMetaPixel(pixelId: string)
+│   └── Inyecta el script base de Facebook dinámicamente
+│
+├── trackPageView()
+│   └── fbq('track', 'PageView')
+│
+├── trackViewContent(product)
+│   └── fbq('track', 'ViewContent', {
+│         content_ids: [id],
+│         content_name: nombre,
+│         content_category: categoria,
+│         content_type: 'product',
+│         value: precio_usd,
+│         currency: 'USD'
+│       })
+│
+├── trackAddToCart(product, quantity)
+│   └── fbq('track', 'AddToCart', {
+│         content_ids: [id],
+│         content_name: nombre,
+│         content_type: 'product',
+│         value: precio_usd * quantity,
+│         currency: 'USD'
+│       })
+│
+├── trackInitiateCheckout(items, subtotal)
+│   └── fbq('track', 'InitiateCheckout', {
+│         content_ids: items.map(i => i.id),
+│         num_items: totalItems,
+│         value: subtotal,
+│         currency: 'USD'
+│       })
+│
+├── trackPurchase(orderId, value, items)
+│   └── fbq('track', 'Purchase', {
+│         value,
+│         currency: 'USD',
+│         content_ids: items.map(i => i.id),
+│         order_id: orderId,
+│         num_items: items.length
+│       })
+│
+├── trackContact(source)
+│   └── fbq('track', 'Contact', {
+│         content_category: source
+│       })
+│
+└── trackSearch(query)
+    └── fbq('track', 'Search', {
+          search_string: query
+        })
 ```
 
-| Tab | Estados Incluidos | Color |
-|-----|-------------------|-------|
-| Pendientes de Pago | `NEW`, `IN_PROGRESS`, `PAYMENT_SUBMITTED` | Azul/Amarillo |
-| Pagadas | `PAID` | Verde |
-| Entregadas | `DELIVERED` | Morado |
-| Canceladas | `CANCELED` | Rojo |
-| Todas | Todos los estados | - |
+### 2.2 Consideraciones Técnicas
 
-### 1.2 Tarjetas KPI en la Cabecera
-
-Mostrar métricas rápidas:
-
-- Pendientes de pago (número de órdenes sin pagar)
-- Pagadas hoy/esta semana
-- Ingresos del día (solo órdenes pagadas)
-- Canceladas
-
-### 1.3 Indicador Visual Mejorado
-
-Cada fila de la tabla mostrará claramente el estado con colores más prominentes para identificar rápidamente qué necesita atención.
+- El script se inyecta solo si hay Pixel ID configurado y habilitado
+- Verificación de `window.fbq` antes de cada llamada
+- Compatibilidad total con el sistema de analytics existente
 
 ---
 
-## Fase 2: Exportación de Clientes para Meta
+## Fase 3: Panel de Administración
 
-### 2.1 Funcionalidad de Exportación
+### 3.1 Nueva sección en `ConfigPanel.tsx`
 
-Se agregará un botón "Exportar para Meta" en el panel de Clientes que generará un archivo CSV compatible con Meta Custom Audiences.
+Se agregará una nueva tarjeta "Meta Pixel (Facebook)" con:
 
-### 2.2 Formato del CSV para Meta
+| Campo | Descripción |
+|-------|-------------|
+| Pixel ID | Input para el ID de 15-16 dígitos |
+| Habilitado | Switch para activar/desactivar |
+| Estado | Badge verde si está activo |
+| Ayuda | Link a documentación de Meta |
 
-Meta requiere columnas específicas con datos normalizados:
+### 3.2 Validación
 
-| Columna CSV | Origen en BD | Formato |
-|-------------|--------------|---------|
-| `email` | `customers.email` | minúsculas, sin espacios |
-| `phone` | `customers.phone` | formato E.164 (+584241234567) |
-| `fn` | `customers.first_name` | minúsculas |
-| `ln` | `customers.last_name` | minúsculas |
-| `country` | (fijo) | VE |
-
-### 2.3 Opciones de Filtrado en Exportación
-
-El usuario podrá elegir qué clientes exportar mediante un diálogo:
-
-| Filtro | Descripción |
-|--------|-------------|
-| Todos los clientes | Exporta toda la base de datos |
-| Solo clientes con compras pagadas | Clientes que tienen al menos una orden con status `PAID` o `DELIVERED` |
-| Solo clientes con proceso abierto | Clientes cuyas órdenes están en `NEW`/`IN_PROGRESS` pero nunca pagaron |
-
-### 2.4 Normalización de Teléfonos
-
-Los teléfonos se convertirán automáticamente al formato E.164 requerido por Meta:
-
-```text
-Ejemplos de conversión:
-04241234567     → +584241234567
-+584241234567   → +584241234567
-0424-123-4567   → +584241234567
-424 123 4567    → +584241234567
-```
+- El Pixel ID debe ser numérico (15-16 dígitos)
+- Mostrar error visual si el formato es inválido
+- Guardado automático al modificar
 
 ---
 
-## Fase 3: Carritos Abandonados (Simplificado)
+## Fase 4: Proveedor Global
 
-### 3.1 Situación Actual
+### 4.1 Crear `src/components/MetaPixelProvider.tsx`
 
-Actualmente los carritos se guardan en `localStorage` del navegador y son anónimos (no hay datos del cliente hasta que llega al checkout).
+Componente que:
+1. Obtiene el Pixel ID de la configuración
+2. Inicializa el Pixel si está configurado y habilitado
+3. Escucha cambios de ruta para disparar `PageView`
 
-### 3.2 Enfoque Propuesto
+### 4.2 Integrar en `App.tsx`
 
-Para detectar carritos abandonados sin modificar significativamente el flujo actual, implementaremos:
-
-**Nueva tabla `pending_checkouts`:**
-- Se crea un registro cuando el usuario llega a la página de Checkout con un carrito
-- Guarda temporalmente: items del carrito, timestamp, un ID único
-- Si el checkout se completa exitosamente, se elimina el registro
-- Los registros que permanecen por más de X horas sin completar son "carritos abandonados"
-
-### 3.3 Flujo de Detección
-
-```text
-Usuario en /checkout
-       │
-       ▼
-┌─────────────────┐
-│ Crear registro  │
-│ pending_checkout│
-└────────┬────────┘
-         │
-    ¿Completa?
-    │       │
-   Sí      No
-    │       │
-    ▼       ▼
-┌────────┐  ┌───────────────┐
-│Eliminar│  │ Queda como    │
-│registro│  │ "abandonado"  │
-└────────┘  └───────────────┘
-```
-
-### 3.4 Limitación Importante
-
-Sin datos de contacto del usuario antes del checkout, no podemos recuperar carritos abandonados para remarketing directo. La tabla `pending_checkouts` servirá para:
-- Estadísticas de conversión (% que llega a checkout vs % que completa)
-- Si el usuario ingresa su email/teléfono primero (posible mejora futura), entonces sí se puede contactar
+Envolver la aplicación con el proveedor para tracking global.
 
 ---
 
-## Archivos a Modificar
+## Fase 5: Integración en Componentes
 
-| Archivo | Cambios |
-|---------|---------|
-| `src/components/admin/OrdersPanel.tsx` | Agregar tabs de filtrado y tarjetas KPI |
-| `src/components/admin/CustomersPanel.tsx` | Agregar botón y diálogo de exportación para Meta |
-| `src/pages/Checkout.tsx` | Registrar entrada a checkout para tracking de abandono |
+### 5.1 Eventos de Producto
+
+| Archivo | Evento | Cuándo |
+|---------|--------|--------|
+| `ProductPage.tsx` | `ViewContent` | Al cargar la página de producto |
+| `AddToCartButton.tsx` | `AddToCart` | Al agregar producto al carrito |
+
+### 5.2 Eventos de Checkout
+
+| Archivo | Evento | Cuándo |
+|---------|--------|--------|
+| `Checkout.tsx` | `InitiateCheckout` | Al entrar al checkout |
+| `Checkout.tsx` | `Purchase` | Al completar la orden exitosamente |
+
+### 5.3 Eventos de Contacto
+
+| Archivo | Evento | Cuándo |
+|---------|--------|--------|
+| `HeroSection.tsx` | `Contact` | Clic en botón WhatsApp |
+| `StickyActionBar.tsx` | `Contact` | Clic en botón "Pedir" |
+| `FloatingWhatsApp.tsx` | `Contact` | Clic en botón flotante |
+
+### 5.4 Eventos de Búsqueda
+
+| Archivo | Evento | Cuándo |
+|---------|--------|--------|
+| `useSearch.ts` | `Search` | Al buscar productos (debounced) |
+
+---
 
 ## Archivos a Crear
 
 | Archivo | Propósito |
 |---------|-----------|
-| `src/lib/metaExport.ts` | Funciones de formateo y generación de CSV para Meta |
+| `src/lib/metaPixel.ts` | Servicio centralizado de Meta Pixel |
+| `src/components/MetaPixelProvider.tsx` | Proveedor global de inicialización |
+
+## Archivos a Modificar
+
+| Archivo | Cambios |
+|---------|---------|
+| `src/hooks/useConfig.ts` | Agregar campos `meta_pixel_id` y `meta_pixel_enabled` |
+| `src/components/admin/ConfigPanel.tsx` | Nueva sección de configuración del Pixel |
+| `src/App.tsx` | Integrar `MetaPixelProvider` |
+| `src/pages/ProductPage.tsx` | Agregar evento `ViewContent` |
+| `src/components/cart/AddToCartButton.tsx` | Agregar evento `AddToCart` |
+| `src/pages/Checkout.tsx` | Agregar eventos `InitiateCheckout` y `Purchase` |
+| `src/components/HeroSection.tsx` | Agregar evento `Contact` |
+| `src/components/StickyActionBar.tsx` | Agregar evento `Contact` |
+| `src/components/FloatingWhatsApp.tsx` | Agregar evento `Contact` |
+| `src/hooks/useSearch.ts` | Agregar evento `Search` |
+
+---
 
 ## Cambios en Base de Datos
 
-| Tabla | Cambios |
-|-------|---------|
-| `pending_checkouts` | Nueva tabla para tracking de carritos abandonados |
+### Migración SQL
+
+```sql
+INSERT INTO config (key, value) 
+VALUES 
+  ('meta_pixel_id', ''),
+  ('meta_pixel_enabled', 'false')
+ON CONFLICT (key) DO NOTHING;
+```
+
+---
+
+## Flujo de Datos
+
+```text
+Usuario navega
+       │
+       ▼
+┌─────────────────────────────┐
+│   MetaPixelProvider         │
+│   - Inicializa Pixel        │
+│   - Escucha cambios ruta    │
+└──────────────┬──────────────┘
+               │
+     ┌─────────┴─────────┐
+     │                   │
+     ▼                   ▼
+PageView           Evento específico
+(automático)       (según acción)
+     │                   │
+     └─────────┬─────────┘
+               │
+               ▼
+        ┌─────────────┐
+        │  Meta Ads   │
+        │  Manager    │
+        └─────────────┘
+```
 
 ---
 
 ## Resultado Esperado
 
-Al completar esta implementación:
+1. **Panel de Admin**: Nueva sección para configurar Meta Pixel
+2. **Tracking Automático**: `PageView` en cada navegación
+3. **Eventos E-commerce**: `ViewContent`, `AddToCart`, `InitiateCheckout`, `Purchase`
+4. **Eventos Contacto**: Cada clic en WhatsApp registrado
+5. **Búsquedas**: Rastreo de qué buscan los usuarios
+6. **Sin código hardcoded**: El Pixel ID se configura desde el admin
+7. **Compatible**: El sistema de analytics interno sigue funcionando
 
-1. **Panel de Órdenes Mejorado**
-   - Filtros rápidos por estado de pago
-   - Vista clara de qué órdenes necesitan seguimiento
-   - KPIs de ingresos y conversión
+---
 
-2. **Exportación para Meta Ads**
-   - Un clic para descargar CSV compatible
-   - Datos normalizados automáticamente
-   - Filtros para segmentar la audiencia
+## Verificación Post-Implementación
 
-3. **Tracking de Abandono**
-   - Visibilidad de cuántos usuarios llegan al checkout sin completar
-   - Base para futuras mejoras de recuperación de carritos
+Para verificar que el Pixel funciona:
+
+1. Instalar extensión "Meta Pixel Helper" en Chrome
+2. Navegar por el sitio
+3. Verificar que los eventos aparecen en la extensión
+4. Confirmar en Meta Events Manager que los eventos llegan
