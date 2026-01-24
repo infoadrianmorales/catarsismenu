@@ -6,11 +6,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, Upload, X, Crop } from 'lucide-react';
+import { Loader2, Upload, X } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Database } from '@/integrations/supabase/types';
-import { resizeImageTo1x1, blobToFile } from '@/lib/imageProcessor';
+import { generateResponsiveImages, blobToFile, getImagePaths, getImageExtension } from '@/lib/imageProcessor';
 
 type ProductCategory = Database['public']['Enums']['product_category'];
 
@@ -49,7 +48,6 @@ const CATEGORIES = [
 export const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [autoResize, setAutoResize] = useState(true);
   const [imagePreview, setImagePreview] = useState<string | null>(product?.imagen_url || null);
   
   const [formData, setFormData] = useState<Product>({
@@ -96,35 +94,44 @@ export const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) 
     setUploading(true);
     
     try {
-      let processedFile: File = file;
+      const slug = formData.slug || `product-${Date.now()}`;
       
-      // Resize to 1:1 (square) if enabled
-      if (autoResize) {
-        toast.info('Redimensionando imagen a 1:1...');
-        const resizedBlob = await resizeImageTo1x1(file);
-        processedFile = blobToFile(resizedBlob, `${formData.slug || Date.now()}.jpg`);
-      }
+      // Generate responsive images (200, 400, 800px in WebP or JPEG)
+      toast.info('Procesando imagen...');
+      const images = await generateResponsiveImages(file);
+      const paths = getImagePaths(slug, images.format);
+      const ext = getImageExtension(images.format);
       
-      // Step 3: Upload to storage
-      const fileName = `${formData.slug || Date.now()}.jpg`;
-      const filePath = `products/${fileName}`;
+      // Upload all 3 sizes in parallel
+      const uploadPromises = [
+        supabase.storage
+          .from('product-images')
+          .upload(paths.thumb, images.thumb, { upsert: true, contentType: `image/${images.format}` }),
+        supabase.storage
+          .from('product-images')
+          .upload(paths.card, images.card, { upsert: true, contentType: `image/${images.format}` }),
+        supabase.storage
+          .from('product-images')
+          .upload(paths.full, images.full, { upsert: true, contentType: `image/${images.format}` }),
+      ];
+      
+      const results = await Promise.all(uploadPromises);
+      
+      // Check for upload errors
+      const uploadError = results.find(r => r.error);
+      if (uploadError?.error) throw uploadError.error;
 
-      const { error: uploadError } = await supabase.storage
-        .from('product-images')
-        .upload(filePath, processedFile, { upsert: true });
-
-      if (uploadError) throw uploadError;
-
+      // Get public URL for the full-size image (base URL)
       const { data: { publicUrl } } = supabase.storage
         .from('product-images')
-        .getPublicUrl(filePath);
+        .getPublicUrl(paths.full);
 
       // Add cache buster to force reload
       const urlWithCacheBuster = `${publicUrl}?t=${Date.now()}`;
       
       setFormData(prev => ({ ...prev, imagen_url: urlWithCacheBuster }));
       setImagePreview(urlWithCacheBuster);
-      toast.success('Imagen subida correctamente');
+      toast.success(`Imagen optimizada (${ext.toUpperCase()}) subida correctamente`);
     } catch (error) {
       console.error('Error uploading image:', error);
       toast.error('Error al procesar la imagen');
@@ -287,21 +294,10 @@ export const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) 
       <div className="space-y-4">
         <Label>Imagen del producto</Label>
         
-        {/* Opción de procesamiento automático */}
-        <div className="flex flex-col gap-3 p-4 bg-muted/50 rounded-lg border border-border">
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="autoResize"
-              checked={autoResize}
-              onCheckedChange={(checked) => setAutoResize(checked === true)}
-            />
-            <label htmlFor="autoResize" className="flex items-center gap-2 text-sm cursor-pointer">
-              <Crop className="h-4 w-4 text-primary" />
-              Redimensionar automáticamente a 1:1 (cuadrado)
-            </label>
-          </div>
+        {/* Info sobre procesamiento automático */}
+        <div className="flex flex-col gap-2 p-3 bg-muted/50 rounded-lg border border-border">
           <p className="text-xs text-muted-foreground">
-            Esta opción procesa la imagen antes de subirla para optimizarla para el menú.
+            Las imágenes se procesan automáticamente: recorte 1:1, conversión a WebP y generación de múltiples resoluciones (200px, 400px, 800px) para optimizar el rendimiento.
           </p>
         </div>
 
