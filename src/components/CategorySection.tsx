@@ -3,7 +3,6 @@ import { ChevronRight } from 'lucide-react';
 import { MenuItem, Currency } from '@/types/menu';
 import { PriceDisplayMode } from '@/hooks/useCurrency';
 import { ProductCarousel } from './ProductCarousel';
-import { CompactProductCard } from './CompactProductCard';
 
 interface CategorySectionProps {
   slug: string;
@@ -23,8 +22,6 @@ export const CategorySection = ({
   displayMode = 'ambas' 
 }: CategorySectionProps) => {
   if (items.length === 0) return null;
-
-  const useCarousel = items.length > 4;
 
   return (
     <section className="py-6">
@@ -55,25 +52,12 @@ export const CategorySection = ({
           </p>
         )}
 
-        {/* Products - Carousel or Grid */}
-        {useCarousel ? (
-          <ProductCarousel 
-            items={items} 
-            currency={currency} 
-            displayMode={displayMode} 
-          />
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            {items.map((item) => (
-              <CompactProductCard 
-                key={item.id}
-                item={item} 
-                currency={currency} 
-                displayMode={displayMode}
-              />
-            ))}
-          </div>
-        )}
+        {/* Products - Always use carousel for consistent sizing */}
+        <ProductCarousel 
+          items={items} 
+          currency={currency} 
+          displayMode={displayMode} 
+        />
       </div>
     </section>
   );
