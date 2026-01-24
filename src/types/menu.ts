@@ -21,6 +21,7 @@ export interface MenuItem {
   tags: string[];
   orden: number;
   destacado?: boolean;
+  is_orderable?: boolean;
 }
 
 export type Currency = 'USD' | 'VES';

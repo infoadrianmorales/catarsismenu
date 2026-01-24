@@ -74,6 +74,98 @@ export type Database = {
         }
         Relationships: []
       }
+      order_items: {
+        Row: {
+          created_at: string
+          id: string
+          line_total: number
+          order_id: string
+          product_id: string
+          product_name_snapshot: string
+          quantity: number
+          unit_price_snapshot: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          line_total: number
+          order_id: string
+          product_id: string
+          product_name_snapshot: string
+          quantity?: number
+          unit_price_snapshot: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          line_total?: number
+          order_id?: string
+          product_id?: string
+          product_name_snapshot?: string
+          quantity?: number
+          unit_price_snapshot?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          created_at: string
+          currency_mode: string
+          email: string
+          exchange_rate: number | null
+          first_name: string
+          id: string
+          last_name: string
+          payment_method: string
+          phone: string
+          status: string
+          subtotal: number
+          total: number
+          updated_at: string | null
+          whatsapp_message: string
+        }
+        Insert: {
+          created_at?: string
+          currency_mode?: string
+          email: string
+          exchange_rate?: number | null
+          first_name: string
+          id?: string
+          last_name: string
+          payment_method: string
+          phone: string
+          status?: string
+          subtotal: number
+          total: number
+          updated_at?: string | null
+          whatsapp_message: string
+        }
+        Update: {
+          created_at?: string
+          currency_mode?: string
+          email?: string
+          exchange_rate?: number | null
+          first_name?: string
+          id?: string
+          last_name?: string
+          payment_method?: string
+          phone?: string
+          status?: string
+          subtotal?: number
+          total?: number
+          updated_at?: string | null
+          whatsapp_message?: string
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           activo: boolean | null
@@ -83,6 +175,7 @@ export type Database = {
           destacado: boolean | null
           id: string
           imagen_url: string | null
+          is_orderable: boolean | null
           nombre: string
           orden: number | null
           precio_usd: number
@@ -98,6 +191,7 @@ export type Database = {
           destacado?: boolean | null
           id?: string
           imagen_url?: string | null
+          is_orderable?: boolean | null
           nombre: string
           orden?: number | null
           precio_usd: number
@@ -113,6 +207,7 @@ export type Database = {
           destacado?: boolean | null
           id?: string
           imagen_url?: string | null
+          is_orderable?: boolean | null
           nombre?: string
           orden?: number | null
           precio_usd?: number

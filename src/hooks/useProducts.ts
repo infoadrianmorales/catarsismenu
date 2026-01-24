@@ -37,6 +37,7 @@ export const useProducts = () => {
             tags: product.tags || [],
             orden: product.orden || 0,
             destacado: product.destacado || false,
+            is_orderable: product.is_orderable !== false, // Default to true if not set
           }));
           
           // Merge with static items (static items as fallback for categories not in DB)
