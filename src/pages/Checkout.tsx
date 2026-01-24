@@ -18,7 +18,7 @@ import { PaymentDetailsStep } from '@/components/checkout/PaymentDetailsStep';
 import { PaymentConfirmationStep } from '@/components/checkout/PaymentConfirmationStep';
 import { z } from 'zod';
 
-type CheckoutStep = 'form' | 'payment-details' | 'confirmation';
+type CheckoutStep = 'form' | 'payment-details' | 'confirmation' | 'success';
 
 const checkoutSchema = z.object({
   firstName: z.string().trim().min(1, 'El nombre es requerido').max(100),
@@ -212,21 +212,25 @@ Correo: ${formData.email.toLowerCase()}
 
       if (itemsError) throw itemsError;
 
+      // Clear cart
+      clearCart();
+      
+      // Store order info
+      setOrderId(newOrderId);
+      sessionStorage.setItem('lastOrderId', newOrderId);
+      
       // Open WhatsApp
       const encodedMessage = encodeURIComponent(whatsappMessage);
       const cleanNumber = whatsappNumber.replace(/\D/g, '');
       const whatsappUrl = `https://wa.me/${cleanNumber}?text=${encodedMessage}`;
       
-      // Clear cart first
-      clearCart();
+      // Open WhatsApp in new tab/window and show success screen
+      window.open(whatsappUrl, '_blank');
       
-      // Store order info for confirmation page
-      sessionStorage.setItem('lastOrderId', newOrderId);
+      toast.success('¡Pedido enviado correctamente!');
       
-      toast.success('¡Pedido creado! Redirigiendo a WhatsApp...');
-      
-      // Use location.href for better mobile compatibility
-      window.location.href = whatsappUrl;
+      // Show success screen
+      setStep('success');
 
     } catch (error) {
       console.error('Error creating order:', error);
@@ -462,6 +466,35 @@ Correo: ${formData.email.toLowerCase()}
             onSubmit={handleFinalSubmit}
             isSubmitting={isSubmitting}
           />
+        )}
+
+        {step === 'success' && (
+          <div className="max-w-md mx-auto text-center py-12">
+            <div className="mb-8">
+              <div className="w-20 h-20 bg-secondary/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                <span className="text-4xl">✅</span>
+              </div>
+              <h1 className="text-2xl font-display font-bold mb-3">
+                ¡Listo! Gracias 💛
+              </h1>
+              <p className="text-muted-foreground">
+                ¿Se te antoja algo más?
+              </p>
+              {orderId && (
+                <p className="text-sm text-muted-foreground mt-2">
+                  Orden: #{orderId.slice(0, 8).toUpperCase()}
+                </p>
+              )}
+            </div>
+            
+            <Button 
+              size="lg" 
+              className="w-full gap-2 text-lg py-6"
+              onClick={() => navigate('/')}
+            >
+              Seguir comprando 🛒
+            </Button>
+          </div>
         )}
       </div>
       
