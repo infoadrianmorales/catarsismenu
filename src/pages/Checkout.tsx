@@ -124,6 +124,22 @@ ${itemLines}
     setIsSubmitting(true);
 
     try {
+      // Find or create customer
+      const { data: customerResult, error: customerError } = await supabase
+        .rpc('find_or_create_customer', {
+          p_first_name: formData.firstName.trim(),
+          p_last_name: formData.lastName.trim(),
+          p_phone: normalizePhone(formData.phone),
+          p_email: formData.email.toLowerCase().trim(),
+        });
+
+      if (customerError) {
+        console.error('Customer error:', customerError);
+        // Continue without customer_id if function fails
+      }
+
+      const customerId = customerResult || null;
+
       // Create order in database
       const orderId = crypto.randomUUID();
       const whatsappMessage = generateWhatsAppMessage(orderId);
@@ -132,6 +148,7 @@ ${itemLines}
         .from('orders')
         .insert({
           id: orderId,
+          customer_id: customerId,
           first_name: formData.firstName.trim(),
           last_name: formData.lastName.trim(),
           phone: normalizePhone(formData.phone),
