@@ -2,7 +2,7 @@ import { Currency } from '@/types/menu';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { PriceDisplayMode } from '@/hooks/useCurrency';
-import { CartButton } from '@/components/cart/CartButton';
+import { CartDrawer } from '@/components/cart/CartDrawer';
 import logoCatarsis from '@/assets/logo-catarsis.png';
 
 interface MenuHeaderProps {
@@ -65,8 +65,8 @@ export const MenuHeader = ({ currency, onCurrencyToggle, displayMode = 'ambas' }
             </div>
           )}
 
-          {/* Cart Button */}
-          <CartButton />
+          {/* Cart Drawer */}
+          <CartDrawer />
         </div>
       </div>
     </header>
