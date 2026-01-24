@@ -1,14 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Loader2, Eye, RefreshCw, Copy, Check } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Loader2, Eye, RefreshCw, Copy, Check, Clock, CreditCard, Truck, XCircle, DollarSign, ShoppingBag } from 'lucide-react';
 import { toast } from 'sonner';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { format } from 'date-fns';
+import { format, isToday, startOfWeek, isWithinInterval } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 interface Order {
@@ -36,9 +37,12 @@ interface OrderItem {
   line_total: number;
 }
 
+type OrderTab = 'pending' | 'paid' | 'delivered' | 'canceled' | 'all';
+
 const STATUS_OPTIONS = [
   { value: 'NEW', label: 'Nuevo', color: 'bg-blue-500' },
   { value: 'IN_PROGRESS', label: 'En Proceso', color: 'bg-yellow-500' },
+  { value: 'PAYMENT_SUBMITTED', label: 'Pago Enviado', color: 'bg-orange-500' },
   { value: 'PAID', label: 'Pagado', color: 'bg-green-500' },
   { value: 'DELIVERED', label: 'Entregado', color: 'bg-purple-500' },
   { value: 'CANCELED', label: 'Cancelado', color: 'bg-red-500' },
@@ -52,6 +56,34 @@ const PAYMENT_LABELS: Record<string, string> = {
   TRANSFER: 'Transferencia',
 };
 
+const TAB_CONFIG: Record<OrderTab, { label: string; statuses: string[]; icon: React.ReactNode }> = {
+  pending: { 
+    label: 'Pendientes', 
+    statuses: ['NEW', 'IN_PROGRESS', 'PAYMENT_SUBMITTED'],
+    icon: <Clock className="h-4 w-4" />
+  },
+  paid: { 
+    label: 'Pagadas', 
+    statuses: ['PAID'],
+    icon: <CreditCard className="h-4 w-4" />
+  },
+  delivered: { 
+    label: 'Entregadas', 
+    statuses: ['DELIVERED'],
+    icon: <Truck className="h-4 w-4" />
+  },
+  canceled: { 
+    label: 'Canceladas', 
+    statuses: ['CANCELED'],
+    icon: <XCircle className="h-4 w-4" />
+  },
+  all: { 
+    label: 'Todas', 
+    statuses: [],
+    icon: <ShoppingBag className="h-4 w-4" />
+  },
+};
+
 export const OrdersPanel = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,6 +91,7 @@ export const OrdersPanel = () => {
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [loadingItems, setLoadingItems] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [activeTab, setActiveTab] = useState<OrderTab>('pending');
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -94,6 +127,45 @@ export const OrdersPanel = () => {
   useEffect(() => {
     fetchOrders();
   }, []);
+
+  // Calculate KPIs
+  const kpis = useMemo(() => {
+    const now = new Date();
+    const weekStart = startOfWeek(now, { weekStartsOn: 1 });
+
+    const pending = orders.filter(o => ['NEW', 'IN_PROGRESS', 'PAYMENT_SUBMITTED'].includes(o.status)).length;
+    
+    const paidOrders = orders.filter(o => o.status === 'PAID' || o.status === 'DELIVERED');
+    const paidToday = paidOrders.filter(o => isToday(new Date(o.created_at))).length;
+    const paidThisWeek = paidOrders.filter(o => 
+      isWithinInterval(new Date(o.created_at), { start: weekStart, end: now })
+    ).length;
+    
+    const revenueToday = paidOrders
+      .filter(o => isToday(new Date(o.created_at)))
+      .reduce((sum, o) => sum + Number(o.total), 0);
+    
+    const canceled = orders.filter(o => o.status === 'CANCELED').length;
+
+    return { pending, paidToday, paidThisWeek, revenueToday, canceled };
+  }, [orders]);
+
+  // Filter orders by active tab
+  const filteredOrders = useMemo(() => {
+    if (activeTab === 'all') return orders;
+    return orders.filter(o => TAB_CONFIG[activeTab].statuses.includes(o.status));
+  }, [orders, activeTab]);
+
+  // Count orders per tab
+  const tabCounts = useMemo(() => {
+    return {
+      pending: orders.filter(o => TAB_CONFIG.pending.statuses.includes(o.status)).length,
+      paid: orders.filter(o => TAB_CONFIG.paid.statuses.includes(o.status)).length,
+      delivered: orders.filter(o => TAB_CONFIG.delivered.statuses.includes(o.status)).length,
+      canceled: orders.filter(o => TAB_CONFIG.canceled.statuses.includes(o.status)).length,
+      all: orders.length,
+    };
+  }, [orders]);
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
     const { error } = await supabase
@@ -153,6 +225,7 @@ export const OrdersPanel = () => {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-display font-bold">Órdenes</h2>
         <Button variant="outline" size="sm" onClick={fetchOrders} className="gap-2">
@@ -161,10 +234,76 @@ export const OrdersPanel = () => {
         </Button>
       </div>
 
-      {orders.length === 0 ? (
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-yellow-500/10">
+              <Clock className="h-5 w-5 text-yellow-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold">{kpis.pending}</p>
+              <p className="text-xs text-muted-foreground">Pendientes de pago</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-green-500/10">
+              <CreditCard className="h-5 w-5 text-green-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold">{kpis.paidToday} <span className="text-sm font-normal text-muted-foreground">/ {kpis.paidThisWeek}</span></p>
+              <p className="text-xs text-muted-foreground">Pagadas hoy / semana</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-secondary/10">
+              <DollarSign className="h-5 w-5 text-secondary" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold">${kpis.revenueToday.toFixed(0)}</p>
+              <p className="text-xs text-muted-foreground">Ingresos hoy</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-red-500/10">
+              <XCircle className="h-5 w-5 text-red-500" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold">{kpis.canceled}</p>
+              <p className="text-xs text-muted-foreground">Canceladas</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as OrderTab)}>
+        <TabsList className="grid w-full grid-cols-5">
+          {(Object.keys(TAB_CONFIG) as OrderTab[]).map((tab) => (
+            <TabsTrigger key={tab} value={tab} className="gap-2 text-xs sm:text-sm">
+              <span className="hidden sm:inline">{TAB_CONFIG[tab].icon}</span>
+              {TAB_CONFIG[tab].label}
+              {tabCounts[tab] > 0 && (
+                <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                  {tabCounts[tab]}
+                </Badge>
+              )}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
+
+      {/* Orders Table */}
+      {filteredOrders.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
-            No hay órdenes registradas
+            No hay órdenes en esta categoría
           </CardContent>
         </Card>
       ) : (
@@ -183,8 +322,12 @@ export const OrdersPanel = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {orders.map((order) => (
-                  <TableRow key={order.id}>
+                {filteredOrders.map((order) => (
+                  <TableRow key={order.id} className={
+                    order.status === 'NEW' ? 'bg-blue-500/5' :
+                    order.status === 'PAYMENT_SUBMITTED' ? 'bg-orange-500/5' :
+                    undefined
+                  }>
                     <TableCell className="font-mono text-xs font-semibold">
                       {order.order_number || `#${order.id.slice(0, 8).toUpperCase()}`}
                     </TableCell>
@@ -208,13 +351,16 @@ export const OrdersPanel = () => {
                         value={order.status}
                         onValueChange={(value) => handleStatusChange(order.id, value)}
                       >
-                        <SelectTrigger className="w-32 h-8">
+                        <SelectTrigger className="w-36 h-8">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
                           {STATUS_OPTIONS.map((status) => (
                             <SelectItem key={status.value} value={status.value}>
-                              {status.label}
+                              <div className="flex items-center gap-2">
+                                <div className={`w-2 h-2 rounded-full ${status.color}`} />
+                                {status.label}
+                              </div>
                             </SelectItem>
                           ))}
                         </SelectContent>

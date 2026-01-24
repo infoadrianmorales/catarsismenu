@@ -303,6 +303,42 @@ export type Database = {
         }
         Relationships: []
       }
+      pending_checkouts: {
+        Row: {
+          cart_items: Json
+          created_at: string
+          customer_email: string | null
+          customer_first_name: string | null
+          customer_last_name: string | null
+          customer_phone: string | null
+          id: string
+          session_id: string
+          updated_at: string
+        }
+        Insert: {
+          cart_items: Json
+          created_at?: string
+          customer_email?: string | null
+          customer_first_name?: string | null
+          customer_last_name?: string | null
+          customer_phone?: string | null
+          id?: string
+          session_id: string
+          updated_at?: string
+        }
+        Update: {
+          cart_items?: Json
+          created_at?: string
+          customer_email?: string | null
+          customer_first_name?: string | null
+          customer_last_name?: string | null
+          customer_phone?: string | null
+          id?: string
+          session_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           activo: boolean | null

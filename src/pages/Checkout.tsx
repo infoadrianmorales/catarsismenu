@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, MessageCircle, Loader2, MapPin, Store, CreditCard, Banknote, Wallet, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,16 @@ import { toast } from 'sonner';
 import { MenuHeader } from '@/components/MenuHeader';
 import { Footer } from '@/components/Footer';
 import { z } from 'zod';
+
+// Generate a unique session ID for abandoned cart tracking
+const getSessionId = (): string => {
+  let sessionId = sessionStorage.getItem('checkout_session_id');
+  if (!sessionId) {
+    sessionId = crypto.randomUUID();
+    sessionStorage.setItem('checkout_session_id', sessionId);
+  }
+  return sessionId;
+};
 
 type CheckoutStep = 'form' | 'success';
 type DeliveryType = 'pickup' | 'delivery';
@@ -87,9 +97,110 @@ const Checkout = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
   const [orderNumber, setOrderNumber] = useState<string | null>(null);
+  const pendingCheckoutIdRef = useRef<string | null>(null);
+  const checkoutCompletedRef = useRef(false);
 
   const prices = getPrices(subtotal);
   const whatsappNumber = config?.whatsapp || '584249056438';
+
+  // Track pending checkout for abandoned cart detection
+  useEffect(() => {
+    if (items.length === 0) return;
+
+    const sessionId = getSessionId();
+    const cartItems = items.map(item => ({
+      id: item.id,
+      nombre: item.nombre,
+      precio_usd: item.precio_usd,
+      quantity: item.quantity,
+    }));
+
+    // Create or update pending checkout record
+    const upsertPendingCheckout = async () => {
+      try {
+        // Check if we already have a pending checkout for this session
+        const { data: existing } = await supabase
+          .from('pending_checkouts')
+          .select('id')
+          .eq('session_id', sessionId)
+          .maybeSingle();
+
+        if (existing) {
+          // Update existing record
+          await supabase
+            .from('pending_checkouts')
+            .update({
+              cart_items: cartItems,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', existing.id);
+          pendingCheckoutIdRef.current = existing.id;
+        } else {
+          // Create new record
+          const { data: newRecord } = await supabase
+            .from('pending_checkouts')
+            .insert({
+              session_id: sessionId,
+              cart_items: cartItems,
+            })
+            .select('id')
+            .single();
+          
+          if (newRecord) {
+            pendingCheckoutIdRef.current = newRecord.id;
+          }
+        }
+      } catch (error) {
+        // Silently fail - this is tracking, not critical functionality
+        console.error('Error tracking pending checkout:', error);
+      }
+    };
+
+    upsertPendingCheckout();
+  }, [items]);
+
+  // Update pending checkout with customer info when form changes
+  useEffect(() => {
+    if (!pendingCheckoutIdRef.current) return;
+    if (!formData.email && !formData.phone) return;
+
+    const updateCustomerInfo = async () => {
+      try {
+        await supabase
+          .from('pending_checkouts')
+          .update({
+            customer_email: formData.email || null,
+            customer_phone: formData.phone || null,
+            customer_first_name: formData.firstName || null,
+            customer_last_name: formData.lastName || null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', pendingCheckoutIdRef.current);
+      } catch (error) {
+        // Silently fail
+      }
+    };
+
+    // Debounce the update
+    const timeoutId = setTimeout(updateCustomerInfo, 1000);
+    return () => clearTimeout(timeoutId);
+  }, [formData.email, formData.phone, formData.firstName, formData.lastName]);
+
+  // Delete pending checkout when order is completed
+  const deletePendingCheckout = async () => {
+    if (pendingCheckoutIdRef.current && !checkoutCompletedRef.current) {
+      checkoutCompletedRef.current = true;
+      try {
+        await supabase
+          .from('pending_checkouts')
+          .delete()
+          .eq('id', pendingCheckoutIdRef.current);
+        sessionStorage.removeItem('checkout_session_id');
+      } catch (error) {
+        // Silently fail
+      }
+    }
+  };
   
   // Get available payment methods based on currency
   const availablePaymentMethods = paymentCurrency === 'USD' ? USD_PAYMENT_METHODS : VES_PAYMENT_METHODS;
@@ -280,8 +391,9 @@ Correo: ${formData.email.toLowerCase()}
 
       if (itemsError) throw itemsError;
 
-      // Clear cart
+      // Clear cart and delete pending checkout
       clearCart();
+      await deletePendingCheckout();
       
       // Store order info
       setOrderId(newOrderId);

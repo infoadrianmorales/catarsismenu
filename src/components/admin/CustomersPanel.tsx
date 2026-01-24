@@ -5,12 +5,15 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Loader2, Eye, RefreshCw, Search, Users, DollarSign, ShoppingBag, Calendar } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
+import { Loader2, Eye, RefreshCw, Search, Users, DollarSign, ShoppingBag, Calendar, Download, Facebook } from 'lucide-react';
 import { toast } from 'sonner';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { exportCustomersForMeta, type ExportFilter, type CustomerForExport, type OrderStatus } from '@/lib/metaExport';
 
 interface CustomerWithMetrics {
   id: string;
@@ -36,6 +39,7 @@ interface CustomerOrder {
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   NEW: { label: 'Nuevo', color: 'bg-blue-500' },
   IN_PROGRESS: { label: 'En Proceso', color: 'bg-yellow-500' },
+  PAYMENT_SUBMITTED: { label: 'Pago Enviado', color: 'bg-orange-500' },
   PAID: { label: 'Pagado', color: 'bg-green-500' },
   DELIVERED: { label: 'Entregado', color: 'bg-purple-500' },
   CANCELED: { label: 'Cancelado', color: 'bg-red-500' },
@@ -49,14 +53,26 @@ const PAYMENT_LABELS: Record<string, string> = {
   TRANSFER: 'Transferencia',
 };
 
+const EXPORT_FILTER_OPTIONS: { value: ExportFilter; label: string; description: string }[] = [
+  { value: 'all', label: 'Todos los clientes', description: 'Exporta toda la base de datos' },
+  { value: 'paid', label: 'Clientes con compras pagadas', description: 'Solo quienes completaron al menos un pago' },
+  { value: 'open_process', label: 'Proceso abierto (sin pagar)', description: 'Llegaron a WhatsApp pero nunca pagaron' },
+];
+
 export const CustomersPanel = () => {
   const [customers, setCustomers] = useState<CustomerWithMetrics[]>([]);
+  const [allOrders, setAllOrders] = useState<OrderStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'orders' | 'spent' | 'recent'>('recent');
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerWithMetrics | null>(null);
   const [customerOrders, setCustomerOrders] = useState<CustomerOrder[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
+  
+  // Export dialog state
+  const [showExportDialog, setShowExportDialog] = useState(false);
+  const [exportFilter, setExportFilter] = useState<ExportFilter>('all');
+  const [exporting, setExporting] = useState(false);
 
   const fetchCustomers = async () => {
     setLoading(true);
@@ -77,19 +93,22 @@ export const CustomersPanel = () => {
     // Fetch order metrics for each customer
     const { data: ordersData, error: ordersError } = await supabase
       .from('orders')
-      .select('customer_id, total, created_at')
+      .select('customer_id, total, created_at, status')
       .not('customer_id', 'is', null);
 
     if (ordersError) {
       console.error(ordersError);
     }
 
+    // Store all orders for export filtering
+    setAllOrders((ordersData || []).map(o => ({ customer_id: o.customer_id!, status: o.status })));
+
     // Calculate metrics
     const metricsMap = new Map<string, { count: number; total: number; lastOrder: string | null }>();
     
     (ordersData || []).forEach(order => {
-      const existing = metricsMap.get(order.customer_id) || { count: 0, total: 0, lastOrder: null };
-      metricsMap.set(order.customer_id, {
+      const existing = metricsMap.get(order.customer_id!) || { count: 0, total: 0, lastOrder: null };
+      metricsMap.set(order.customer_id!, {
         count: existing.count + 1,
         total: existing.total + Number(order.total),
         lastOrder: !existing.lastOrder || order.created_at > existing.lastOrder 
@@ -137,6 +156,68 @@ export const CustomersPanel = () => {
     fetchCustomerOrders(customer.id);
   };
 
+  // Handle Meta export
+  const handleExport = () => {
+    setExporting(true);
+    
+    const customersForExport: CustomerForExport[] = customers.map(c => ({
+      id: c.id,
+      first_name: c.first_name,
+      last_name: c.last_name,
+      phone: c.phone,
+      email: c.email,
+    }));
+
+    const result = exportCustomersForMeta(customersForExport, allOrders, exportFilter);
+    
+    if (result.success) {
+      toast.success(`Exportados ${result.count} clientes`, {
+        description: `Archivo: ${result.filename}`,
+      });
+      setShowExportDialog(false);
+    } else {
+      toast.error('No hay clientes para exportar con este filtro');
+    }
+    
+    setExporting(false);
+  };
+
+  // Get count for each export filter
+  const getFilterCount = (filter: ExportFilter): number => {
+    const customersForExport: CustomerForExport[] = customers.map(c => ({
+      id: c.id,
+      first_name: c.first_name,
+      last_name: c.last_name,
+      phone: c.phone,
+      email: c.email,
+    }));
+
+    if (filter === 'all') return customers.length;
+
+    const customerOrdersMap = new Map<string, string[]>();
+    allOrders.forEach(order => {
+      const existing = customerOrdersMap.get(order.customer_id) || [];
+      existing.push(order.status);
+      customerOrdersMap.set(order.customer_id, existing);
+    });
+
+    return customersForExport.filter(customer => {
+      const statuses = customerOrdersMap.get(customer.id) || [];
+      
+      if (filter === 'paid') {
+        return statuses.some(s => s === 'PAID' || s === 'DELIVERED');
+      }
+      
+      if (filter === 'open_process') {
+        const hasPaid = statuses.some(s => s === 'PAID' || s === 'DELIVERED');
+        const hasOrders = statuses.length > 0;
+        return hasOrders && !hasPaid;
+      }
+      
+      return true;
+    }).length;
+  };
+
   // Filter and sort customers
   const filteredCustomers = customers
     .filter(customer => {
@@ -178,7 +259,7 @@ export const CustomersPanel = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <h2 className="text-xl font-display font-bold">Compradores</h2>
-        <div className="flex items-center gap-3 w-full sm:w-auto">
+        <div className="flex items-center gap-3 w-full sm:w-auto flex-wrap">
           <div className="relative flex-1 sm:flex-initial">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -200,6 +281,15 @@ export const CustomersPanel = () => {
           </Select>
           <Button variant="outline" size="icon" onClick={fetchCustomers}>
             <RefreshCw className="h-4 w-4" />
+          </Button>
+          <Button 
+            variant="secondary" 
+            onClick={() => setShowExportDialog(true)}
+            className="gap-2"
+          >
+            <Facebook className="h-4 w-4" />
+            <span className="hidden sm:inline">Exportar para Meta</span>
+            <span className="sm:hidden">Meta</span>
           </Button>
         </div>
       </div>
@@ -443,6 +533,66 @@ export const CustomersPanel = () => {
               </Card>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Export Dialog */}
+      <Dialog open={showExportDialog} onOpenChange={setShowExportDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Facebook className="h-5 w-5 text-blue-600" />
+              Exportar para Meta Ads
+            </DialogTitle>
+            <DialogDescription>
+              Genera un archivo CSV compatible con Meta Custom Audiences para crear públicos personalizados en Facebook e Instagram.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4">
+            <Label className="text-sm font-medium mb-3 block">Selecciona qué clientes exportar:</Label>
+            <RadioGroup value={exportFilter} onValueChange={(v) => setExportFilter(v as ExportFilter)}>
+              {EXPORT_FILTER_OPTIONS.map((option) => {
+                const count = getFilterCount(option.value);
+                return (
+                  <div key={option.value} className="flex items-start space-x-3 space-y-0 rounded-lg border p-4 hover:bg-muted/50 transition-colors">
+                    <RadioGroupItem value={option.value} id={option.value} className="mt-1" />
+                    <div className="flex-1">
+                      <Label htmlFor={option.value} className="font-medium cursor-pointer flex items-center gap-2">
+                        {option.label}
+                        <Badge variant="secondary" className="text-xs">{count}</Badge>
+                      </Label>
+                      <p className="text-sm text-muted-foreground mt-1">{option.description}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </RadioGroup>
+          </div>
+
+          <div className="bg-muted/50 rounded-lg p-4 text-sm">
+            <p className="font-medium mb-2">El archivo incluirá:</p>
+            <ul className="text-muted-foreground space-y-1 text-xs">
+              <li>• <code className="bg-background px-1 rounded">email</code> - Correo normalizado (minúsculas)</li>
+              <li>• <code className="bg-background px-1 rounded">phone</code> - Teléfono en formato E.164 (+58...)</li>
+              <li>• <code className="bg-background px-1 rounded">fn</code> / <code className="bg-background px-1 rounded">ln</code> - Nombre y apellido</li>
+              <li>• <code className="bg-background px-1 rounded">country</code> - País (VE)</li>
+            </ul>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setShowExportDialog(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleExport} disabled={exporting || getFilterCount(exportFilter) === 0} className="gap-2">
+              {exporting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4" />
+              )}
+              Descargar CSV ({getFilterCount(exportFilter)})
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
