@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,12 +8,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { Loader2, Eye, RefreshCw, Search, Users, DollarSign, ShoppingBag, Calendar, Download, Facebook } from 'lucide-react';
+import { Loader2, Eye, RefreshCw, Search, Users, DollarSign, ShoppingBag, Calendar, Download, Facebook, Filter } from 'lucide-react';
 import { toast } from 'sonner';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { exportCustomersForMeta, type ExportFilter, type CustomerForExport, type OrderStatus } from '@/lib/metaExport';
+
+type StatusFilter = 'all' | 'paid' | 'pending' | 'canceled' | 'new';
+
+const STATUS_FILTER_OPTIONS: { value: StatusFilter; label: string; color: string; dbStatuses: string[] }[] = [
+  { value: 'all', label: 'Todos', color: '', dbStatuses: [] },
+  { value: 'paid', label: 'Pagados', color: 'bg-green-500', dbStatuses: ['PAID', 'DELIVERED'] },
+  { value: 'pending', label: 'Pendientes', color: 'bg-yellow-500', dbStatuses: ['PENDING', 'IN_PROGRESS', 'PAYMENT_SUBMITTED'] },
+  { value: 'canceled', label: 'Cancelados', color: 'bg-red-500', dbStatuses: ['CANCELED'] },
+  { value: 'new', label: 'Nuevos', color: 'bg-blue-500', dbStatuses: ['NEW'] },
+];
 
 interface CustomerWithMetrics {
   id: string;
@@ -74,6 +84,13 @@ export const CustomersPanel = () => {
   const [exportFilter, setExportFilter] = useState<ExportFilter>('all');
   const [exporting, setExporting] = useState(false);
 
+  // Advanced filter states
+  const [filterStatus, setFilterStatus] = useState<StatusFilter>('all');
+  const [filterProduct, setFilterProduct] = useState<string>('all');
+  const [customerStatusesMap, setCustomerStatusesMap] = useState<Map<string, string[]>>(new Map());
+  const [customerProductsMap, setCustomerProductsMap] = useState<Map<string, string[]>>(new Map());
+  const [allProducts, setAllProducts] = useState<string[]>([]);
+
   const fetchCustomers = async () => {
     setLoading(true);
     
@@ -93,12 +110,66 @@ export const CustomersPanel = () => {
     // Fetch order metrics for each customer
     const { data: ordersData, error: ordersError } = await supabase
       .from('orders')
-      .select('customer_id, total, created_at, status')
+      .select('id, customer_id, total, created_at, status')
       .not('customer_id', 'is', null);
 
     if (ordersError) {
       console.error(ordersError);
     }
+
+    // Fetch order items for product filtering
+    const orderIds = (ordersData || []).map(o => o.id);
+    let orderItemsData: { order_id: string; product_name_snapshot: string }[] = [];
+    
+    if (orderIds.length > 0) {
+      const { data: items, error: itemsError } = await supabase
+        .from('order_items')
+        .select('order_id, product_name_snapshot')
+        .in('order_id', orderIds);
+      
+      if (!itemsError && items) {
+        orderItemsData = items;
+      }
+    }
+
+    // Build order to customer mapping
+    const orderToCustomer = new Map<string, string>();
+    (ordersData || []).forEach(order => {
+      if (order.customer_id) {
+        orderToCustomer.set(order.id, order.customer_id);
+      }
+    });
+
+    // Build customer statuses map
+    const statusesMap = new Map<string, string[]>();
+    (ordersData || []).forEach(order => {
+      if (order.customer_id) {
+        const existing = statusesMap.get(order.customer_id) || [];
+        if (!existing.includes(order.status)) {
+          existing.push(order.status);
+        }
+        statusesMap.set(order.customer_id, existing);
+      }
+    });
+    setCustomerStatusesMap(statusesMap);
+
+    // Build customer products map and collect all unique products
+    const productsMap = new Map<string, string[]>();
+    const allProductsSet = new Set<string>();
+    
+    orderItemsData.forEach(item => {
+      const customerId = orderToCustomer.get(item.order_id);
+      if (customerId) {
+        const existing = productsMap.get(customerId) || [];
+        if (!existing.includes(item.product_name_snapshot)) {
+          existing.push(item.product_name_snapshot);
+        }
+        productsMap.set(customerId, existing);
+        allProductsSet.add(item.product_name_snapshot);
+      }
+    });
+    setCustomerProductsMap(productsMap);
+    setAllProducts(Array.from(allProductsSet).sort());
 
     // Store all orders for export filtering
     setAllOrders((ordersData || []).map(o => ({ customer_id: o.customer_id!, status: o.status })));
@@ -218,17 +289,52 @@ export const CustomersPanel = () => {
     }).length;
   };
 
+  // Check if a customer matches the status filter
+  const matchesStatusFilter = (customerId: string, filter: StatusFilter): boolean => {
+    if (filter === 'all') return true;
+    
+    const statuses = customerStatusesMap.get(customerId) || [];
+    const filterConfig = STATUS_FILTER_OPTIONS.find(o => o.value === filter);
+    if (!filterConfig) return true;
+    
+    return statuses.some(s => filterConfig.dbStatuses.includes(s));
+  };
+
+  // Check if a customer matches the product filter
+  const matchesProductFilter = (customerId: string, product: string): boolean => {
+    if (product === 'all') return true;
+    
+    const products = customerProductsMap.get(customerId) || [];
+    return products.includes(product);
+  };
+
+  // Count customers by status filter
+  const getStatusFilterCount = (filter: StatusFilter): number => {
+    if (filter === 'all') return customers.length;
+    return customers.filter(c => matchesStatusFilter(c.id, filter)).length;
+  };
+
   // Filter and sort customers
   const filteredCustomers = customers
     .filter(customer => {
-      if (!searchQuery) return true;
-      const query = searchQuery.toLowerCase();
-      return (
-        customer.first_name.toLowerCase().includes(query) ||
-        customer.last_name.toLowerCase().includes(query) ||
-        customer.phone.includes(query) ||
-        customer.email.toLowerCase().includes(query)
-      );
+      // Text search filter
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        const matchesSearch = 
+          customer.first_name.toLowerCase().includes(query) ||
+          customer.last_name.toLowerCase().includes(query) ||
+          customer.phone.includes(query) ||
+          customer.email.toLowerCase().includes(query);
+        if (!matchesSearch) return false;
+      }
+      
+      // Status filter
+      if (!matchesStatusFilter(customer.id, filterStatus)) return false;
+      
+      // Product filter
+      if (!matchesProductFilter(customer.id, filterProduct)) return false;
+      
+      return true;
     })
     .sort((a, b) => {
       switch (sortBy) {
@@ -244,6 +350,9 @@ export const CustomersPanel = () => {
           return new Date(b.last_order_at).getTime() - new Date(a.last_order_at).getTime();
       }
     });
+
+  // Check if filters are active
+  const hasActiveFilters = filterStatus !== 'all' || filterProduct !== 'all';
 
   const formatPrice = (amount: number) => `$${amount.toFixed(2)}`;
 
@@ -292,6 +401,68 @@ export const CustomersPanel = () => {
             <span className="sm:hidden">Meta</span>
           </Button>
         </div>
+      </div>
+
+      {/* Advanced Filters */}
+      <div className="flex flex-wrap items-center gap-3 p-4 bg-muted/30 rounded-lg border">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Filter className="h-4 w-4" />
+          <span>Filtrar por:</span>
+        </div>
+        
+        <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as StatusFilter)}>
+          <SelectTrigger className="w-40 bg-background">
+            <SelectValue placeholder="Estado" />
+          </SelectTrigger>
+          <SelectContent>
+            {STATUS_FILTER_OPTIONS.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                <div className="flex items-center gap-2">
+                  {option.color && (
+                    <span className={`w-2 h-2 rounded-full ${option.color}`} />
+                  )}
+                  <span>{option.label}</span>
+                  {option.value !== 'all' && (
+                    <Badge variant="secondary" className="ml-1 text-xs px-1.5 py-0">
+                      {getStatusFilterCount(option.value)}
+                    </Badge>
+                  )}
+                </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        
+        <Select value={filterProduct} onValueChange={setFilterProduct}>
+          <SelectTrigger className="w-56 bg-background">
+            <SelectValue placeholder="Producto" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos los productos</SelectItem>
+            {allProducts.map((product) => (
+              <SelectItem key={product} value={product}>
+                {product}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {hasActiveFilters && (
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => { setFilterStatus('all'); setFilterProduct('all'); }}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            Limpiar filtros
+          </Button>
+        )}
+        
+        {hasActiveFilters && (
+          <Badge variant="outline" className="ml-auto">
+            {filteredCustomers.length} de {customers.length} clientes
+          </Badge>
+        )}
       </div>
 
       {/* Summary Cards */}
