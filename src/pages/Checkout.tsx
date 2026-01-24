@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, MessageCircle, Loader2, MapPin, Store } from 'lucide-react';
+import { ArrowLeft, MessageCircle, Loader2, MapPin, Store, CreditCard, Banknote, Wallet, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -18,6 +18,19 @@ import { z } from 'zod';
 
 type CheckoutStep = 'form' | 'success';
 type DeliveryType = 'pickup' | 'delivery';
+
+// Payment methods by currency
+const USD_PAYMENT_METHODS = [
+  { id: 'usdt', label: 'USDT (Crypto)', icon: Wallet },
+  { id: 'zinli', label: 'Zinli', icon: CreditCard },
+  { id: 'zelle', label: 'Zelle', icon: CreditCard },
+  { id: 'cash_usd', label: 'Divisas en Efectivo', icon: Banknote },
+];
+
+const VES_PAYMENT_METHODS = [
+  { id: 'pago_movil', label: 'Pago Móvil', icon: CreditCard },
+  { id: 'transferencia', label: 'Transferencia Bancaria', icon: Building2 },
+];
 
 // Validate Google Maps URL pattern
 const isValidMapsUrl = (url: string): boolean => {
@@ -46,6 +59,7 @@ const checkoutSchema = z.object({
     { message: 'Debe ser un enlace válido de Google Maps' }
   ),
   notes: z.string().trim().max(500).optional(),
+  paymentMethod: z.string().min(1, 'Selecciona un método de pago'),
 });
 
 const Checkout = () => {
@@ -64,6 +78,7 @@ const Checkout = () => {
     deliveryAddress: '',
     deliveryMapsUrl: '',
     notes: '',
+    paymentMethod: '',
   });
   const [paymentCurrency, setPaymentCurrency] = useState<'USD' | 'VES'>(
     displayMode === 'solo_ves' ? 'VES' : 'USD'
@@ -74,6 +89,25 @@ const Checkout = () => {
 
   const prices = getPrices(subtotal);
   const whatsappNumber = config?.whatsapp || '584249056438';
+  
+  // Get available payment methods based on currency
+  const availablePaymentMethods = paymentCurrency === 'USD' ? USD_PAYMENT_METHODS : VES_PAYMENT_METHODS;
+  
+  // Get payment method label
+  const getPaymentMethodLabel = (methodId: string): string => {
+    const allMethods = [...USD_PAYMENT_METHODS, ...VES_PAYMENT_METHODS];
+    return allMethods.find(m => m.id === methodId)?.label || methodId;
+  };
+
+  // Reset payment method when currency changes
+  const handleCurrencyChange = (newCurrency: 'USD' | 'VES') => {
+    setPaymentCurrency(newCurrency);
+    // Reset payment method since options change based on currency
+    setFormData(prev => ({ ...prev, paymentMethod: '' }));
+    if (errors.paymentMethod) {
+      setErrors(prev => ({ ...prev, paymentMethod: '' }));
+    }
+  };
 
   if (items.length === 0) {
     navigate('/carrito');
@@ -124,6 +158,8 @@ const Checkout = () => {
       }
     }
 
+    const paymentMethodLabel = getPaymentMethodLabel(formData.paymentMethod);
+
     const message = `Hola 👋 Soy ${formData.firstName} ${formData.lastName}. Quiero realizar el siguiente pedido en Catarsis.
 
 *Pedido:*
@@ -131,13 +167,17 @@ ${itemLines}
 
 *Total: ${totalStr}*${entregaSection}
 
+*💳 Método de pago preferido:*
+Moneda: ${paymentCurrency === 'USD' ? 'Dólares (USD)' : 'Bolívares (VES)'}
+Método: ${paymentMethodLabel}
+
+_Por favor envíame los datos para realizar el pago_ 🙏
+
 *Datos del cliente:*
 Teléfono: ${normalizePhone(formData.phone)}
 Correo: ${formData.email.toLowerCase()}
 
-*Orden:* #${orderIdParam.slice(0, 8).toUpperCase()}
-
-_Esperando instrucciones de pago_ 💳`;
+*Orden:* #${orderIdParam.slice(0, 8).toUpperCase()}`;
 
     return message;
   };
@@ -198,7 +238,7 @@ _Esperando instrucciones de pago_ 💳`;
           currency_mode: paymentCurrency,
           payment_currency: paymentCurrency,
           exchange_rate: paymentCurrency === 'VES' ? exchangeRate : null,
-          payment_method: 'pending_whatsapp',
+          payment_method: formData.paymentMethod,
           notes: formData.notes.trim() || null,
           delivery_type: deliveryType,
           delivery_address: deliveryType === 'delivery' ? formData.deliveryAddress.trim() || null : null,
@@ -438,34 +478,94 @@ _Esperando instrucciones de pago_ 💳`;
             </CardContent>
           </Card>
 
-          {/* Currency Selection (only if displayMode is 'ambas') */}
-          {displayMode === 'ambas' && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Moneda de Referencia</CardTitle>
-              </CardHeader>
-              <CardContent>
+          {/* Currency and Payment Method Selection */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Método de Pago *</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Currency Selection */}
+              {displayMode === 'ambas' && (
+                <div className="space-y-3">
+                  <Label className="text-sm font-medium">¿En qué moneda deseas pagar?</Label>
+                  <RadioGroup
+                    value={paymentCurrency}
+                    onValueChange={(value) => handleCurrencyChange(value as 'USD' | 'VES')}
+                    className="grid grid-cols-2 gap-3"
+                  >
+                    <Label
+                      htmlFor="currency-usd"
+                      className={`flex flex-col items-center gap-1 p-4 rounded-lg border-2 cursor-pointer transition-all text-center ${
+                        paymentCurrency === 'USD' 
+                          ? 'border-primary bg-primary/5' 
+                          : 'border-border hover:border-primary/50'
+                      }`}
+                    >
+                      <RadioGroupItem value="USD" id="currency-usd" className="sr-only" />
+                      <Banknote className="h-5 w-5 text-primary" />
+                      <span className="font-medium">Dólares (USD)</span>
+                      <span className="text-xs text-muted-foreground">{prices.formattedUSD}</span>
+                    </Label>
+                    <Label
+                      htmlFor="currency-ves"
+                      className={`flex flex-col items-center gap-1 p-4 rounded-lg border-2 cursor-pointer transition-all text-center ${
+                        paymentCurrency === 'VES' 
+                          ? 'border-primary bg-primary/5' 
+                          : 'border-border hover:border-primary/50'
+                      }`}
+                    >
+                      <RadioGroupItem value="VES" id="currency-ves" className="sr-only" />
+                      <Building2 className="h-5 w-5 text-primary" />
+                      <span className="font-medium">Bolívares (VES)</span>
+                      <span className="text-xs text-muted-foreground">{prices.formattedVES}</span>
+                    </Label>
+                  </RadioGroup>
+                </div>
+              )}
+
+              {/* Payment Method Selection */}
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">
+                  {paymentCurrency === 'USD' ? 'Método de pago en dólares' : 'Método de pago en bolívares'}
+                </Label>
                 <RadioGroup
-                  value={paymentCurrency}
-                  onValueChange={(value) => setPaymentCurrency(value as 'USD' | 'VES')}
-                  className="flex gap-4"
+                  value={formData.paymentMethod}
+                  onValueChange={(value) => handleInputChange('paymentMethod', value)}
+                  className="grid grid-cols-2 gap-3"
                 >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="USD" id="currency-usd" />
-                    <Label htmlFor="currency-usd" className="cursor-pointer">
-                      USD ({prices.formattedUSD})
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="VES" id="currency-ves" />
-                    <Label htmlFor="currency-ves" className="cursor-pointer">
-                      Bolívares ({prices.formattedVES})
-                    </Label>
-                  </div>
+                  {availablePaymentMethods.map((method) => {
+                    const IconComponent = method.icon;
+                    return (
+                      <Label
+                        key={method.id}
+                        htmlFor={`payment-${method.id}`}
+                        className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                          formData.paymentMethod === method.id 
+                            ? 'border-primary bg-primary/5' 
+                            : 'border-border hover:border-primary/50'
+                        }`}
+                      >
+                        <RadioGroupItem value={method.id} id={`payment-${method.id}`} className="sr-only" />
+                        <IconComponent className="h-5 w-5 text-primary shrink-0" />
+                        <span className="font-medium text-sm">{method.label}</span>
+                      </Label>
+                    );
+                  })}
                 </RadioGroup>
-              </CardContent>
-            </Card>
-          )}
+                {errors.paymentMethod && (
+                  <p className="text-xs text-destructive">{errors.paymentMethod}</p>
+                )}
+              </div>
+
+              {/* Info note */}
+              <div className="bg-muted/50 rounded-lg p-3 text-sm text-muted-foreground">
+                <p className="flex items-start gap-2">
+                  <MessageCircle className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                  <span>Te enviaremos los datos de pago por WhatsApp según el método que selecciones.</span>
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Order Summary */}
