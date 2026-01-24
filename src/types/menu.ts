@@ -1,5 +1,6 @@
 export type MenuCategory = 
-  | 'todos' 
+  | 'todos'
+  | 'best-seller'
   | 'entradas' 
   | 'hamburguesas' 
   | 'emparedados' 

@@ -7,9 +7,12 @@ interface MenuGridProps {
   currency: Currency;
   selectedCategory: MenuCategory;
   displayMode?: PriceDisplayMode;
+  bestSellers?: MenuItem[];
 }
 
-const categoryTitles: Record<Exclude<MenuCategory, 'todos'>, { title: string; subtitle: string }> = {
+type ProductCategory = Exclude<MenuCategory, 'todos' | 'best-seller'>;
+
+const categoryTitles: Record<ProductCategory, { title: string; subtitle: string }> = {
   entradas: {
     title: 'Entradas & Aperitivos',
     subtitle: 'El comienzo perfecto para una experiencia gastronómica inolvidable.',
@@ -44,7 +47,44 @@ const categoryTitles: Record<Exclude<MenuCategory, 'todos'>, { title: string; su
   },
 };
 
-export const MenuGrid = ({ items, currency, selectedCategory, displayMode = 'ambas' }: MenuGridProps) => {
+export const MenuGrid = ({ items, currency, selectedCategory, displayMode = 'ambas', bestSellers = [] }: MenuGridProps) => {
+  // Handle best-seller category
+  if (selectedCategory === 'best-seller') {
+    if (bestSellers.length === 0) {
+      return (
+        <section className="container px-4 py-16 text-center">
+          <p className="text-muted-foreground text-lg">
+            Aún no hay suficientes ventas para mostrar los más vendidos.
+          </p>
+        </section>
+      );
+    }
+
+    return (
+      <section className="container px-4 py-8">
+        <div className="mb-6 space-y-1">
+          <h2 className="text-2xl md:text-3xl font-display font-black text-foreground">
+            🔥 Best Seller
+          </h2>
+          <p className="text-muted-foreground text-sm md:text-base max-w-2xl">
+            Los favoritos de nuestros clientes. Los 8 platos más pedidos del menú.
+          </p>
+        </div>
+        
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {bestSellers.map(item => (
+            <MenuCard 
+              key={item.id} 
+              item={item} 
+              currency={currency}
+              displayMode={displayMode}
+            />
+          ))}
+        </div>
+      </section>
+    );
+  }
+
   const filteredItems = selectedCategory === 'todos' 
     ? items 
     : items.filter(item => item.categoria === selectedCategory);
@@ -74,15 +114,15 @@ export const MenuGrid = ({ items, currency, selectedCategory, displayMode = 'amb
   }
 
   if (selectedCategory !== 'todos') {
-    const categoryInfo = categoryTitles[selectedCategory];
+    const categoryInfo = categoryTitles[selectedCategory as ProductCategory];
     return (
       <section className="container px-4 py-8">
         <div className="mb-6 space-y-1">
           <h2 className="text-2xl md:text-3xl font-display font-black text-foreground">
-            {categoryInfo.title}
+            {categoryInfo?.title || selectedCategory}
           </h2>
           <p className="text-muted-foreground text-sm md:text-base max-w-2xl">
-            {categoryInfo.subtitle}
+            {categoryInfo?.subtitle || ''}
           </p>
         </div>
         
@@ -105,7 +145,7 @@ export const MenuGrid = ({ items, currency, selectedCategory, displayMode = 'amb
     <div className="space-y-12 py-8">
       {groupedItems && Object.entries(groupedItems).map(([category, categoryItems]) => {
         if (categoryItems.length === 0) return null;
-        const categoryInfo = categoryTitles[category as Exclude<MenuCategory, 'todos'>];
+        const categoryInfo = categoryTitles[category as ProductCategory];
         
         return (
           <section key={category} id={category} className="container px-4 scroll-mt-32">

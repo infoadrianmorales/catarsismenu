@@ -12,7 +12,7 @@ import { useProducts } from '@/hooks/useProducts';
 
 const Index = () => {
   const { currency, toggleCurrency, displayMode } = useCurrency();
-  const { products, featuredProducts } = useProducts();
+  const { products, featuredProducts, bestSellers } = useProducts();
   const { 
     searchQuery, 
     setSearchQuery, 
@@ -52,6 +52,7 @@ const Index = () => {
         currency={currency}
         selectedCategory={selectedCategory}
         displayMode={displayMode}
+        bestSellers={bestSellers}
       />
       
       <Footer />

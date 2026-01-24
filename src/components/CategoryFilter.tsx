@@ -10,7 +10,8 @@ import {
   Salad, 
   Wine, 
   Cake,
-  LayoutGrid
+  LayoutGrid,
+  TrendingUp
 } from 'lucide-react';
 
 interface CategoryFilterProps {
@@ -26,6 +27,7 @@ interface CategoryOption {
 
 const categories: CategoryOption[] = [
   { id: 'todos', label: 'Todos', icon: <LayoutGrid className="h-4 w-4" /> },
+  { id: 'best-seller', label: 'Best Seller', icon: <TrendingUp className="h-4 w-4" /> },
   { id: 'entradas', label: 'Entradas', icon: <UtensilsCrossed className="h-4 w-4" /> },
   { id: 'hamburguesas', label: 'Hamburguesas', icon: <Beef className="h-4 w-4" /> },
   { id: 'emparedados', label: 'Emparedados', icon: <Sandwich className="h-4 w-4" /> },
