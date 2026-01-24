@@ -104,19 +104,29 @@ const Checkout = () => {
   const prices = getPrices(subtotal);
   const whatsappNumber = config?.whatsapp || '584249056438';
 
+  // Track InitiateCheckout once when entering checkout
+  const hasTrackedCheckoutRef = useRef(false);
+  
+  useEffect(() => {
+    if (items.length === 0) return;
+    
+    // Track InitiateCheckout event for Meta Pixel (only once)
+    if (!hasTrackedCheckoutRef.current) {
+      trackInitiateCheckout(
+        items.map(item => ({
+          id: item.id,
+          precio_usd: item.precio_usd,
+          quantity: item.quantity,
+        })),
+        subtotal
+      );
+      hasTrackedCheckoutRef.current = true;
+    }
+  }, [items, subtotal]);
+
   // Track pending checkout for abandoned cart detection
   useEffect(() => {
     if (items.length === 0) return;
-
-    // Track InitiateCheckout event for Meta Pixel
-    trackInitiateCheckout(
-      items.map(item => ({
-        id: item.id,
-        precio_usd: item.precio_usd,
-        quantity: item.quantity,
-      })),
-      subtotal
-    );
 
     const sessionId = getSessionId();
     const cartItems = items.map(item => ({
@@ -328,6 +338,10 @@ Correo: ${formData.email.toLowerCase()}
     }
 
     setIsSubmitting(true);
+    
+    // Save cart data before clearing for tracking
+    const cartItemsForTracking = items.map(item => ({ id: item.id, quantity: item.quantity }));
+    const cartSubtotal = subtotal;
 
     try {
       // Find or create customer
@@ -419,11 +433,11 @@ Correo: ${formData.email.toLowerCase()}
       
       window.open(whatsappUrl, '_blank');
       
-      // Track Meta Pixel events
+      // Track Meta Pixel events (using saved cart data)
       trackPurchase(
         generatedOrderNumber,
-        subtotal,
-        items.map(item => ({ id: item.id, quantity: item.quantity }))
+        cartSubtotal,
+        cartItemsForTracking
       );
       trackContact('checkout_whatsapp');
       
