@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Loader2, LogOut, Settings, Package, Megaphone, Users, Layers, ShoppingBag, UserCheck, CreditCard } from 'lucide-react';
+import { Loader2, LogOut, Settings, Package, Megaphone, Users, Layers, ShoppingBag, UserCheck, CreditCard, Image } from 'lucide-react';
 import { ConfigPanel } from '@/components/admin/ConfigPanel';
 import { ProductsPanel } from '@/components/admin/ProductsPanel';
 import { PromotionsPanel } from '@/components/admin/PromotionsPanel';
@@ -12,6 +12,7 @@ import { CategoriesPanel } from '@/components/admin/CategoriesPanel';
 import { OrdersPanel } from '@/components/admin/OrdersPanel';
 import { CustomersPanel } from '@/components/admin/CustomersPanel';
 import { PaymentMethodsPanel } from '@/components/admin/PaymentMethodsPanel';
+import { HeroSlidesPanel } from '@/components/admin/HeroSlidesPanel';
 
 const Admin = () => {
   const { user, isAdmin, loading, roleLoading, signOut } = useAuth();
@@ -73,7 +74,7 @@ const Admin = () => {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6">
         <Tabs defaultValue="orders" className="w-full">
-          <TabsList className="grid w-full grid-cols-8 mb-6">
+          <TabsList className="grid w-full grid-cols-9 mb-6">
             <TabsTrigger value="orders" className="gap-2">
               <ShoppingBag className="h-4 w-4" />
               <span className="hidden sm:inline">Órdenes</span>
@@ -85,6 +86,10 @@ const Admin = () => {
             <TabsTrigger value="payments" className="gap-2">
               <CreditCard className="h-4 w-4" />
               <span className="hidden sm:inline">Pagos</span>
+            </TabsTrigger>
+            <TabsTrigger value="hero" className="gap-2">
+              <Image className="h-4 w-4" />
+              <span className="hidden sm:inline">Banner</span>
             </TabsTrigger>
             <TabsTrigger value="config" className="gap-2">
               <Settings className="h-4 w-4" />
@@ -118,6 +123,10 @@ const Admin = () => {
 
           <TabsContent value="payments">
             <PaymentMethodsPanel />
+          </TabsContent>
+
+          <TabsContent value="hero">
+            <HeroSlidesPanel />
           </TabsContent>
 
           <TabsContent value="config">
