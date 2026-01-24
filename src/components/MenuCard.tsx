@@ -47,13 +47,13 @@ export const MenuCard = ({ item, currency, displayMode = 'ambas' }: MenuCardProp
     <Card className="group overflow-hidden border-border/40 bg-card hover:border-primary/50 transition-all duration-200 hover:shadow-glow hover:-translate-y-1">
       <CardContent className="p-0">
         {/* White-background image container */}
-        <div className="relative p-2">
+        <div className="relative p-1.5 sm:p-2">
           <div className="relative aspect-square overflow-hidden rounded-lg bg-white border border-foreground/10 shadow-md">
             <img 
               src={item.imagen} 
               alt={`Foto de ${item.nombre} sobre fondo blanco`}
               loading="lazy"
-              className="h-full w-full object-cover p-2 transition-transform duration-300 ease-out group-hover:scale-110"
+              className="h-full w-full object-cover p-1.5 sm:p-2 transition-transform duration-300 ease-out group-hover:scale-110 group-active:scale-105"
             />
           </div>
         </div>
