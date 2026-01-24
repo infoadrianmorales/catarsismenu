@@ -11,6 +11,8 @@ import Admin from "./pages/Admin";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import OrderConfirmed from "./pages/OrderConfirmed";
+import CategoryPage from "./pages/CategoryPage";
+import ProductPage from "./pages/ProductPage";
 import NotFound from "./pages/NotFound";
 import { FloatingWhatsApp } from "./components/FloatingWhatsApp";
 
@@ -24,6 +26,8 @@ const AppContent = () => {
     <>
       <Routes>
         <Route path="/" element={<Index />} />
+        <Route path="/categoria/:slug" element={<CategoryPage />} />
+        <Route path="/producto/:slug" element={<ProductPage />} />
         <Route path="/legal" element={<Legal />} />
         <Route path="/auth" element={<Auth />} />
         <Route path="/admin" element={<Admin />} />
