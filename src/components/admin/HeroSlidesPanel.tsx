@@ -8,7 +8,7 @@ import { useHeroSlides } from '@/hooks/useHeroSlides';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-const MAX_FILE_SIZE = 512 * 1024; // 512KB
+const MAX_FILE_SIZE = 3 * 1024 * 1024; // 3MB
 const RECOMMENDED_WIDTH = 1920;
 const RECOMMENDED_HEIGHT = 1080;
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -31,7 +31,7 @@ export const HeroSlidesPanel = () => {
 
     // Validate file size
     if (file.size > MAX_FILE_SIZE) {
-      toast.error(`La imagen es muy pesada. Máximo ${MAX_FILE_SIZE / 1024}KB.`);
+      toast.error(`La imagen es muy pesada. Máximo ${MAX_FILE_SIZE / (1024 * 1024)}MB.`);
       return;
     }
 
@@ -119,7 +119,7 @@ export const HeroSlidesPanel = () => {
               <strong>Especificaciones:</strong>
               <ul className="list-disc list-inside mt-1 text-sm">
                 <li>Dimensiones: <strong>{RECOMMENDED_WIDTH}x{RECOMMENDED_HEIGHT}px</strong> (16:9)</li>
-                <li>Tamaño máximo: <strong>{MAX_FILE_SIZE / 1024}KB</strong></li>
+                <li>Tamaño máximo: <strong>{MAX_FILE_SIZE / (1024 * 1024)}MB</strong></li>
                 <li>Formatos: JPG, PNG, WebP</li>
               </ul>
             </AlertDescription>
