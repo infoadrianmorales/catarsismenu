@@ -12,7 +12,7 @@ export const SearchBar = ({ value, onChange }: SearchBarProps) => {
     <div className="container px-4 py-8">
       <div className="relative max-w-2xl mx-auto">
         {/* Glow effect background */}
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-accent/20 to-primary/20 rounded-full blur-xl opacity-60" />
+        <div className="absolute inset-0 bg-secondary/40 rounded-full blur-xl" />
         
         <div className="relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-6 w-6 text-primary" />
