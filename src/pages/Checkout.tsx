@@ -547,31 +547,65 @@ Correo: ${formData.email.toLowerCase()}
         )}
 
         {step === 'success' && (
-          <div className="max-w-md mx-auto text-center py-12">
-            <div className="mb-8">
-              <div className="w-20 h-20 bg-secondary/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                <span className="text-4xl">✅</span>
+          <div className="max-w-md mx-auto text-center py-8 sm:py-12 px-4">
+            {/* Success Icon */}
+            <div className="mb-6">
+              <div className="w-24 h-24 bg-gradient-to-br from-secondary/30 to-primary/20 rounded-full flex items-center justify-center mx-auto mb-4 animate-in zoom-in duration-300">
+                <span className="text-5xl">🎉</span>
               </div>
-              <h1 className="text-2xl font-display font-bold mb-3">
-                ¡Listo! Gracias 💛
+              <h1 className="text-2xl sm:text-3xl font-display font-bold mb-2">
+                ¡Pedido listo! 🎉
               </h1>
-              <p className="text-muted-foreground">
-                ¿Se te antoja algo más?
+              <p className="text-muted-foreground text-lg">
+                Gracias por tu orden 💛
               </p>
-              {orderId && (
-                <p className="text-sm text-muted-foreground mt-2">
-                  Orden: #{orderId.slice(0, 8).toUpperCase()}
-                </p>
-              )}
+              <p className="text-muted-foreground mt-1">
+                ¿Quieres seguir viendo el menú o sumar algo más?
+              </p>
             </div>
-            
-            <Button 
-              size="lg" 
-              className="w-full gap-2 text-lg py-6"
-              onClick={() => navigate('/')}
-            >
-              Seguir comprando 🛒
-            </Button>
+
+            {/* Order ID Badge */}
+            {orderId && (
+              <div className="inline-flex items-center gap-2 bg-muted/50 rounded-full px-4 py-2 mb-6">
+                <span className="text-xs text-muted-foreground">Orden:</span>
+                <span className="font-mono font-medium text-sm">
+                  #{orderId.slice(0, 8).toUpperCase()}
+                </span>
+              </div>
+            )}
+
+            {/* Cart Reset Notice */}
+            <div className="bg-secondary/10 border border-secondary/20 rounded-lg p-3 mb-6">
+              <p className="text-sm text-secondary flex items-center justify-center gap-2">
+                <span>✨</span>
+                Carrito reiniciado para tu próxima orden
+              </p>
+            </div>
+
+            {/* CTAs */}
+            <div className="space-y-3">
+              <Button 
+                size="lg" 
+                className="w-full gap-2 text-lg py-6"
+                onClick={() => navigate('/')}
+              >
+                Seguir comprando 🛒
+              </Button>
+              
+              <Button 
+                variant="outline"
+                size="lg" 
+                className="w-full gap-2"
+                onClick={() => navigate('/#menu')}
+              >
+                Ver Best Sellers 🔥
+              </Button>
+            </div>
+
+            {/* Friendly footer message */}
+            <p className="text-xs text-muted-foreground mt-8">
+              Tu pedido fue enviado por WhatsApp. ¡Te contactaremos pronto!
+            </p>
           </div>
         )}
       </div>
