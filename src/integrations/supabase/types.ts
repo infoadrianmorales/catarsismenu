@@ -155,7 +155,12 @@ export type Database = {
           first_name: string
           id: string
           last_name: string
+          notes: string | null
+          payment_confirmed_at: string | null
+          payment_currency: string
+          payment_instructions_snapshot: string | null
           payment_method: string
+          payment_reference: string | null
           phone: string
           status: string
           subtotal: number
@@ -172,7 +177,12 @@ export type Database = {
           first_name: string
           id?: string
           last_name: string
+          notes?: string | null
+          payment_confirmed_at?: string | null
+          payment_currency?: string
+          payment_instructions_snapshot?: string | null
           payment_method: string
+          payment_reference?: string | null
           phone: string
           status?: string
           subtotal: number
@@ -189,7 +199,12 @@ export type Database = {
           first_name?: string
           id?: string
           last_name?: string
+          notes?: string | null
+          payment_confirmed_at?: string | null
+          payment_currency?: string
+          payment_instructions_snapshot?: string | null
           payment_method?: string
+          payment_reference?: string | null
           phone?: string
           status?: string
           subtotal?: number
@@ -206,6 +221,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      payment_methods: {
+        Row: {
+          created_at: string
+          display_order: number
+          enabled: boolean
+          id: string
+          instructions_usd: string | null
+          instructions_ves: string | null
+          label: string
+          supports_usd: boolean
+          supports_ves: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          enabled?: boolean
+          id: string
+          instructions_usd?: string | null
+          instructions_ves?: string | null
+          label: string
+          supports_usd?: boolean
+          supports_ves?: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          enabled?: boolean
+          id?: string
+          instructions_usd?: string | null
+          instructions_ves?: string | null
+          label?: string
+          supports_usd?: boolean
+          supports_ves?: boolean
+          updated_at?: string
+        }
+        Relationships: []
       }
       products: {
         Row: {
