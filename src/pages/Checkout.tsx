@@ -103,6 +103,7 @@ const Checkout = () => {
 ${itemLines}
 
 *Total: ${totalStr}*
+⚠️ _Este monto no incluye el costo del delivery._
 
 *Moneda de pago:* ${paymentCurrency}
 *Método de pago:* ${paymentMethodLabel}
