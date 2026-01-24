@@ -9,7 +9,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, Eye, RefreshCw, Copy, Check, Clock, CreditCard, XCircle, DollarSign, ShoppingBag, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { format, isToday, startOfWeek, isWithinInterval, differenceInMinutes } from 'date-fns';
+import { format, isToday, startOfWeek, isWithinInterval } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 interface Order {
@@ -39,14 +39,23 @@ interface OrderItem {
 
 type OrderTab = 'new' | 'pending' | 'paid' | 'canceled' | 'all';
 
+// Status options for the dropdown selector (simplified to 3 options)
 const STATUS_OPTIONS = [
-  { value: 'NEW', label: 'Nuevo', color: 'bg-blue-500' },
-  { value: 'IN_PROGRESS', label: 'En Proceso', color: 'bg-yellow-500' },
-  { value: 'PAYMENT_SUBMITTED', label: 'Pago Enviado', color: 'bg-orange-500' },
   { value: 'PAID', label: 'Pagado', color: 'bg-green-500' },
-  { value: 'DELIVERED', label: 'Entregado', color: 'bg-purple-500' },
+  { value: 'PENDING', label: 'Pendiente', color: 'bg-yellow-500' },
   { value: 'CANCELED', label: 'Cancelado', color: 'bg-red-500' },
 ];
+
+// Display configuration for all statuses (for badges)
+const STATUS_DISPLAY: Record<string, { label: string; color: string }> = {
+  NEW: { label: 'Nuevo', color: 'bg-blue-500' },
+  PENDING: { label: 'Pendiente', color: 'bg-yellow-500' },
+  IN_PROGRESS: { label: 'En Proceso', color: 'bg-yellow-500' },
+  PAYMENT_SUBMITTED: { label: 'Pago Enviado', color: 'bg-orange-500' },
+  PAID: { label: 'Pagado', color: 'bg-green-500' },
+  DELIVERED: { label: 'Entregado', color: 'bg-purple-500' },
+  CANCELED: { label: 'Cancelado', color: 'bg-red-500' },
+};
 
 const PAYMENT_LABELS: Record<string, string> = {
   PAGOMOVIL: 'Pago Móvil',
@@ -79,18 +88,13 @@ const TAB_CONFIG: Record<OrderTab, { label: string; icon: React.ReactNode }> = {
   },
 };
 
-// Time threshold for moving orders from "Nuevas" to "Pendientes" (60 minutes)
-const NEW_ORDER_THRESHOLD_MINUTES = 60;
-
-// Classify an order into the appropriate tab based on status and time
+// Classify an order into the appropriate tab based on status
+// NEW orders always go to "Nuevas" (no time-based rule)
 const classifyOrder = (order: Order): OrderTab => {
   if (order.status === 'CANCELED') return 'canceled';
   if (order.status === 'PAID' || order.status === 'DELIVERED') return 'paid';
-  if (order.status === 'NEW') {
-    const minutesSinceCreation = differenceInMinutes(new Date(), new Date(order.created_at));
-    return minutesSinceCreation < NEW_ORDER_THRESHOLD_MINUTES ? 'new' : 'pending';
-  }
-  if (['IN_PROGRESS', 'PAYMENT_SUBMITTED'].includes(order.status)) return 'pending';
+  if (order.status === 'NEW') return 'new';
+  if (['IN_PROGRESS', 'PAYMENT_SUBMITTED', 'PENDING'].includes(order.status)) return 'pending';
   return 'all';
 };
 
@@ -215,10 +219,10 @@ export const OrdersPanel = () => {
   };
 
   const getStatusBadge = (status: string) => {
-    const statusConfig = STATUS_OPTIONS.find(s => s.value === status);
+    const statusConfig = STATUS_DISPLAY[status] || { label: status, color: 'bg-gray-500' };
     return (
-      <Badge className={`${statusConfig?.color || 'bg-gray-500'} text-white`}>
-        {statusConfig?.label || status}
+      <Badge className={`${statusConfig.color} text-white`}>
+        {statusConfig.label}
       </Badge>
     );
   };
@@ -257,7 +261,7 @@ export const OrdersPanel = () => {
             </div>
             <div>
               <p className="text-2xl font-bold">{kpis.newOrders}</p>
-              <p className="text-xs text-muted-foreground">Nuevas (&lt;60 min)</p>
+              <p className="text-xs text-muted-foreground">Nuevas</p>
             </div>
           </CardContent>
         </Card>
