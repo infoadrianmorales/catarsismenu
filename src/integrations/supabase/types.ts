@@ -24,6 +24,7 @@ export type Database = {
           nombre: string
           orden: number
           slug: string
+          type: string
           updated_at: string | null
         }
         Insert: {
@@ -35,6 +36,7 @@ export type Database = {
           nombre: string
           orden?: number
           slug: string
+          type?: string
           updated_at?: string | null
         }
         Update: {
@@ -46,6 +48,7 @@ export type Database = {
           nombre?: string
           orden?: number
           slug?: string
+          type?: string
           updated_at?: string | null
         }
         Relationships: []
@@ -398,7 +401,24 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      best_sellers_food: {
+        Row: {
+          activo: boolean | null
+          categoria: Database["public"]["Enums"]["product_category"] | null
+          descripcion_corta: string | null
+          destacado: boolean | null
+          id: string | null
+          imagen_url: string | null
+          is_orderable: boolean | null
+          nombre: string | null
+          orden: number | null
+          precio_usd: number | null
+          slug: string | null
+          tags: string[] | null
+          total_sold: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       find_or_create_customer: {
