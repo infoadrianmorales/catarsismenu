@@ -182,6 +182,7 @@ export type Database = {
           customer_id: string | null
           delivery_address: string | null
           delivery_maps_url: string | null
+          delivery_type: string | null
           email: string
           exchange_rate: number | null
           first_name: string
@@ -206,6 +207,7 @@ export type Database = {
           customer_id?: string | null
           delivery_address?: string | null
           delivery_maps_url?: string | null
+          delivery_type?: string | null
           email: string
           exchange_rate?: number | null
           first_name: string
@@ -230,6 +232,7 @@ export type Database = {
           customer_id?: string | null
           delivery_address?: string | null
           delivery_maps_url?: string | null
+          delivery_type?: string | null
           email?: string
           exchange_rate?: number | null
           first_name?: string
