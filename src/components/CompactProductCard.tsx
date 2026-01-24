@@ -1,8 +1,10 @@
+import { memo } from 'react';
 import { Link } from 'react-router-dom';
 import { MenuItem, Currency } from '@/types/menu';
 import { Card, CardContent } from '@/components/ui/card';
 import { useCurrency, PriceDisplayMode } from '@/hooks/useCurrency';
 import { AddToCartButton } from '@/components/cart/AddToCartButton';
+import { OptimizedImage } from '@/components/OptimizedImage';
 
 interface CompactProductCardProps {
   item: MenuItem;
@@ -10,7 +12,7 @@ interface CompactProductCardProps {
   displayMode?: PriceDisplayMode;
 }
 
-export const CompactProductCard = ({ item, currency, displayMode = 'ambas' }: CompactProductCardProps) => {
+export const CompactProductCard = memo(({ item, currency, displayMode = 'ambas' }: CompactProductCardProps) => {
   const { getPrices } = useCurrency();
   const prices = getPrices(item.precio_usd);
 
@@ -40,11 +42,11 @@ export const CompactProductCard = ({ item, currency, displayMode = 'ambas' }: Co
         <Link to={`/producto/${item.slug}`} className="block shrink-0">
           <div className="relative p-1 sm:p-1.5">
             <div className="relative aspect-square overflow-hidden rounded-lg bg-white border border-foreground/10 shadow-sm">
-              <img 
+              <OptimizedImage 
                 src={item.imagen} 
                 alt={`Foto de ${item.nombre}`}
-                loading="lazy"
                 className="h-full w-full object-cover p-1 sm:p-1.5 transition-transform duration-300 ease-out group-hover:scale-110 group-active:scale-105"
+                containerClassName="h-full w-full"
               />
             </div>
           </div>
@@ -72,4 +74,6 @@ export const CompactProductCard = ({ item, currency, displayMode = 'ambas' }: Co
       </CardContent>
     </Card>
   );
-};
+});
+
+CompactProductCard.displayName = 'CompactProductCard';

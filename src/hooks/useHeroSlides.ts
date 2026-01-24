@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useMemo, useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface HeroSlide {
@@ -8,33 +9,29 @@ export interface HeroSlide {
   activo: boolean;
 }
 
+// Fetch hero slides from Supabase
+const fetchHeroSlides = async (): Promise<HeroSlide[]> => {
+  const { data, error } = await supabase
+    .from('hero_slides')
+    .select('*')
+    .order('orden', { ascending: true });
+
+  if (error) throw error;
+  return data || [];
+};
+
 export const useHeroSlides = () => {
-  const [slides, setSlides] = useState<HeroSlide[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
-  const fetchSlides = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('hero_slides')
-        .select('*')
-        .order('orden', { ascending: true });
+  const { data: slides = [], isLoading: loading, error, refetch } = useQuery({
+    queryKey: ['hero-slides'],
+    queryFn: fetchHeroSlides,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: false,
+  });
 
-      if (error) throw error;
-      setSlides(data || []);
-    } catch (err) {
-      console.error('Error fetching hero slides:', err);
-      setError('Error al cargar slides');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchSlides();
-  }, []);
-
-  const addSlide = async (imageUrl: string): Promise<boolean> => {
+  const addSlide = useCallback(async (imageUrl: string): Promise<boolean> => {
     try {
       const maxOrden = slides.length > 0 ? Math.max(...slides.map(s => s.orden)) + 1 : 0;
       
@@ -43,15 +40,15 @@ export const useHeroSlides = () => {
         .insert({ image_url: imageUrl, orden: maxOrden });
 
       if (error) throw error;
-      await fetchSlides();
+      await queryClient.invalidateQueries({ queryKey: ['hero-slides'] });
       return true;
     } catch (err) {
       console.error('Error adding slide:', err);
       return false;
     }
-  };
+  }, [slides, queryClient]);
 
-  const deleteSlide = async (id: string, imageUrl: string): Promise<boolean> => {
+  const deleteSlide = useCallback(async (id: string, imageUrl: string): Promise<boolean> => {
     try {
       // Delete from database
       const { error: dbError } = await supabase
@@ -68,15 +65,15 @@ export const useHeroSlides = () => {
         await supabase.storage.from('hero-slides').remove([filePath]);
       }
 
-      await fetchSlides();
+      await queryClient.invalidateQueries({ queryKey: ['hero-slides'] });
       return true;
     } catch (err) {
       console.error('Error deleting slide:', err);
       return false;
     }
-  };
+  }, [queryClient]);
 
-  const reorderSlides = async (newOrder: HeroSlide[]): Promise<boolean> => {
+  const reorderSlides = useCallback(async (newOrder: HeroSlide[]): Promise<boolean> => {
     try {
       const updates = newOrder.map((slide, index) => ({
         id: slide.id,
@@ -93,26 +90,26 @@ export const useHeroSlides = () => {
         if (error) throw error;
       }
 
-      await fetchSlides();
+      await queryClient.invalidateQueries({ queryKey: ['hero-slides'] });
       return true;
     } catch (err) {
       console.error('Error reordering slides:', err);
       return false;
     }
-  };
+  }, [queryClient]);
 
-  // Get only active slides for public display
-  const activeSlides = slides.filter(s => s.activo);
+  // Get only active slides for public display - memoized
+  const activeSlides = useMemo(() => slides.filter(s => s.activo), [slides]);
 
   return {
     slides,
     activeSlides,
     loading,
-    error,
+    error: error?.message || null,
     addSlide,
     deleteSlide,
     reorderSlides,
-    refetch: fetchSlides,
+    refetch,
     canAddMore: slides.length < 5,
     canDelete: slides.length > 1,
   };
