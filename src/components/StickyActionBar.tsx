@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { PriceDisplayMode } from '@/hooks/useCurrency';
+import { CartButton } from '@/components/cart/CartButton';
 
 interface StickyActionBarProps {
   currency: Currency;
@@ -36,7 +37,6 @@ export const StickyActionBar = ({ currency, onCurrencyToggle, displayMode = 'amb
         await navigator.share(shareData);
       } else {
         await navigator.clipboard.writeText(window.location.href);
-        // Could show a toast here
       }
       
       window.dispatchEvent(new CustomEvent('analytics', {
@@ -89,6 +89,9 @@ export const StickyActionBar = ({ currency, onCurrencyToggle, displayMode = 'amb
             >
               <Share2 className="h-5 w-5" />
             </Button>
+            
+            {/* Cart Button - Prominent in mobile */}
+            <CartButton variant="sticky" />
             
             <Button
               size="sm"
