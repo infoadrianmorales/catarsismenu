@@ -180,6 +180,8 @@ export type Database = {
           created_at: string
           currency_mode: string
           customer_id: string | null
+          delivery_address: string | null
+          delivery_maps_url: string | null
           email: string
           exchange_rate: number | null
           first_name: string
@@ -202,6 +204,8 @@ export type Database = {
           created_at?: string
           currency_mode?: string
           customer_id?: string | null
+          delivery_address?: string | null
+          delivery_maps_url?: string | null
           email: string
           exchange_rate?: number | null
           first_name: string
@@ -224,6 +228,8 @@ export type Database = {
           created_at?: string
           currency_mode?: string
           customer_id?: string | null
+          delivery_address?: string | null
+          delivery_maps_url?: string | null
           email?: string
           exchange_rate?: number | null
           first_name?: string
