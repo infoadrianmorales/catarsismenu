@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { MenuHeader } from '@/components/MenuHeader';
 import { Footer } from '@/components/Footer';
 import { z } from 'zod';
+import { trackInitiateCheckout, trackPurchase, trackContact } from '@/lib/metaPixel';
 
 // Generate a unique session ID for abandoned cart tracking
 const getSessionId = (): string => {
@@ -106,6 +107,16 @@ const Checkout = () => {
   // Track pending checkout for abandoned cart detection
   useEffect(() => {
     if (items.length === 0) return;
+
+    // Track InitiateCheckout event for Meta Pixel
+    trackInitiateCheckout(
+      items.map(item => ({
+        id: item.id,
+        precio_usd: item.precio_usd,
+        quantity: item.quantity,
+      })),
+      subtotal
+    );
 
     const sessionId = getSessionId();
     const cartItems = items.map(item => ({
@@ -407,6 +418,14 @@ Correo: ${formData.email.toLowerCase()}
       const whatsappUrl = `https://wa.me/${cleanNumber}?text=${encodedMessage}`;
       
       window.open(whatsappUrl, '_blank');
+      
+      // Track Meta Pixel events
+      trackPurchase(
+        generatedOrderNumber,
+        subtotal,
+        items.map(item => ({ id: item.id, quantity: item.quantity }))
+      );
+      trackContact('checkout_whatsapp');
       
       toast.success('¡Pedido enviado correctamente!');
       setStep('success');

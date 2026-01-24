@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { MessageCircle, Instagram, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useHeroSlides } from '@/hooks/useHeroSlides';
 import heroImageFallback from '@/assets/banner-hero.png';
+import { trackContact } from '@/lib/metaPixel';
 
 export const HeroSection = () => {
   const { activeSlides, loading } = useHeroSlides();
@@ -47,6 +48,7 @@ export const HeroSection = () => {
     const message = encodeURIComponent('Hola, vengo del menú web de Catarsis. Quiero hacer un pedido.');
     window.open(`https://wa.me/${appConfig.whatsapp}?text=${message}`, '_blank');
     
+    trackContact('hero');
     window.dispatchEvent(new CustomEvent('analytics', {
       detail: { event: 'click_whatsapp', source: 'hero' }
     }));

@@ -6,6 +6,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { PriceDisplayMode } from '@/hooks/useCurrency';
 import { CartDrawer } from '@/components/cart/CartDrawer';
+import { trackContact } from '@/lib/metaPixel';
 
 interface StickyActionBarProps {
   currency: Currency;
@@ -20,6 +21,7 @@ export const StickyActionBar = ({ currency, onCurrencyToggle, displayMode = 'amb
     const message = encodeURIComponent('Hola, vengo del menú web de Catarsis. Quiero hacer un pedido.');
     window.open(`https://wa.me/${appConfig.whatsapp}?text=${message}`, '_blank');
     
+    trackContact('sticky_bar');
     window.dispatchEvent(new CustomEvent('analytics', {
       detail: { event: 'click_whatsapp', source: 'sticky_bar' }
     }));

@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { useCart } from '@/contexts/CartContext';
 import { MenuItem } from '@/types/menu';
 import { toast } from 'sonner';
+import { trackAddToCart } from '@/lib/metaPixel';
 
 interface AddToCartButtonProps {
   product: MenuItem;
@@ -29,6 +30,7 @@ export const AddToCartButton = ({ product, variant = 'default' }: AddToCartButto
     const success = addToCart(product);
     if (success) {
       toast.success(`${product.nombre} agregado al carrito`);
+      trackAddToCart({ id: product.id, nombre: product.nombre, precio_usd: product.precio_usd }, 1);
     }
   };
 
