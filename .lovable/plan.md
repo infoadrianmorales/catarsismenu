@@ -1,163 +1,166 @@
 
 
-# Plan: Reorganización de Tabs de Órdenes
+# Plan: Simplificar Gestión de Estados de Órdenes
 
 ## Resumen
 
-Reorganizaremos las pestañas del panel de órdenes para reflejar mejor el flujo operativo del negocio, fusionando "Pagadas" y "Entregadas" en un solo tab, y separando las órdenes nuevas de las pendientes por tiempo.
+Modificaremos el panel de órdenes para que:
+1. Todas las órdenes con estado `NEW` caigan siempre en la pestaña "Nuevas" (sin regla de 60 minutos)
+2. El selector de estado muestre solo 3 opciones claras: **Pagado**, **Pendiente** y **Cancelado**
 
 ---
 
-## Nueva Estructura de Tabs
+## Cambios Propuestos
 
-| Tab | Estados Incluidos | Descripción | Icono |
-|-----|-------------------|-------------|-------|
-| **Nuevas** | `NEW` | Órdenes recién recibidas (< 60 min) | ⭐ Sparkles |
-| **Pendientes** | `IN_PROGRESS`, `PAYMENT_SUBMITTED` | Órdenes en espera de pago (> 60 min sin acción) | ⏰ Clock |
-| **Pagadas** | `PAID`, `DELIVERED` | Órdenes con pago confirmado o entregadas | ✅ CheckCircle |
-| **Canceladas** | `CANCELED` | Órdenes canceladas | ❌ XCircle |
-| **Todas** | Todos los estados | Vista completa | 📦 ShoppingBag |
+### 1. Eliminar la Regla de 60 Minutos
 
----
+La función `classifyOrder` se simplificará:
 
-## Lógica de Clasificación Automática
+| Estado Actual | Tab Destino |
+|---------------|-------------|
+| `NEW` | Nuevas (siempre) |
+| `IN_PROGRESS`, `PAYMENT_SUBMITTED` | Pendientes |
+| `PAID`, `DELIVERED` | Pagadas |
+| `CANCELED` | Canceladas |
 
-### Regla de los 60 minutos
+### 2. Simplificar Opciones de Estado
 
-Las órdenes con estado `NEW` que tengan más de 60 minutos desde su creación se mostrarán automáticamente en la pestaña "Pendientes" en lugar de "Nuevas".
+El selector de estado pasará de 6 opciones a 3:
 
+| Opción Actual | Nueva Opción |
+|---------------|--------------|
+| Nuevo | ❌ Se elimina |
+| En Proceso | ❌ Se elimina |
+| Pago Enviado | ❌ Se elimina |
+| Pagado | ✅ **Pagado** |
+| Entregado | ❌ Se elimina (fusionado con Pagado) |
+| Cancelado | ✅ **Cancelado** |
+| (nuevo) | ✅ **Pendiente** |
+
+Nuevas opciones del selector:
 ```text
-Flujo de clasificación:
-┌─────────────────────────────────────┐
-│      Orden creada (status: NEW)     │
-└─────────────────┬───────────────────┘
-                  │
-         ¿Tiene más de 60 min?
-                  │
-        ┌─────────┴─────────┐
-        │                   │
-       No                  Sí
-        │                   │
-        ▼                   ▼
-┌─────────────┐    ┌─────────────────┐
-│ Tab "Nuevas"│    │ Tab "Pendientes"│
-└─────────────┘    └─────────────────┘
+┌─────────────────────────────────┐
+│  🟢 Pagado    → status: PAID    │
+│  🟡 Pendiente → status: PENDING │
+│  🔴 Cancelado → status: CANCELED│
+└─────────────────────────────────┘
 ```
 
-### Criterio de Tiempo
+### 3. Flujo Operativo Simplificado
 
-- **Nuevas**: Órdenes `NEW` creadas hace menos de 60 minutos
-- **Pendientes**: Órdenes `NEW` con más de 60 minutos + `IN_PROGRESS` + `PAYMENT_SUBMITTED`
+```text
+┌─────────────────────────────────────────────────────────────┐
+│                    ORDEN NUEVA LLEGA                         │
+│                    (status: NEW)                             │
+└────────────────────────┬────────────────────────────────────┘
+                         │
+                         ▼
+              ┌──────────────────────┐
+              │   Tab "NUEVAS"       │
+              │   (todas las NEW)    │
+              └──────────┬───────────┘
+                         │
+         Operador revisa y decide:
+                         │
+        ┌────────────────┼────────────────┐
+        │                │                │
+        ▼                ▼                ▼
+┌──────────────┐ ┌──────────────┐ ┌──────────────┐
+│   PAGADO     │ │  PENDIENTE   │ │  CANCELADO   │
+│  (cliente    │ │  (espera     │ │  (no se      │
+│   ya pagó)   │ │   de pago)   │ │   concreta)  │
+└──────────────┘ └──────────────┘ └──────────────┘
+        │                │                │
+        ▼                ▼                ▼
+  Tab "Pagadas"   Tab "Pendientes"  Tab "Canceladas"
+```
 
 ---
 
 ## Cambios en el Código
 
-### 1. Actualizar TAB_CONFIG
+### Archivo: `src/components/admin/OrdersPanel.tsx`
 
-Se modificará la configuración de pestañas:
+#### 1. Actualizar STATUS_OPTIONS
+
+Reducir las opciones del selector a 3:
 
 ```text
-TAB_CONFIG actual:
-├── pending: ['NEW', 'IN_PROGRESS', 'PAYMENT_SUBMITTED']
-├── paid: ['PAID']
-├── delivered: ['DELIVERED']
-├── canceled: ['CANCELED']
-└── all: []
+STATUS_OPTIONS actual (6 opciones):
+├── NEW
+├── IN_PROGRESS
+├── PAYMENT_SUBMITTED
+├── PAID
+├── DELIVERED
+└── CANCELED
 
-TAB_CONFIG nuevo:
-├── new: ['NEW'] (con filtro < 60 min)
-├── pending: ['IN_PROGRESS', 'PAYMENT_SUBMITTED', 'NEW > 60 min']
-├── paid: ['PAID', 'DELIVERED']
-├── canceled: ['CANCELED']
-└── all: []
+STATUS_OPTIONS nuevo (3 opciones):
+├── PAID (verde)      → "Pagado"
+├── PENDING (amarillo) → "Pendiente"
+└── CANCELED (rojo)   → "Cancelado"
 ```
 
-### 2. Lógica de Filtrado Inteligente
+#### 2. Simplificar classifyOrder
 
-Se implementará una función que clasifique las órdenes según:
-1. Estado de la orden
-2. Tiempo transcurrido desde la creación (para órdenes `NEW`)
-
-### 3. Actualizar KPIs
-
-Los KPIs se ajustarán para reflejar la nueva estructura:
-- **Nuevas**: Cantidad de órdenes nuevas (< 60 min)
-- **Pendientes**: Órdenes que requieren seguimiento
-- **Pagadas hoy/semana**: Combinación de `PAID` + `DELIVERED`
-- **Canceladas**: Sin cambios
-
-### 4. Actualizar Grid de Tabs
-
-El grid pasará de 5 columnas a 5 (mismo número, diferentes tabs):
-- Se elimina "Entregadas" 
-- Se renombra "Pendientes" → "Nuevas"
-- Se agrega nuevo "Pendientes" con lógica de tiempo
-
----
-
-## Archivo a Modificar
-
-| Archivo | Cambios |
-|---------|---------|
-| `src/components/admin/OrdersPanel.tsx` | Actualizar TAB_CONFIG, lógica de filtrado, KPIs y etiquetas |
-
----
-
-## Detalles de Implementación
-
-### Nueva Lógica de Clasificación
+Eliminar la lógica de tiempo:
 
 ```text
 function classifyOrder(order):
-  if order.status == 'CANCELED':
+  if status == 'CANCELED':
     return 'canceled'
-  if order.status in ['PAID', 'DELIVERED']:
+  if status in ['PAID', 'DELIVERED']:
     return 'paid'
-  if order.status == 'NEW':
-    if minutesSinceCreation(order) < 60:
-      return 'new'
-    else:
-      return 'pending'
-  if order.status in ['IN_PROGRESS', 'PAYMENT_SUBMITTED']:
+  if status == 'NEW':
+    return 'new'  // ← Siempre va a Nuevas
+  if status in ['IN_PROGRESS', 'PAYMENT_SUBMITTED', 'PENDING']:
     return 'pending'
   return 'all'
 ```
 
-### Nuevos Iconos y Etiquetas
+#### 3. Actualizar getStatusBadge
 
-| Tab | Icono | Etiqueta | Color Fondo |
-|-----|-------|----------|-------------|
-| Nuevas | Sparkles | "Nuevas" | Azul |
-| Pendientes | Clock | "Pendientes" | Amarillo/Naranja |
-| Pagadas | CheckCircle | "Pagadas" | Verde |
-| Canceladas | XCircle | "Canceladas" | Rojo |
-| Todas | ShoppingBag | "Todas" | Gris |
+Agregar soporte para el nuevo estado `PENDING`:
+
+```text
+STATUS_DISPLAY:
+├── NEW → Azul, "Nuevo"
+├── PENDING → Amarillo, "Pendiente"
+├── PAID → Verde, "Pagado"
+├── DELIVERED → Morado, "Entregado"
+└── CANCELED → Rojo, "Cancelado"
+```
+
+---
+
+## Estados en Base de Datos
+
+| Estado | Descripción |
+|--------|-------------|
+| `NEW` | Orden recién creada, sin revisar |
+| `PENDING` | Orden revisada, esperando pago |
+| `PAID` | Pago confirmado |
+| `DELIVERED` | Entregado (se trata igual que PAID en UI) |
+| `CANCELED` | Cancelada |
+
+**Nota**: Los estados `IN_PROGRESS` y `PAYMENT_SUBMITTED` existentes seguirán funcionando y aparecerán en "Pendientes".
 
 ---
 
 ## Resultado Esperado
 
-1. **Tab "Nuevas"**: Muestra solo órdenes `NEW` recientes (< 60 min) - foco en atención inmediata
-2. **Tab "Pendientes"**: Órdenes que necesitan seguimiento (> 60 min sin pago o en proceso)
-3. **Tab "Pagadas"**: Todas las órdenes exitosas (pagadas + entregadas) en un solo lugar
-4. **Eliminación de redundancia**: Ya no hay tab separado de "Entregadas"
-5. **Automatización**: Las órdenes se mueven automáticamente de "Nuevas" a "Pendientes" después de 60 min
+1. **Tab "Nuevas"**: Todas las órdenes `NEW` sin importar antigüedad
+2. **Selector simplificado**: Solo 3 opciones (Pagado, Pendiente, Cancelado)
+3. **Flujo claro**: Nueva → Pendiente/Pagado/Cancelado
+4. **Compatibilidad**: Los estados antiguos (`IN_PROGRESS`, `PAYMENT_SUBMITTED`, `DELIVERED`) siguen funcionando
 
 ---
 
-## Flujo Visual del Cliente
+## KPIs Actualizados
 
-```text
-┌───────────┐    ┌───────────────┐    ┌──────────┐
-│  NUEVAS   │ →  │  PENDIENTES   │ →  │ PAGADAS  │
-│ (< 60min) │    │ (> 60min sin  │    │ (PAID o  │
-│           │    │  actualizar)  │    │DELIVERED)│
-└───────────┘    └───────────────┘    └──────────┘
-                         │
-                         ▼
-                  ┌────────────┐
-                  │ CANCELADAS │
-                  └────────────┘
-```
+| KPI | Descripción |
+|-----|-------------|
+| Nuevas | Órdenes con estado `NEW` |
+| Pendientes | Órdenes `PENDING`, `IN_PROGRESS`, `PAYMENT_SUBMITTED` |
+| Pagadas | Órdenes `PAID` o `DELIVERED` |
+| Canceladas | Órdenes `CANCELED` |
 
