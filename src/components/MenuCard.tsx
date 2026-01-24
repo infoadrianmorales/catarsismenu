@@ -1,6 +1,7 @@
 import { MenuItem, Currency } from '@/types/menu';
 import { Card, CardContent } from '@/components/ui/card';
 import { useCurrency, PriceDisplayMode } from '@/hooks/useCurrency';
+import { AddToCartButton } from '@/components/cart/AddToCartButton';
 
 interface MenuCardProps {
   item: MenuItem;
@@ -68,9 +69,10 @@ export const MenuCard = ({ item, currency, displayMode = 'ambas' }: MenuCardProp
             </p>
           </div>
           
-          {/* Prices */}
+          {/* Prices and Add to Cart */}
           <div className="flex items-center justify-between gap-2">
             {renderPrices()}
+            <AddToCartButton product={item} variant="compact" />
           </div>
         </div>
       </CardContent>
