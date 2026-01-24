@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, MessageCircle, Loader2, MapPin, Store } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -6,24 +6,22 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Textarea } from '@/components/ui/textarea';
 import { useCart } from '@/contexts/CartContext';
 import { useCurrency } from '@/hooks/useCurrency';
 import { useConfig } from '@/hooks/useConfig';
-import { usePaymentMethods } from '@/hooks/usePaymentMethods';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { MenuHeader } from '@/components/MenuHeader';
 import { Footer } from '@/components/Footer';
-import { PaymentDetailsStep } from '@/components/checkout/PaymentDetailsStep';
-import { PaymentConfirmationStep } from '@/components/checkout/PaymentConfirmationStep';
 import { z } from 'zod';
 
-type CheckoutStep = 'form' | 'payment-details' | 'confirmation' | 'success';
+type CheckoutStep = 'form' | 'success';
 type DeliveryType = 'pickup' | 'delivery';
 
 // Validate Google Maps URL pattern
 const isValidMapsUrl = (url: string): boolean => {
-  if (!url) return true; // Optional field
+  if (!url) return true;
   try {
     const parsed = new URL(url);
     return (
@@ -47,7 +45,7 @@ const checkoutSchema = z.object({
     (val) => !val || isValidMapsUrl(val),
     { message: 'Debe ser un enlace válido de Google Maps' }
   ),
-  paymentMethod: z.string().min(1, 'Selecciona un método de pago'),
+  notes: z.string().trim().max(500).optional(),
 });
 
 const Checkout = () => {
@@ -55,7 +53,6 @@ const Checkout = () => {
   const { items, subtotal, clearCart } = useCart();
   const { currency, toggleCurrency, displayMode, getPrices, exchangeRate } = useCurrency();
   const { config } = useConfig();
-  const { methods, loading: methodsLoading, getMethodById, getMethodsForCurrency, getInstructions } = usePaymentMethods();
   
   const [step, setStep] = useState<CheckoutStep>('form');
   const [deliveryType, setDeliveryType] = useState<DeliveryType>('pickup');
@@ -66,7 +63,7 @@ const Checkout = () => {
     email: '',
     deliveryAddress: '',
     deliveryMapsUrl: '',
-    paymentMethod: '',
+    notes: '',
   });
   const [paymentCurrency, setPaymentCurrency] = useState<'USD' | 'VES'>(
     displayMode === 'solo_ves' ? 'VES' : 'USD'
@@ -74,24 +71,9 @@ const Checkout = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
-  const [paymentInstructionsSnapshot, setPaymentInstructionsSnapshot] = useState<string>('');
 
   const prices = getPrices(subtotal);
   const whatsappNumber = config?.whatsapp || '584249056438';
-
-  // Get available payment methods based on selected currency
-  const availableMethods = getMethodsForCurrency(paymentCurrency);
-
-  // Reset payment method if it doesn't support the selected currency
-  useEffect(() => {
-    if (formData.paymentMethod) {
-      const method = getMethodById(formData.paymentMethod);
-      const supportsCurrentCurrency = paymentCurrency === 'USD' ? method?.supports_usd : method?.supports_ves;
-      if (!supportsCurrentCurrency) {
-        setFormData(prev => ({ ...prev, paymentMethod: '' }));
-      }
-    }
-  }, [paymentCurrency, formData.paymentMethod, getMethodById]);
 
   if (items.length === 0) {
     navigate('/carrito');
@@ -109,7 +91,7 @@ const Checkout = () => {
     return phone.replace(/[\s\-\(\)]/g, '');
   };
 
-  const generateWhatsAppMessage = (orderIdParam: string, reference: string, notes: string): string => {
+  const generateWhatsAppMessage = (orderIdParam: string): string => {
     const itemLines = items.map(item => {
       const lineTotal = item.precio_usd * item.quantity;
       const linePrices = getPrices(lineTotal);
@@ -120,7 +102,6 @@ const Checkout = () => {
     }).join('\n');
 
     const totalStr = paymentCurrency === 'USD' ? prices.formattedUSD : prices.formattedVES;
-    const paymentMethodLabel = getMethodById(formData.paymentMethod)?.label || formData.paymentMethod;
 
     // Build delivery/pickup section
     let entregaSection = '';
@@ -132,38 +113,36 @@ const Checkout = () => {
       if (formData.deliveryMapsUrl.trim()) {
         entregaSection += `\nUbicación (Maps): ${formData.deliveryMapsUrl.trim()}`;
       }
-      if (notes.trim()) {
-        entregaSection += `\nReferencia: ${notes.trim()}`;
+      if (formData.notes.trim()) {
+        entregaSection += `\nReferencia: ${formData.notes.trim()}`;
       }
       entregaSection += `\n⚠️ _El costo del delivery NO está incluido y será coordinado por este chat._`;
     } else {
       entregaSection = `\n\n*Entrega: Pickup (Retiro en local) 🏪*`;
-      if (notes.trim()) {
-        entregaSection += `\nNotas: ${notes.trim()}`;
+      if (formData.notes.trim()) {
+        entregaSection += `\nNotas: ${formData.notes.trim()}`;
       }
     }
 
-    const message = `Hola 👋 Soy ${formData.firstName} ${formData.lastName}. Ya realicé el pago de mi pedido en Catarsis.
+    const message = `Hola 👋 Soy ${formData.firstName} ${formData.lastName}. Quiero realizar el siguiente pedido en Catarsis.
 
 *Pedido:*
 ${itemLines}
 
 *Total: ${totalStr}*${entregaSection}
 
-*Moneda de pago:* ${paymentCurrency}
-*Método de pago:* ${paymentMethodLabel}
-*Referencia:* ${reference}
-
 *Datos del cliente:*
 Teléfono: ${normalizePhone(formData.phone)}
 Correo: ${formData.email.toLowerCase()}
 
-*Orden:* #${orderIdParam.slice(0, 8).toUpperCase()}`;
+*Orden:* #${orderIdParam.slice(0, 8).toUpperCase()}
+
+_Esperando instrucciones de pago_ 💳`;
 
     return message;
   };
 
-  const handleFormSubmit = async () => {
+  const handleSubmit = async () => {
     // Validate form
     const validation = checkoutSchema.safeParse(formData);
     if (!validation.success) {
@@ -185,22 +164,6 @@ Correo: ${formData.email.toLowerCase()}
       return;
     }
 
-    // Get payment instructions
-    const instructions = getInstructions(formData.paymentMethod, paymentCurrency);
-    if (!instructions) {
-      toast.error('No hay instrucciones de pago configuradas para este método');
-      return;
-    }
-
-    setPaymentInstructionsSnapshot(instructions);
-    setStep('payment-details');
-  };
-
-  const handlePaymentDetailsContinue = () => {
-    setStep('confirmation');
-  };
-
-  const handleFinalSubmit = async (reference: string, notes: string) => {
     setIsSubmitting(true);
 
     try {
@@ -221,7 +184,8 @@ Correo: ${formData.email.toLowerCase()}
 
       // Create order in database
       const newOrderId = crypto.randomUUID();
-      const whatsappMessage = generateWhatsAppMessage(newOrderId, reference, notes);
+      const whatsappMessage = generateWhatsAppMessage(newOrderId);
+      
       const { error: orderError } = await supabase
         .from('orders')
         .insert({
@@ -234,17 +198,14 @@ Correo: ${formData.email.toLowerCase()}
           currency_mode: paymentCurrency,
           payment_currency: paymentCurrency,
           exchange_rate: paymentCurrency === 'VES' ? exchangeRate : null,
-          payment_method: formData.paymentMethod,
-          payment_instructions_snapshot: paymentInstructionsSnapshot,
-          payment_reference: reference,
-          payment_confirmed_at: new Date().toISOString(),
-          notes: notes || null,
+          payment_method: 'pending_whatsapp',
+          notes: formData.notes.trim() || null,
           delivery_type: deliveryType,
           delivery_address: deliveryType === 'delivery' ? formData.deliveryAddress.trim() || null : null,
           delivery_maps_url: deliveryType === 'delivery' ? formData.deliveryMapsUrl.trim() || null : null,
           subtotal: subtotal,
           total: subtotal,
-          status: 'PAYMENT_SUBMITTED',
+          status: 'NEW',
           whatsapp_message: whatsappMessage,
         });
 
@@ -278,12 +239,9 @@ Correo: ${formData.email.toLowerCase()}
       const cleanNumber = whatsappNumber.replace(/\D/g, '');
       const whatsappUrl = `https://wa.me/${cleanNumber}?text=${encodedMessage}`;
       
-      // Open WhatsApp in new tab/window and show success screen
       window.open(whatsappUrl, '_blank');
       
       toast.success('¡Pedido enviado correctamente!');
-      
-      // Show success screen
       setStep('success');
 
     } catch (error) {
@@ -413,13 +371,13 @@ Correo: ${formData.email.toLowerCase()}
                   </Label>
                 </RadioGroup>
 
-                {/* Delivery Address Fields - Only show when delivery is selected */}
+                {/* Delivery Address Fields */}
                 {deliveryType === 'delivery' && (
                   <div className="mt-4 space-y-4 animate-in slide-in-from-top-2 duration-200">
                     <div className="bg-secondary/10 border border-secondary/20 rounded-lg p-3 mb-4">
                       <p className="text-sm text-secondary flex items-center gap-2">
                         <span>⚠️</span>
-                        El costo del delivery <strong>no está incluido</strong> en el monto total y será notificado en el chat de WhatsApp.
+                        El costo del delivery <strong>no está incluido</strong> y será coordinado por WhatsApp.
                       </p>
                     </div>
                     
@@ -459,6 +417,24 @@ Correo: ${formData.email.toLowerCase()}
                   </div>
                 )}
               </div>
+
+              {/* Notes */}
+              <div className="space-y-2">
+                <Label htmlFor="notes">
+                  {deliveryType === 'delivery' ? 'Referencia / Notas' : 'Notas adicionales'}{' '}
+                  <span className="text-muted-foreground font-normal">(opcional)</span>
+                </Label>
+                <Textarea
+                  id="notes"
+                  value={formData.notes}
+                  onChange={(e) => handleInputChange('notes', e.target.value)}
+                  placeholder={deliveryType === 'delivery' 
+                    ? "Ej: Frente al Centro Comercial, casa con portón azul..." 
+                    : "Cualquier información adicional..."
+                  }
+                  rows={2}
+                />
+              </div>
             </CardContent>
           </Card>
 
@@ -466,7 +442,7 @@ Correo: ${formData.email.toLowerCase()}
           {displayMode === 'ambas' && (
             <Card>
               <CardHeader>
-                <CardTitle>Moneda de Pago</CardTitle>
+                <CardTitle>Moneda de Referencia</CardTitle>
               </CardHeader>
               <CardContent>
                 <RadioGroup
@@ -477,55 +453,19 @@ Correo: ${formData.email.toLowerCase()}
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="USD" id="currency-usd" />
                     <Label htmlFor="currency-usd" className="cursor-pointer">
-                      Pagar en USD ({prices.formattedUSD})
+                      USD ({prices.formattedUSD})
                     </Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="VES" id="currency-ves" />
                     <Label htmlFor="currency-ves" className="cursor-pointer">
-                      Pagar en Bolívares ({prices.formattedVES})
+                      Bolívares ({prices.formattedVES})
                     </Label>
                   </div>
                 </RadioGroup>
               </CardContent>
             </Card>
           )}
-
-          {/* Payment Method */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Método de Pago *</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {methodsLoading ? (
-                <div className="flex items-center justify-center py-4">
-                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                </div>
-              ) : availableMethods.length === 0 ? (
-                <p className="text-muted-foreground text-sm">
-                  No hay métodos de pago disponibles para {paymentCurrency}
-                </p>
-              ) : (
-                <RadioGroup
-                  value={formData.paymentMethod}
-                  onValueChange={(value) => handleInputChange('paymentMethod', value)}
-                  className="grid sm:grid-cols-2 gap-3"
-                >
-                  {availableMethods.map((method) => (
-                    <div key={method.id} className="flex items-center space-x-3">
-                      <RadioGroupItem value={method.id} id={method.id} />
-                      <Label htmlFor={method.id} className="cursor-pointer">
-                        {method.label}
-                      </Label>
-                    </div>
-                  ))}
-                </RadioGroup>
-              )}
-              {errors.paymentMethod && (
-                <p className="text-xs text-destructive mt-2">{errors.paymentMethod}</p>
-              )}
-            </CardContent>
-          </Card>
         </div>
 
         {/* Order Summary */}
@@ -566,12 +506,26 @@ Correo: ${formData.email.toLowerCase()}
                 )}
               </div>
 
+              {/* Info about payment */}
+              <div className="bg-muted/50 rounded-lg p-3 text-sm text-muted-foreground">
+                <p className="flex items-center gap-2">
+                  <MessageCircle className="h-4 w-4 text-primary shrink-0" />
+                  Los detalles de pago se coordinarán por WhatsApp
+                </p>
+              </div>
+
               <Button 
                 className="w-full gap-2" 
                 size="lg"
-                onClick={handleFormSubmit}
+                onClick={handleSubmit}
+                disabled={isSubmitting}
               >
-                Continuar al Pago
+                {isSubmitting ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <MessageCircle className="h-5 w-5" />
+                )}
+                {isSubmitting ? 'Enviando...' : 'Enviar pedido por WhatsApp'}
               </Button>
             </CardContent>
           </Card>
@@ -590,26 +544,6 @@ Correo: ${formData.email.toLowerCase()}
       
       <div className="container px-4 py-8">
         {step === 'form' && renderFormStep()}
-        
-        {step === 'payment-details' && (
-          <PaymentDetailsStep
-            paymentMethod={formData.paymentMethod}
-            paymentMethodLabel={getMethodById(formData.paymentMethod)?.label || formData.paymentMethod}
-            paymentCurrency={paymentCurrency}
-            instructions={paymentInstructionsSnapshot}
-            totalFormatted={paymentCurrency === 'USD' ? prices.formattedUSD : prices.formattedVES}
-            onBack={() => setStep('form')}
-            onContinue={handlePaymentDetailsContinue}
-          />
-        )}
-
-        {step === 'confirmation' && (
-          <PaymentConfirmationStep
-            onBack={() => setStep('payment-details')}
-            onSubmit={handleFinalSubmit}
-            isSubmitting={isSubmitting}
-          />
-        )}
 
         {step === 'success' && (
           <div className="max-w-md mx-auto text-center py-8 sm:py-12 px-4">
@@ -669,7 +603,7 @@ Correo: ${formData.email.toLowerCase()}
 
             {/* Friendly footer message */}
             <p className="text-xs text-muted-foreground mt-8">
-              Tu pedido fue enviado por WhatsApp. ¡Te contactaremos pronto!
+              Tu pedido fue enviado por WhatsApp. ¡Te contactaremos pronto para coordinar el pago!
             </p>
           </div>
         )}
