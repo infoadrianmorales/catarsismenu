@@ -63,14 +63,15 @@ export const CategorySection = ({
             displayMode={displayMode} 
           />
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             {items.map((item) => (
-              <CompactProductCard 
-                key={item.id}
-                item={item} 
-                currency={currency} 
-                displayMode={displayMode}
-              />
+              <div key={item.id} className="h-[260px]">
+                <CompactProductCard 
+                  item={item} 
+                  currency={currency} 
+                  displayMode={displayMode}
+                />
+              </div>
             ))}
           </div>
         )}
