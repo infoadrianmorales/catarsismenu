@@ -9,26 +9,31 @@ interface SearchBarProps {
 
 export const SearchBar = ({ value, onChange }: SearchBarProps) => {
   return (
-    <div className="container px-4 py-4">
-      <div className="relative max-w-xl mx-auto">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-        <Input
-          type="text"
-          placeholder="Buscar por nombre o ingrediente…"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="pl-10 pr-10 h-12 bg-card border-border/50 focus:border-primary text-foreground placeholder:text-muted-foreground rounded-full"
-        />
-        {value && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => onChange('')}
-            className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-foreground"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        )}
+    <div className="container px-4 py-8">
+      <div className="relative max-w-2xl mx-auto">
+        {/* Glow effect background */}
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-accent/20 to-primary/20 rounded-full blur-xl opacity-60" />
+        
+        <div className="relative">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-6 w-6 text-primary" />
+          <Input
+            type="text"
+            placeholder="🔍 Buscar por nombre o ingrediente…"
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            className="pl-12 pr-12 h-14 bg-card/80 backdrop-blur-sm border-2 border-primary/30 focus:border-primary text-foreground text-lg placeholder:text-muted-foreground rounded-full shadow-lg shadow-primary/10 transition-all duration-300 hover:border-primary/50 hover:shadow-xl hover:shadow-primary/20"
+          />
+          {value && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onChange('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 h-9 w-9 text-muted-foreground hover:text-foreground hover:bg-primary/10 rounded-full"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );
