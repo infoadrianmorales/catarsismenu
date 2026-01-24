@@ -74,6 +74,36 @@ export type Database = {
         }
         Relationships: []
       }
+      customers: {
+        Row: {
+          created_at: string
+          email: string
+          first_name: string
+          id: string
+          last_name: string
+          phone: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          first_name: string
+          id?: string
+          last_name: string
+          phone: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          first_name?: string
+          id?: string
+          last_name?: string
+          phone?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           created_at: string
@@ -119,6 +149,7 @@ export type Database = {
         Row: {
           created_at: string
           currency_mode: string
+          customer_id: string | null
           email: string
           exchange_rate: number | null
           first_name: string
@@ -135,6 +166,7 @@ export type Database = {
         Insert: {
           created_at?: string
           currency_mode?: string
+          customer_id?: string | null
           email: string
           exchange_rate?: number | null
           first_name: string
@@ -151,6 +183,7 @@ export type Database = {
         Update: {
           created_at?: string
           currency_mode?: string
+          customer_id?: string | null
           email?: string
           exchange_rate?: number | null
           first_name?: string
@@ -164,7 +197,15 @@ export type Database = {
           updated_at?: string | null
           whatsapp_message?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       products: {
         Row: {
@@ -306,6 +347,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      find_or_create_customer: {
+        Args: {
+          p_email: string
+          p_first_name: string
+          p_last_name: string
+          p_phone: string
+        }
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
