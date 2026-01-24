@@ -20,11 +20,32 @@ import { z } from 'zod';
 
 type CheckoutStep = 'form' | 'payment-details' | 'confirmation' | 'success';
 
+// Validate Google Maps URL pattern
+const isValidMapsUrl = (url: string): boolean => {
+  if (!url) return true; // Optional field
+  try {
+    const parsed = new URL(url);
+    return (
+      parsed.hostname.includes('google.com') ||
+      parsed.hostname.includes('goo.gl') ||
+      parsed.hostname.includes('maps.google') ||
+      parsed.hostname === 'maps.app.goo.gl'
+    );
+  } catch {
+    return false;
+  }
+};
+
 const checkoutSchema = z.object({
   firstName: z.string().trim().min(1, 'El nombre es requerido').max(100),
   lastName: z.string().trim().min(1, 'El apellido es requerido').max(100),
   phone: z.string().trim().min(1, 'El teléfono es requerido').max(20),
   email: z.string().trim().email('Correo inválido').max(255),
+  deliveryAddress: z.string().trim().max(500).optional(),
+  deliveryMapsUrl: z.string().trim().max(500).optional().refine(
+    (val) => !val || isValidMapsUrl(val),
+    { message: 'Debe ser un enlace válido de Google Maps' }
+  ),
   paymentMethod: z.string().min(1, 'Selecciona un método de pago'),
 });
 
@@ -41,6 +62,8 @@ const Checkout = () => {
     lastName: '',
     phone: '',
     email: '',
+    deliveryAddress: '',
+    deliveryMapsUrl: '',
     paymentMethod: '',
   });
   const [paymentCurrency, setPaymentCurrency] = useState<'USD' | 'VES'>(
@@ -84,7 +107,7 @@ const Checkout = () => {
     return phone.replace(/[\s\-\(\)]/g, '');
   };
 
-  const generateWhatsAppMessage = (orderIdParam: string, reference: string): string => {
+  const generateWhatsAppMessage = (orderIdParam: string, reference: string, notes: string): string => {
     const itemLines = items.map(item => {
       const lineTotal = item.precio_usd * item.quantity;
       const linePrices = getPrices(lineTotal);
@@ -97,13 +120,26 @@ const Checkout = () => {
     const totalStr = paymentCurrency === 'USD' ? prices.formattedUSD : prices.formattedVES;
     const paymentMethodLabel = getMethodById(formData.paymentMethod)?.label || formData.paymentMethod;
 
+    // Build delivery section
+    let deliverySection = '';
+    if (formData.deliveryAddress.trim()) {
+      deliverySection = `\n\n*Entrega: Delivery*\nDirección: ${formData.deliveryAddress.trim()}`;
+      if (formData.deliveryMapsUrl.trim()) {
+        deliverySection += `\nUbicación (Maps): ${formData.deliveryMapsUrl.trim()}`;
+      }
+      if (notes.trim()) {
+        deliverySection += `\nReferencia: ${notes.trim()}`;
+      }
+      deliverySection += `\n⚠️ _El costo del delivery NO está incluido._`;
+    }
+
     const message = `Hola 👋 Soy ${formData.firstName} ${formData.lastName}. Ya realicé el pago de mi pedido en Catarsis.
 
 *Pedido:*
 ${itemLines}
 
 *Total: ${totalStr}*
-⚠️ _Este monto no incluye el costo del delivery._
+⚠️ _Este monto no incluye el costo del delivery._${deliverySection}
 
 *Moneda de pago:* ${paymentCurrency}
 *Método de pago:* ${paymentMethodLabel}
@@ -169,8 +205,7 @@ Correo: ${formData.email.toLowerCase()}
 
       // Create order in database
       const newOrderId = crypto.randomUUID();
-      const whatsappMessage = generateWhatsAppMessage(newOrderId, reference);
-
+      const whatsappMessage = generateWhatsAppMessage(newOrderId, reference, notes);
       const { error: orderError } = await supabase
         .from('orders')
         .insert({
@@ -188,6 +223,8 @@ Correo: ${formData.email.toLowerCase()}
           payment_reference: reference,
           payment_confirmed_at: new Date().toISOString(),
           notes: notes || null,
+          delivery_address: formData.deliveryAddress.trim() || null,
+          delivery_maps_url: formData.deliveryMapsUrl.trim() || null,
           subtotal: subtotal,
           total: subtotal,
           status: 'PAYMENT_SUBMITTED',
@@ -315,6 +352,47 @@ Correo: ${formData.email.toLowerCase()}
                 {errors.email && (
                   <p className="text-xs text-destructive">{errors.email}</p>
                 )}
+              </div>
+
+              {/* Delivery Address Section */}
+              <div className="border-t border-border pt-4 mt-4">
+                <h3 className="font-medium mb-3">Datos de Entrega (Delivery)</h3>
+                
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="deliveryAddress">Dirección de entrega</Label>
+                    <Input
+                      id="deliveryAddress"
+                      value={formData.deliveryAddress}
+                      onChange={(e) => handleInputChange('deliveryAddress', e.target.value)}
+                      placeholder="Av. Principal, Edificio XYZ, Piso 3, Apto 5"
+                      className={errors.deliveryAddress ? 'border-destructive' : ''}
+                    />
+                    {errors.deliveryAddress && (
+                      <p className="text-xs text-destructive">{errors.deliveryAddress}</p>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="deliveryMapsUrl">
+                      Link de Google Maps <span className="text-muted-foreground font-normal">(opcional)</span>
+                    </Label>
+                    <Input
+                      id="deliveryMapsUrl"
+                      type="url"
+                      value={formData.deliveryMapsUrl}
+                      onChange={(e) => handleInputChange('deliveryMapsUrl', e.target.value)}
+                      placeholder="Pega aquí el enlace de Google Maps…"
+                      className={errors.deliveryMapsUrl ? 'border-destructive' : ''}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Recomendado para mayor precisión en la ubicación.
+                    </p>
+                    {errors.deliveryMapsUrl && (
+                      <p className="text-xs text-destructive">{errors.deliveryMapsUrl}</p>
+                    )}
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
