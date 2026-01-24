@@ -44,7 +44,7 @@ export const CompactProductCard = ({ item, currency, displayMode = 'ambas' }: Co
                 src={item.imagen} 
                 alt={`Foto de ${item.nombre}`}
                 loading="lazy"
-                className="h-full w-full object-cover p-1.5"
+                className="h-full w-full object-cover p-1.5 transition-transform duration-300 ease-out group-hover:scale-110"
               />
             </div>
           </div>

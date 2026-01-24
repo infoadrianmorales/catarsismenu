@@ -53,7 +53,7 @@ export const MenuCard = ({ item, currency, displayMode = 'ambas' }: MenuCardProp
               src={item.imagen} 
               alt={`Foto de ${item.nombre} sobre fondo blanco`}
               loading="lazy"
-              className="h-full w-full object-cover p-2"
+              className="h-full w-full object-cover p-2 transition-transform duration-300 ease-out group-hover:scale-110"
             />
           </div>
         </div>
