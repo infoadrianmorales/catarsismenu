@@ -1,9 +1,22 @@
 import { MenuItem } from '@/types/menu';
 
+// Helper to generate consistent UUIDs from slugs (for static fallback data)
+const generateUUID = (slug: string): string => {
+  // Create a simple hash-based UUID v4-like string
+  let hash = 0;
+  for (let i = 0; i < slug.length; i++) {
+    const char = slug.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  const hex = Math.abs(hash).toString(16).padStart(8, '0');
+  return `${hex.slice(0, 8)}-${hex.slice(0, 4)}-4${hex.slice(1, 4)}-a${hex.slice(1, 4)}-${hex.padEnd(12, '0').slice(0, 12)}`;
+};
+
 export const menuItems: MenuItem[] = [
   // ENTRADAS
   {
-    id: 'entradas-1',
+    id: generateUUID('alitas-de-pollo-catarsis'),
     nombre: 'Alitas de Pollo Catarsis',
     slug: 'alitas-de-pollo-catarsis',
     descripcion_corta: '8 alitas crujientes, empanizadas o BBQ, con papas fritas.',
@@ -15,7 +28,7 @@ export const menuItems: MenuItem[] = [
     orden: 1,
   },
   {
-    id: 'entradas-2',
+    id: generateUUID('ceviche-mixto-tropical'),
     nombre: 'Ceviche Mixto Tropical',
     slug: 'ceviche-mixto-tropical',
     descripcion_corta: 'Pescado, langostinos y pulpo en leche de tigre con frutas.',
@@ -27,7 +40,7 @@ export const menuItems: MenuItem[] = [
     orden: 2,
   },
   {
-    id: 'entradas-3',
+    id: generateUUID('papas-queso-tocineta'),
     nombre: 'Papas con Queso y Tocineta',
     slug: 'papas-queso-tocineta',
     descripcion_corta: 'Papas calientes con queso fundido y tocineta crujiente.',
@@ -39,7 +52,7 @@ export const menuItems: MenuItem[] = [
     orden: 3,
   },
   {
-    id: 'entradas-4',
+    id: generateUUID('rebozados-del-mar'),
     nombre: 'Rebozados del Mar',
     slug: 'rebozados-del-mar',
     descripcion_corta: 'Pescado, calamares y langostinos rebozados con papas y tártara.',
@@ -51,7 +64,7 @@ export const menuItems: MenuItem[] = [
     orden: 4,
   },
   {
-    id: 'entradas-5',
+    id: generateUUID('tequenos-clasicos'),
     nombre: 'Tequeños Clásicos (6 u.)',
     slug: 'tequenos-clasicos',
     descripcion_corta: '6 unidades doradas por fuera, fundidas por dentro.',
@@ -63,7 +76,7 @@ export const menuItems: MenuItem[] = [
     orden: 5,
   },
   {
-    id: 'entradas-6',
+    id: generateUUID('aros-de-cebolla'),
     nombre: 'Aros de Cebolla',
     slug: 'aros-de-cebolla',
     descripcion_corta: 'Aros empanizados y crujientes para picar o acompañar.',
@@ -75,7 +88,7 @@ export const menuItems: MenuItem[] = [
     orden: 6,
   },
   {
-    id: 'entradas-7',
+    id: generateUUID('chili-con-papas'),
     nombre: 'Chili con Papas',
     slug: 'chili-con-papas',
     descripcion_corta: 'Carne, jalapeños, cheddar, tocineta y pepinillos sobre papas.',
@@ -87,7 +100,7 @@ export const menuItems: MenuItem[] = [
     orden: 7,
   },
   {
-    id: 'entradas-8',
+    id: generateUUID('racion-de-papas'),
     nombre: 'Ración de Papas',
     slug: 'racion-de-papas',
     descripcion_corta: 'Papas fritas doradas al punto exacto.',
@@ -99,7 +112,7 @@ export const menuItems: MenuItem[] = [
     orden: 8,
   },
   {
-    id: 'entradas-9',
+    id: generateUUID('tenders-de-pollo'),
     nombre: 'Tenders de Pollo (6 u.)',
     slug: 'tenders-de-pollo',
     descripcion_corta: '6 piezas crujientes de pollo con papas fritas.',
@@ -111,7 +124,7 @@ export const menuItems: MenuItem[] = [
     orden: 9,
   },
   {
-    id: 'entradas-10',
+    id: generateUUID('crispy-bites'),
     nombre: 'Crispy Bites',
     slug: 'crispy-bites',
     descripcion_corta: 'Papas picantes, tenders, cheddar, tocineta y salsa relish.',
@@ -125,7 +138,7 @@ export const menuItems: MenuItem[] = [
 
   // HAMBURGUESAS
   {
-    id: 'hamburguesas-1',
+    id: generateUUID('chicken-crunch'),
     nombre: 'Chicken Crunch',
     slug: 'chicken-crunch',
     descripcion_corta: 'Pollo crujiente, tocineta, pepinillos, tártara, balsámico y cheddar.',
@@ -137,7 +150,7 @@ export const menuItems: MenuItem[] = [
     orden: 1,
   },
   {
-    id: 'hamburguesas-2',
+    id: generateUUID('shrimp-crunch'),
     nombre: 'Shrimp Crunch',
     slug: 'shrimp-crunch',
     descripcion_corta: 'Langostinos crujientes, vegetales, balsámico y salsa de aceitunas.',
@@ -149,7 +162,7 @@ export const menuItems: MenuItem[] = [
     orden: 2,
   },
   {
-    id: 'hamburguesas-3',
+    id: generateUUID('bbq-champions'),
     nombre: 'BBQ Champions',
     slug: 'bbq-champions',
     descripcion_corta: 'Carne 150 g, BBQ, tocineta, queso azul, champiñones, vegetales.',
@@ -161,7 +174,7 @@ export const menuItems: MenuItem[] = [
     orden: 3,
   },
   {
-    id: 'hamburguesas-4',
+    id: generateUUID('smash-catarsis'),
     nombre: 'Smash Catarsis',
     slug: 'smash-catarsis',
     descripcion_corta: 'Doble smash 300 g, cheddar doble, pepinillos y tocineta.',
@@ -173,7 +186,7 @@ export const menuItems: MenuItem[] = [
     orden: 4,
   },
   {
-    id: 'hamburguesas-5',
+    id: generateUUID('honeyholic-burger'),
     nombre: 'Honeyholic Burger',
     slug: 'honeyholic-burger',
     descripcion_corta: 'Pollo crispy con miel y Cholula, cheddar, manchego y tocineta.',
@@ -185,7 +198,7 @@ export const menuItems: MenuItem[] = [
     orden: 5,
   },
   {
-    id: 'hamburguesas-6',
+    id: generateUUID('chicken-slow'),
     nombre: 'Chicken Slow',
     slug: 'chicken-slow',
     descripcion_corta: 'Pollo crunch, repollo encurtido, cheddar y sweet relish.',
@@ -197,7 +210,7 @@ export const menuItems: MenuItem[] = [
     orden: 6,
   },
   {
-    id: 'hamburguesas-7',
+    id: generateUUID('clasica-americana'),
     nombre: 'Clásica Americana',
     slug: 'clasica-americana',
     descripcion_corta: 'Carne 150 g, cheddar, tocineta, pepinillos y vegetales.',
@@ -209,7 +222,7 @@ export const menuItems: MenuItem[] = [
     orden: 7,
   },
   {
-    id: 'hamburguesas-8',
+    id: generateUUID('texmex'),
     nombre: 'Texmex',
     slug: 'texmex',
     descripcion_corta: 'Carne con jalapeños y cheddar, tocineta, pimentón y cebolla.',
@@ -221,7 +234,7 @@ export const menuItems: MenuItem[] = [
     orden: 8,
   },
   {
-    id: 'hamburguesas-9',
+    id: generateUUID('chicken-spicy'),
     nombre: 'Chicken Spicy',
     slug: 'chicken-spicy',
     descripcion_corta: 'Pollo crispy, cheddar, salsa picante, tocineta y pepinillos.',
@@ -233,7 +246,7 @@ export const menuItems: MenuItem[] = [
     orden: 9,
   },
   {
-    id: 'hamburguesas-10',
+    id: generateUUID('onion-queen'),
     nombre: 'Onion Queen',
     slug: 'onion-queen',
     descripcion_corta: 'Carne 150 g, cheddar, tocineta, cebolla crunch, vegetales y tártara.',
@@ -245,7 +258,7 @@ export const menuItems: MenuItem[] = [
     orden: 10,
   },
   {
-    id: 'hamburguesas-11',
+    id: generateUUID('double-cheesy'),
     nombre: 'Double Cheesy',
     slug: 'double-cheesy',
     descripcion_corta: 'Doble smash 80 g c/u, doble queso, cebolla grillada y relish.',
@@ -259,7 +272,7 @@ export const menuItems: MenuItem[] = [
 
   // EMPAREDADOS
   {
-    id: 'emparedados-1',
+    id: generateUUID('chicken-crunch-americano'),
     nombre: 'Chicken Crunch Americano',
     slug: 'chicken-crunch-americano',
     descripcion_corta: 'Pollo empanizado, cheddar, tocineta, pepinillos y tártara.',
@@ -271,7 +284,7 @@ export const menuItems: MenuItem[] = [
     orden: 1,
   },
   {
-    id: 'emparedados-2',
+    id: generateUUID('perla-negra'),
     nombre: 'Perla Negra',
     slug: 'perla-negra',
     descripcion_corta: 'Pan de aceitunas, calamares rebozados, vegetales y tártara.',
@@ -283,7 +296,7 @@ export const menuItems: MenuItem[] = [
     orden: 2,
   },
   {
-    id: 'emparedados-3',
+    id: generateUUID('fondue-de-lomito'),
     nombre: 'Fondue de Lomito',
     slug: 'fondue-de-lomito',
     descripcion_corta: 'Lomito en fondue de queso azul con champiñones y pepinillos.',
@@ -297,7 +310,7 @@ export const menuItems: MenuItem[] = [
 
   // PIZZAS
   {
-    id: 'pizzas-1',
+    id: generateUUID('margarita-catarsis'),
     nombre: 'Margarita Catarsis',
     slug: 'margarita-catarsis',
     descripcion_corta: 'Jamón y maíz sobre base clásica.',
@@ -309,7 +322,7 @@ export const menuItems: MenuItem[] = [
     orden: 1,
   },
   {
-    id: 'pizzas-2',
+    id: generateUUID('paradise'),
     nombre: 'Paradise',
     slug: 'paradise',
     descripcion_corta: 'Jamón ahumado, pepperoni, tocineta y maíz.',
@@ -321,7 +334,7 @@ export const menuItems: MenuItem[] = [
     orden: 2,
   },
   {
-    id: 'pizzas-3',
+    id: generateUUID('pepperoni'),
     nombre: 'Pepperoni',
     slug: 'pepperoni',
     descripcion_corta: 'Pepperoni clásico, queso derretido y masa dorada.',
@@ -333,7 +346,7 @@ export const menuItems: MenuItem[] = [
     orden: 3,
   },
   {
-    id: 'pizzas-4',
+    id: generateUUID('tasty'),
     nombre: 'Tasty',
     slug: 'tasty',
     descripcion_corta: 'Jamón, tocineta, cebolla, pimentón, tomate seco, manchego y pesto.',
@@ -345,7 +358,7 @@ export const menuItems: MenuItem[] = [
     orden: 4,
   },
   {
-    id: 'pizzas-5',
+    id: generateUUID('veggie'),
     nombre: 'Veggie',
     slug: 'veggie',
     descripcion_corta: 'Cebolla, pimentón, champiñones, aceitunas, berenjena, tomate seco, manchego.',
@@ -359,7 +372,7 @@ export const menuItems: MenuItem[] = [
 
   // PARRILLA
   {
-    id: 'parrilla-1',
+    id: generateUUID('parrilla-mar-y-tierra'),
     nombre: 'Parrilla Mar y Tierra',
     slug: 'parrilla-mar-y-tierra',
     descripcion_corta: 'Selección de carnes y mariscos a la parrilla.',
@@ -371,7 +384,7 @@ export const menuItems: MenuItem[] = [
     orden: 1,
   },
   {
-    id: 'parrilla-2',
+    id: generateUUID('parrilla-mixta'),
     nombre: 'Parrilla Mixta',
     slug: 'parrilla-mixta',
     descripcion_corta: 'Carnes seleccionadas a la parrilla.',
@@ -383,7 +396,7 @@ export const menuItems: MenuItem[] = [
     orden: 2,
   },
   {
-    id: 'parrilla-3',
+    id: generateUUID('parrilla-de-pollo'),
     nombre: 'Parrilla de Pollo',
     slug: 'parrilla-de-pollo',
     descripcion_corta: 'Pollo a la parrilla, jugoso y bien marcado.',
@@ -395,7 +408,7 @@ export const menuItems: MenuItem[] = [
     orden: 3,
   },
   {
-    id: 'parrilla-4',
+    id: generateUUID('parrilla-de-lomito'),
     nombre: 'Parrilla de Lomito',
     slug: 'parrilla-de-lomito',
     descripcion_corta: 'Lomito a la parrilla, suave y sabroso.',
@@ -407,7 +420,7 @@ export const menuItems: MenuItem[] = [
     orden: 4,
   },
   {
-    id: 'parrilla-5',
+    id: generateUUID('parrilla-de-mariscos'),
     nombre: 'Parrilla de Mariscos',
     slug: 'parrilla-de-mariscos',
     descripcion_corta: 'Mariscos frescos a la parrilla, en su punto.',
@@ -421,7 +434,7 @@ export const menuItems: MenuItem[] = [
 
   // ENSALADAS
   {
-    id: 'ensaladas-1',
+    id: generateUUID('ensalada-cesar-langostinos'),
     nombre: 'Ensalada César con Langostinos',
     slug: 'ensalada-cesar-langostinos',
     descripcion_corta: 'Langostinos, lechuga fresca, aderezo César y crutones.',
@@ -433,7 +446,7 @@ export const menuItems: MenuItem[] = [
     orden: 1,
   },
   {
-    id: 'ensaladas-2',
+    id: generateUUID('ensalada-cesar-pollo'),
     nombre: 'Ensalada César de Pollo',
     slug: 'ensalada-cesar-pollo',
     descripcion_corta: 'Pollo, lechuga romana, aderezo César y crutones.',
@@ -445,7 +458,7 @@ export const menuItems: MenuItem[] = [
     orden: 2,
   },
   {
-    id: 'ensaladas-3',
+    id: generateUUID('ensalada-cesar-clasica'),
     nombre: 'Ensalada César Clásica',
     slug: 'ensalada-cesar-clasica',
     descripcion_corta: 'Ligera, fresca y equilibrada.',
@@ -459,7 +472,7 @@ export const menuItems: MenuItem[] = [
 
   // COCTELERÍA
   {
-    id: 'cocteleria-1',
+    id: generateUUID('catarsis-punch'),
     nombre: 'Catarsis Punch',
     slug: 'catarsis-punch',
     descripcion_corta: 'Ron añejo, parchita, naranja, limón, granadina y bitter.',
@@ -471,7 +484,7 @@ export const menuItems: MenuItem[] = [
     orden: 1,
   },
   {
-    id: 'cocteleria-2',
+    id: generateUUID('whipped'),
     nombre: 'Whipped',
     slug: 'whipped',
     descripcion_corta: 'Vodka whipped, parchita y limón.',
@@ -483,7 +496,7 @@ export const menuItems: MenuItem[] = [
     orden: 2,
   },
   {
-    id: 'cocteleria-3',
+    id: generateUUID('le-fraisier'),
     nombre: 'Le Fraisier',
     slug: 'le-fraisier',
     descripcion_corta: 'Ginebra, limón, oleo saccharum de fresa, bitter y soda.',
@@ -495,7 +508,7 @@ export const menuItems: MenuItem[] = [
     orden: 3,
   },
   {
-    id: 'cocteleria-4',
+    id: generateUUID('flowers'),
     nombre: 'Flowers',
     slug: 'flowers',
     descripcion_corta: 'Ginebra, blue butterfly, jarabe de flores, lima y soda.',
@@ -507,7 +520,7 @@ export const menuItems: MenuItem[] = [
     orden: 4,
   },
   {
-    id: 'cocteleria-5',
+    id: generateUUID('rum-old-fashioned-tonic'),
     nombre: 'Rum Old Fashioned Tonic',
     slug: 'rum-old-fashioned-tonic',
     descripcion_corta: 'Ron, azúcar, angostura y tónica.',
@@ -519,7 +532,7 @@ export const menuItems: MenuItem[] = [
     orden: 5,
   },
   {
-    id: 'cocteleria-6',
+    id: generateUUID('sangria'),
     nombre: 'Sangría',
     slug: 'sangria',
     descripcion_corta: 'Vino cabernet, cítricos, licor de ponche y jarabe de fresa.',
@@ -531,7 +544,7 @@ export const menuItems: MenuItem[] = [
     orden: 6,
   },
   {
-    id: 'cocteleria-7',
+    id: generateUUID('long-island-tea'),
     nombre: 'Long Island Tea',
     slug: 'long-island-tea',
     descripcion_corta: 'Vodka, ginebra, ron, tequila, triple sec, limón y cola.',
@@ -543,7 +556,7 @@ export const menuItems: MenuItem[] = [
     orden: 7,
   },
   {
-    id: 'cocteleria-8',
+    id: generateUUID('margarita-on-the-rocks'),
     nombre: 'Margarita on the Rocks',
     slug: 'margarita-on-the-rocks',
     descripcion_corta: 'Tequila, fresa, limón y triple sec.',
@@ -555,7 +568,7 @@ export const menuItems: MenuItem[] = [
     orden: 8,
   },
   {
-    id: 'cocteleria-9',
+    id: generateUUID('green-gin'),
     nombre: 'Green Gin',
     slug: 'green-gin',
     descripcion_corta: 'Gin, blue curaçao, parchita y jarabe simple.',
@@ -567,7 +580,7 @@ export const menuItems: MenuItem[] = [
     orden: 9,
   },
   {
-    id: 'cocteleria-10',
+    id: generateUUID('southside-berry'),
     nombre: 'Southside Berry',
     slug: 'southside-berry',
     descripcion_corta: 'Gin, limón y fresa.',
@@ -581,7 +594,7 @@ export const menuItems: MenuItem[] = [
 
   // POSTRES
   {
-    id: 'postres-1',
+    id: generateUUID('brownie-con-helado'),
     nombre: 'Brownie con Helado',
     slug: 'brownie-con-helado',
     descripcion_corta: 'Brownie tibio con helado. Final feliz garantizado.',
@@ -593,7 +606,7 @@ export const menuItems: MenuItem[] = [
     orden: 1,
   },
   {
-    id: 'postres-2',
+    id: generateUUID('sweet-bites'),
     nombre: 'Sweet Bites',
     slug: 'sweet-bites',
     descripcion_corta: 'Bocados dulces para cerrar sin excesos.',
