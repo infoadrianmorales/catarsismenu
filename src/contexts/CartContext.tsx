@@ -29,11 +29,20 @@ const STORAGE_KEY = 'catarsis_cart';
 // Categories that cannot be ordered (for pickup only)
 const NON_ORDERABLE_CATEGORIES = ['cocteleria', 'cocteles', 'cocktails'];
 
+// Simple UUID validation
+const isValidUUID = (id: string): boolean => {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+};
+
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [items, setItems] = useState<CartItem[]>(() => {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem(STORAGE_KEY);
-      return stored ? JSON.parse(stored) : [];
+      if (stored) {
+        const parsed = JSON.parse(stored) as CartItem[];
+        // Filter out items with invalid IDs (non-UUID format)
+        return parsed.filter(item => isValidUUID(item.id));
+      }
     }
     return [];
   });
