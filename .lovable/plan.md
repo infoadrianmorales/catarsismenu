@@ -1,153 +1,112 @@
 
+# Plan: Corregir visualización de imágenes existentes
 
-# Plan: Optimización Técnica de Imágenes
+## Problema
+Las imágenes de productos no se muestran porque el componente `OptimizedImage` intenta cargar variantes (`_400.jpg`, `_200.jpg`) que no existen. Solo las imágenes originales (`producto.jpg`) están disponibles.
 
-## Resumen
+## Causa Raíz
+El código actual asume que todas las imágenes tienen variantes de tamaño:
 
-Implementaremos mejoras técnicas para optimizar las imágenes de productos:
-1. **Conversión a WebP** - Formato moderno 30-50% más liviano que JPEG
-2. **Múltiples resoluciones** - Thumbnails pequeños para el menú, imagen grande para detalle
-3. **Mejoras al componente OptimizedImage** - Soporte para srcset y formatos modernos
+```text
+URL entrada:    products/chicken-crunch.jpg?t=123456
+URL generada:   products/chicken-crunch_400.jpg  ← NO EXISTE
+Resultado:      Error 404, imagen no se muestra
+```
 
----
-
-## Estado Actual vs Propuesto
-
-| Característica | Actual | Propuesto |
-|----------------|--------|-----------|
-| Formato | JPEG | WebP (con fallback JPEG) |
-| Resoluciones | 800px única | 200px (thumb), 400px (card), 800px (full) |
-| Peso promedio | ~150KB | ~50KB (WebP 400px) |
-| Lazy loading | ✅ IntersectionObserver | ✅ + responsive srcset |
+## Solución
+Modificar la lógica en `OptimizedImage.tsx` para:
+1. **Imágenes JPEG (legacy):** Usar URL original directamente, sin variantes
+2. **Imágenes WebP (nuevas optimizadas):** Usar variantes `_200.webp`, `_400.webp`, `.webp`
 
 ---
 
 ## Cambios Técnicos
 
-### 1. Actualizar `src/lib/imageProcessor.ts`
+### Archivo: `src/components/OptimizedImage.tsx`
 
-Agregar nuevas funciones:
+**Modificar la función `parseProductUrl`** para detectar si hay variantes reales:
 
 ```text
-Nuevas funciones:
-├── convertToWebP(blob, quality)     → Convierte imagen a WebP
-├── generateThumbnails(file)         → Genera 3 resoluciones
-└── Actualizar resizeImageTo1x1      → Usar WebP por defecto
+Lógica actual:
+├── Detectar formato (.jpg o .webp)
+├── Generar URLs de variantes (_200, _400)
+└── Usar variante según 'variant' prop
+
+Lógica corregida:
+├── Detectar formato (.jpg o .webp)
+├── SI es JPEG → usar URL original (sin variantes)
+├── SI es WebP → generar URLs de variantes
+└── Preservar query string (?t=timestamp)
 ```
 
-Lógica de generación de resoluciones:
+**Cambio específico en líneas 91-128:**
 
 ```text
-Original (cualquier tamaño)
-    │
-    ▼
-┌─────────────────────────────────────┐
-│  Resize + Crop a 1:1 (cuadrado)     │
-└─────────────────────────────────────┘
-    │
-    ├──► 800x800 WebP (full)   → products/{slug}.webp
-    ├──► 400x400 WebP (card)   → products/{slug}_400.webp
-    └──► 200x200 WebP (thumb)  → products/{slug}_200.webp
-```
+ANTES:
+const format = parsed.isWebP ? 'webp' : 'jpg';
+const variantSrc = variantSize === 800 
+  ? `${parsed.basePath}.${format}`
+  : `${parsed.basePath}_${variantSize}.${format}`;
 
-### 2. Actualizar `src/components/admin/ProductForm.tsx`
-
-Modificar `handleImageUpload` para:
-- Generar las 3 versiones de la imagen
-- Subir todas al storage
-- Guardar la URL base (sin sufijo) en la base de datos
-
-```text
-Flujo de subida:
-1. Usuario selecciona imagen
-2. Procesar a 1:1
-3. Generar 3 tamaños en WebP
-4. Subir los 3 archivos a storage
-5. Guardar URL base en imagen_url
-```
-
-### 3. Actualizar `src/components/OptimizedImage.tsx`
-
-Agregar soporte para múltiples resoluciones:
-
-```text
-Props nuevas:
-├── sizes?: string           → Tamaños responsivos (srcset)
-└── variant?: 'thumb' | 'card' | 'full'
-
-Lógica:
-- Si la URL base es de producto, construir srcset automáticamente
-- Detectar URLs de storage de productos (_200.webp, _400.webp, .webp)
-- Usar <picture> con fallback a JPEG original si existe
-```
-
-Ejemplo de uso:
-
-```text
-<OptimizedImage 
-  src="/products/hamburguesa.webp"
-  alt="Hamburguesa"
-  sizes="(max-width: 640px) 150px, 185px"
-/>
-
-Genera:
-<picture>
-  <source 
-    srcset="...hamburguesa_200.webp 200w, 
-            ...hamburguesa_400.webp 400w"
-    sizes="(max-width: 640px) 150px, 185px"
-    type="image/webp" 
-  />
-  <img src="...hamburguesa.webp" ... />
-</picture>
-```
-
-### 4. Actualizar `src/components/CompactProductCard.tsx`
-
-Pasar el variant correcto al OptimizedImage:
-
-```text
-<OptimizedImage 
-  src={item.imagen}
-  variant="card"        ← Nuevo
-  sizes="150px"         ← Nuevo
-  ...
-/>
+DESPUÉS:
+// Para JPEG (imágenes legacy), usar URL original
+if (!parsed.isWebP) {
+  return { src, srcSet: undefined, sizes: undefined, usesPicture: false };
+}
+// Para WebP (nuevas optimizadas), usar variantes
+const variantSrc = variantSize === 800 
+  ? `${parsed.basePath}.webp`
+  : `${parsed.basePath}_${variantSize}.webp`;
 ```
 
 ---
 
-## Estructura de Archivos en Storage
+## Comportamiento Esperado
+
+| Tipo de Imagen | URL Entrada | URL Usada |
+|----------------|-------------|-----------|
+| JPEG (existente) | `chicken-crunch.jpg?t=123` | `chicken-crunch.jpg?t=123` ✅ |
+| WebP (nueva) | `chicken-crunch.webp` | `chicken-crunch_400.webp` ✅ |
+
+---
+
+## Diagrama de Flujo
 
 ```text
-product-images/
-├── hamburguesa.webp          (800x800 - detalle producto)
-├── hamburguesa_400.webp      (400x400 - tarjetas menú)
-├── hamburguesa_200.webp      (200x200 - thumbnails)
-├── pizza-margarita.webp
-├── pizza-margarita_400.webp
-├── pizza-margarita_200.webp
-└── ...
+┌─────────────────────────────────────────────┐
+│           OptimizedImage                    │
+│    src="products/hamburguesa.jpg?t=123"    │
+└─────────────────────────────────────────────┘
+                    │
+                    ▼
+         ┌──────────────────────┐
+         │ ¿Es imagen de        │
+         │ producto storage?    │
+         └──────────────────────┘
+                    │
+            Sí      │
+                    ▼
+         ┌──────────────────────┐
+         │ ¿Formato es WebP?    │
+         └──────────────────────┘
+            │               │
+     No (JPEG)          Sí (WebP)
+            │               │
+            ▼               ▼
+   ┌────────────────┐  ┌────────────────┐
+   │ Usar URL       │  │ Generar srcset │
+   │ original       │  │ con variantes  │
+   │ (sin cambios)  │  │ _200, _400     │
+   └────────────────┘  └────────────────┘
+            │               │
+            └───────┬───────┘
+                    │
+                    ▼
+         ┌──────────────────────┐
+         │   Renderizar <img>   │
+         │   o <picture>        │
+         └──────────────────────┘
 ```
-
----
-
-## Impacto en Rendimiento
-
-| Métrica | Antes | Después |
-|---------|-------|---------|
-| Peso promedio por imagen | ~150KB | ~35KB (400px WebP) |
-| Tiempo de carga inicial | ~2.5s | ~1.2s |
-| LCP (Largest Contentful Paint) | Mejorado con srcset |
-| Puntuación Lighthouse Performance | +5-10 puntos estimado |
-
----
-
-## Compatibilidad
-
-- **WebP**: 97% de navegadores soportados
-- **Fallback**: Se mantiene funcionalidad con JPEG para navegadores antiguos
-- **Imágenes existentes**: Seguirán funcionando, solo las nuevas usarán WebP
 
 ---
 
@@ -155,8 +114,7 @@ product-images/
 
 | Archivo | Cambio |
 |---------|--------|
-| `src/lib/imageProcessor.ts` | Agregar conversión WebP y generación de múltiples tamaños |
-| `src/components/admin/ProductForm.tsx` | Subir 3 versiones de cada imagen |
-| `src/components/OptimizedImage.tsx` | Soporte para srcset y picture element |
-| `src/components/CompactProductCard.tsx` | Pasar sizes y variant al OptimizedImage |
+| `src/components/OptimizedImage.tsx` | Ajustar lógica para que imágenes JPEG usen URL original sin intentar cargar variantes |
 
+## Resultado
+Las imágenes existentes (JPEG) se mostrarán correctamente de inmediato. Las nuevas imágenes subidas (WebP optimizado) usarán las variantes responsivas automáticamente.
