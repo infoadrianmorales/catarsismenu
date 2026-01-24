@@ -47,6 +47,8 @@ export const CompactProductCard = memo(({ item, currency, displayMode = 'ambas' 
                 alt={`Foto de ${item.nombre}`}
                 className="h-full w-full object-cover p-1 sm:p-1.5 transition-transform duration-300 ease-out group-hover:scale-110 group-active:scale-105"
                 containerClassName="h-full w-full"
+                variant="card"
+                sizes="(max-width: 640px) 150px, 185px"
               />
             </div>
           </div>
