@@ -60,11 +60,9 @@ export const CompactProductCard = memo(({ item, currency, displayMode = 'ambas' 
             </h3>
           </Link>
           
-          {item.descripcion_corta && (
-            <p className="text-xs text-muted-foreground line-clamp-2 whitespace-normal mb-2 leading-relaxed">
-              {item.descripcion_corta}
-            </p>
-          )}
+          <p className="text-xs text-muted-foreground line-clamp-2 whitespace-normal mb-2 leading-relaxed min-h-[2rem]">
+            {item.descripcion_corta || '\u00A0'}
+          </p>
           
           <div className="mt-auto flex items-end justify-between gap-1 pt-1">
             {renderPrice()}
