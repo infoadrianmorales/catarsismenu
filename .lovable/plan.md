@@ -1,85 +1,101 @@
 
 
-# Plan: Corregir Asimetría de Categorías en Página Principal
+# Plan: Unificar Tamaño de Tarjetas entre Categorías
 
 ## Problema Identificado
 
-Las tarjetas de productos en las secciones de categorías tienen alturas inconsistentes porque:
+Las categorías muestran tarjetas de diferentes tamaños dependiendo de si usan grid o carrusel:
 
-1. **Descripciones opcionales**: Algunas tarjetas tienen descripción y otras no, creando diferencias de altura
-2. **Longitud variable de texto**: Los nombres y descripciones tienen diferentes longitudes
-3. **Falta de altura uniforme**: El carrusel no fuerza una altura consistente entre tarjetas
+| Modo | Ancho de Tarjeta | Condición |
+|------|------------------|-----------|
+| Grid | ~50% pantalla (móvil) | ≤4 productos |
+| Carrusel | 150px (móvil) / 185px (desktop) | >4 productos |
+
+Esto crea un aspecto visual inconsistente entre secciones.
+
+```text
+ANTES (inconsistente):
+┌─────────────────────────────────────┐
+│ ENTRADAS (>4, carrusel)             │
+│ ┌───┐ ┌───┐ ┌───┐ ┌───┐ →          │  ← Tarjetas pequeñas
+│ └───┘ └───┘ └───┘ └───┘             │
+├─────────────────────────────────────┤
+│ ENSALADAS (≤4, grid)                │
+│ ┌───────────┐ ┌───────────┐         │  ← Tarjetas grandes
+│ │           │ │           │         │
+│ └───────────┘ └───────────┘         │
+│ ┌───────────┐ ┌───────────┐         │
+│ │           │ │           │         │
+│ └───────────┘ └───────────┘         │
+└─────────────────────────────────────┘
+
+DESPUÉS (uniforme):
+┌─────────────────────────────────────┐
+│ ENTRADAS (>4, carrusel)             │
+│ ┌───┐ ┌───┐ ┌───┐ ┌───┐ →          │  ← Mismo tamaño
+│ └───┘ └───┘ └───┘ └───┘             │
+├─────────────────────────────────────┤
+│ ENSALADAS (≤4, scroll horizontal)   │
+│ ┌───┐ ┌───┐ ┌───┐                   │  ← Mismo tamaño
+│ └───┘ └───┘ └───┘                   │
+└─────────────────────────────────────┘
+```
 
 ## Solución Propuesta
 
-Aplicar altura uniforme a todas las tarjetas usando flexbox y espacios reservados para el contenido.
+**Usar carrusel para TODAS las categorías**, independientemente del número de productos. Esto garantiza que todas las tarjetas tengan el mismo tamaño y el mismo comportamiento de scroll horizontal.
 
 ---
 
 ## Cambios Técnicos
 
-### Archivo: `src/components/CompactProductCard.tsx`
+### Archivo: `src/components/CategorySection.tsx`
 
-| Elemento | Problema Actual | Solución |
-|----------|-----------------|----------|
-| Descripción | Ocupa espacio variable cuando existe/no existe | Agregar `min-h-[2rem]` para reservar espacio fijo |
-| Contenedor de contenido | Altura flexible | Usar estructura flex consistente |
+| Antes | Después |
+|-------|---------|
+| Grid si items ≤ 4, Carrusel si > 4 | Siempre Carrusel |
 
-**Cambio específico en línea 63-66:**
+**Cambio específico:**
+
+Eliminar la lógica condicional y usar siempre `ProductCarousel`:
 
 ```text
-Actual:
-{item.descripcion_corta && (
-  <p className="text-xs ... line-clamp-2 ...">
+Antes (líneas 27 y 59-76):
+const useCarousel = items.length > 4;
 
-Nuevo:
-<p className="text-xs ... line-clamp-2 min-h-[2rem] ...">
-  {item.descripcion_corta || '\u00A0'}
+{useCarousel ? (
+  <ProductCarousel ... />
+) : (
+  <div className="grid ...">
+    {items.map(...)}
+  </div>
+)}
+
+Después:
+// Eliminar la variable useCarousel
+// Siempre usar ProductCarousel
+
+<ProductCarousel 
+  items={items} 
+  currency={currency} 
+  displayMode={displayMode} 
+/>
 ```
-
-Esto garantiza que el espacio de descripción siempre esté reservado, aunque esté vacío.
 
 ---
 
-### Archivo: `src/components/ProductCarousel.tsx`
+## Beneficios
 
-| Elemento | Problema Actual | Solución |
-|----------|-----------------|----------|
-| Contenedor de tarjeta | Solo ancho fijo, altura variable | Agregar `h-full` y clase de alineación |
-
-**Cambio específico en líneas 17-19:**
-
-```text
-Actual:
-className="snap-start shrink-0 w-[150px] sm:w-[185px]"
-
-Nuevo:
-className="snap-start shrink-0 w-[150px] sm:w-[185px] h-full"
-```
-
-También agregar `items-stretch` al contenedor flex para que todas las tarjetas tengan la misma altura.
+1. **Consistencia visual**: Todas las tarjetas tienen el mismo tamaño (150px/185px)
+2. **Experiencia unificada**: Siempre scroll horizontal, mismo patrón de interacción
+3. **Código más simple**: Elimina la lógica condicional grid/carrusel
+4. **Mobile-first**: El carrusel es más natural en dispositivos móviles
 
 ---
 
-## Resultado Visual Esperado
+## Alternativa Considerada
 
-```text
-ANTES (asimétrico):
-┌─────┐ ┌─────┐ ┌─────┐
-│     │ │     │ │     │
-│  A  │ │  B  │ │  C  │
-│     │ │     │ └─────┘  ← Altura diferente
-│     │ └─────┘
-└─────┘
-
-DESPUÉS (simétrico):
-┌─────┐ ┌─────┐ ┌─────┐
-│     │ │     │ │     │
-│  A  │ │  B  │ │  C  │
-│     │ │     │ │     │
-│     │ │     │ │     │
-└─────┘ └─────┘ └─────┘  ← Altura uniforme
-```
+Otra opción sería forzar el grid a usar el mismo ancho fijo que el carrusel. Sin embargo, esto resultaría en mucho espacio vacío en categorías con pocos productos. El carrusel mantiene las tarjetas compactas y alineadas a la izquierda, lo cual es más natural.
 
 ---
 
@@ -87,14 +103,5 @@ DESPUÉS (simétrico):
 
 | Archivo | Cambio |
 |---------|--------|
-| `src/components/CompactProductCard.tsx` | Reservar espacio fijo para descripción con `min-h-[2rem]` |
-| `src/components/ProductCarousel.tsx` | Agregar `items-stretch` al flex container y `h-full` a los wrappers |
-
----
-
-## Notas de Compatibilidad
-
-- Los cambios son puramente de CSS, no afectan lógica ni datos
-- Las tarjetas en grid (categorías con ≤4 items) también se beneficiarán porque ya usan `h-full` en `CompactProductCard`
-- Mantiene el diseño mobile-first existente
+| `src/components/CategorySection.tsx` | Eliminar condicional grid/carrusel, siempre usar `ProductCarousel` |
 
