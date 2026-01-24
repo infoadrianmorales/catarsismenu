@@ -6,10 +6,10 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Eye, RefreshCw, Copy, Check, Clock, CreditCard, Truck, XCircle, DollarSign, ShoppingBag } from 'lucide-react';
+import { Loader2, Eye, RefreshCw, Copy, Check, Clock, CreditCard, XCircle, DollarSign, ShoppingBag, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { format, isToday, startOfWeek, isWithinInterval } from 'date-fns';
+import { format, isToday, startOfWeek, isWithinInterval, differenceInMinutes } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 interface Order {
@@ -37,7 +37,7 @@ interface OrderItem {
   line_total: number;
 }
 
-type OrderTab = 'pending' | 'paid' | 'delivered' | 'canceled' | 'all';
+type OrderTab = 'new' | 'pending' | 'paid' | 'canceled' | 'all';
 
 const STATUS_OPTIONS = [
   { value: 'NEW', label: 'Nuevo', color: 'bg-blue-500' },
@@ -56,32 +56,42 @@ const PAYMENT_LABELS: Record<string, string> = {
   TRANSFER: 'Transferencia',
 };
 
-const TAB_CONFIG: Record<OrderTab, { label: string; statuses: string[]; icon: React.ReactNode }> = {
+const TAB_CONFIG: Record<OrderTab, { label: string; icon: React.ReactNode }> = {
+  new: { 
+    label: 'Nuevas', 
+    icon: <Sparkles className="h-4 w-4" />
+  },
   pending: { 
     label: 'Pendientes', 
-    statuses: ['NEW', 'IN_PROGRESS', 'PAYMENT_SUBMITTED'],
     icon: <Clock className="h-4 w-4" />
   },
   paid: { 
     label: 'Pagadas', 
-    statuses: ['PAID'],
     icon: <CreditCard className="h-4 w-4" />
-  },
-  delivered: { 
-    label: 'Entregadas', 
-    statuses: ['DELIVERED'],
-    icon: <Truck className="h-4 w-4" />
   },
   canceled: { 
     label: 'Canceladas', 
-    statuses: ['CANCELED'],
     icon: <XCircle className="h-4 w-4" />
   },
   all: { 
     label: 'Todas', 
-    statuses: [],
     icon: <ShoppingBag className="h-4 w-4" />
   },
+};
+
+// Time threshold for moving orders from "Nuevas" to "Pendientes" (60 minutes)
+const NEW_ORDER_THRESHOLD_MINUTES = 60;
+
+// Classify an order into the appropriate tab based on status and time
+const classifyOrder = (order: Order): OrderTab => {
+  if (order.status === 'CANCELED') return 'canceled';
+  if (order.status === 'PAID' || order.status === 'DELIVERED') return 'paid';
+  if (order.status === 'NEW') {
+    const minutesSinceCreation = differenceInMinutes(new Date(), new Date(order.created_at));
+    return minutesSinceCreation < NEW_ORDER_THRESHOLD_MINUTES ? 'new' : 'pending';
+  }
+  if (['IN_PROGRESS', 'PAYMENT_SUBMITTED'].includes(order.status)) return 'pending';
+  return 'all';
 };
 
 export const OrdersPanel = () => {
@@ -91,7 +101,7 @@ export const OrdersPanel = () => {
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [loadingItems, setLoadingItems] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [activeTab, setActiveTab] = useState<OrderTab>('pending');
+  const [activeTab, setActiveTab] = useState<OrderTab>('new');
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -128,12 +138,16 @@ export const OrdersPanel = () => {
     fetchOrders();
   }, []);
 
-  // Calculate KPIs
+  // Calculate KPIs with the new classification logic
   const kpis = useMemo(() => {
     const now = new Date();
     const weekStart = startOfWeek(now, { weekStartsOn: 1 });
 
-    const pending = orders.filter(o => ['NEW', 'IN_PROGRESS', 'PAYMENT_SUBMITTED'].includes(o.status)).length;
+    // New orders (< 60 min)
+    const newOrders = orders.filter(o => classifyOrder(o) === 'new').length;
+    
+    // Pending orders (> 60 min or IN_PROGRESS/PAYMENT_SUBMITTED)
+    const pending = orders.filter(o => classifyOrder(o) === 'pending').length;
     
     const paidOrders = orders.filter(o => o.status === 'PAID' || o.status === 'DELIVERED');
     const paidToday = paidOrders.filter(o => isToday(new Date(o.created_at))).length;
@@ -147,22 +161,22 @@ export const OrdersPanel = () => {
     
     const canceled = orders.filter(o => o.status === 'CANCELED').length;
 
-    return { pending, paidToday, paidThisWeek, revenueToday, canceled };
+    return { newOrders, pending, paidToday, paidThisWeek, revenueToday, canceled };
   }, [orders]);
 
-  // Filter orders by active tab
+  // Filter orders by active tab using the classification logic
   const filteredOrders = useMemo(() => {
     if (activeTab === 'all') return orders;
-    return orders.filter(o => TAB_CONFIG[activeTab].statuses.includes(o.status));
+    return orders.filter(o => classifyOrder(o) === activeTab);
   }, [orders, activeTab]);
 
-  // Count orders per tab
+  // Count orders per tab using the classification logic
   const tabCounts = useMemo(() => {
     return {
-      pending: orders.filter(o => TAB_CONFIG.pending.statuses.includes(o.status)).length,
-      paid: orders.filter(o => TAB_CONFIG.paid.statuses.includes(o.status)).length,
-      delivered: orders.filter(o => TAB_CONFIG.delivered.statuses.includes(o.status)).length,
-      canceled: orders.filter(o => TAB_CONFIG.canceled.statuses.includes(o.status)).length,
+      new: orders.filter(o => classifyOrder(o) === 'new').length,
+      pending: orders.filter(o => classifyOrder(o) === 'pending').length,
+      paid: orders.filter(o => classifyOrder(o) === 'paid').length,
+      canceled: orders.filter(o => classifyOrder(o) === 'canceled').length,
       all: orders.length,
     };
   }, [orders]);
@@ -235,7 +249,18 @@ export const OrdersPanel = () => {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <Card>
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-blue-500/10">
+              <Sparkles className="h-5 w-5 text-blue-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold">{kpis.newOrders}</p>
+              <p className="text-xs text-muted-foreground">Nuevas (&lt;60 min)</p>
+            </div>
+          </CardContent>
+        </Card>
         <Card>
           <CardContent className="p-4 flex items-center gap-3">
             <div className="p-2 rounded-lg bg-yellow-500/10">
@@ -243,7 +268,7 @@ export const OrdersPanel = () => {
             </div>
             <div>
               <p className="text-2xl font-bold">{kpis.pending}</p>
-              <p className="text-xs text-muted-foreground">Pendientes de pago</p>
+              <p className="text-xs text-muted-foreground">Pendientes</p>
             </div>
           </CardContent>
         </Card>
