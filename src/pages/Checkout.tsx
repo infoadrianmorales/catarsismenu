@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, MessageCircle, Loader2 } from 'lucide-react';
+import { ArrowLeft, MessageCircle, Loader2, MapPin, Store } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -19,6 +19,7 @@ import { PaymentConfirmationStep } from '@/components/checkout/PaymentConfirmati
 import { z } from 'zod';
 
 type CheckoutStep = 'form' | 'payment-details' | 'confirmation' | 'success';
+type DeliveryType = 'pickup' | 'delivery';
 
 // Validate Google Maps URL pattern
 const isValidMapsUrl = (url: string): boolean => {
@@ -57,6 +58,7 @@ const Checkout = () => {
   const { methods, loading: methodsLoading, getMethodById, getMethodsForCurrency, getInstructions } = usePaymentMethods();
   
   const [step, setStep] = useState<CheckoutStep>('form');
+  const [deliveryType, setDeliveryType] = useState<DeliveryType>('pickup');
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -120,17 +122,25 @@ const Checkout = () => {
     const totalStr = paymentCurrency === 'USD' ? prices.formattedUSD : prices.formattedVES;
     const paymentMethodLabel = getMethodById(formData.paymentMethod)?.label || formData.paymentMethod;
 
-    // Build delivery section
-    let deliverySection = '';
-    if (formData.deliveryAddress.trim()) {
-      deliverySection = `\n\n*Entrega: Delivery*\nDirección: ${formData.deliveryAddress.trim()}`;
+    // Build delivery/pickup section
+    let entregaSection = '';
+    if (deliveryType === 'delivery') {
+      entregaSection = `\n\n*Entrega: Delivery 🛵*`;
+      if (formData.deliveryAddress.trim()) {
+        entregaSection += `\nDirección: ${formData.deliveryAddress.trim()}`;
+      }
       if (formData.deliveryMapsUrl.trim()) {
-        deliverySection += `\nUbicación (Maps): ${formData.deliveryMapsUrl.trim()}`;
+        entregaSection += `\nUbicación (Maps): ${formData.deliveryMapsUrl.trim()}`;
       }
       if (notes.trim()) {
-        deliverySection += `\nReferencia: ${notes.trim()}`;
+        entregaSection += `\nReferencia: ${notes.trim()}`;
       }
-      deliverySection += `\n⚠️ _El costo del delivery NO está incluido._`;
+      entregaSection += `\n⚠️ _El costo del delivery NO está incluido y será coordinado por este chat._`;
+    } else {
+      entregaSection = `\n\n*Entrega: Pickup (Retiro en local) 🏪*`;
+      if (notes.trim()) {
+        entregaSection += `\nNotas: ${notes.trim()}`;
+      }
     }
 
     const message = `Hola 👋 Soy ${formData.firstName} ${formData.lastName}. Ya realicé el pago de mi pedido en Catarsis.
@@ -138,8 +148,7 @@ const Checkout = () => {
 *Pedido:*
 ${itemLines}
 
-*Total: ${totalStr}*
-⚠️ _Este monto no incluye el costo del delivery._${deliverySection}
+*Total: ${totalStr}*${entregaSection}
 
 *Moneda de pago:* ${paymentCurrency}
 *Método de pago:* ${paymentMethodLabel}
@@ -166,6 +175,13 @@ Correo: ${formData.email.toLowerCase()}
       });
       setErrors(fieldErrors);
       toast.error('Por favor completa todos los campos correctamente');
+      return;
+    }
+
+    // Validate delivery address if delivery is selected
+    if (deliveryType === 'delivery' && !formData.deliveryAddress.trim()) {
+      setErrors(prev => ({ ...prev, deliveryAddress: 'La dirección es requerida para delivery' }));
+      toast.error('Por favor ingresa la dirección de entrega');
       return;
     }
 
@@ -223,8 +239,9 @@ Correo: ${formData.email.toLowerCase()}
           payment_reference: reference,
           payment_confirmed_at: new Date().toISOString(),
           notes: notes || null,
-          delivery_address: formData.deliveryAddress.trim() || null,
-          delivery_maps_url: formData.deliveryMapsUrl.trim() || null,
+          delivery_type: deliveryType,
+          delivery_address: deliveryType === 'delivery' ? formData.deliveryAddress.trim() || null : null,
+          delivery_maps_url: deliveryType === 'delivery' ? formData.deliveryMapsUrl.trim() || null : null,
           subtotal: subtotal,
           total: subtotal,
           status: 'PAYMENT_SUBMITTED',
@@ -354,45 +371,93 @@ Correo: ${formData.email.toLowerCase()}
                 )}
               </div>
 
-              {/* Delivery Address Section */}
+              {/* Delivery Type Selection */}
               <div className="border-t border-border pt-4 mt-4">
-                <h3 className="font-medium mb-3">Datos de Entrega (Delivery)</h3>
+                <h3 className="font-medium mb-3">Tipo de Entrega *</h3>
                 
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="deliveryAddress">Dirección de entrega</Label>
-                    <Input
-                      id="deliveryAddress"
-                      value={formData.deliveryAddress}
-                      onChange={(e) => handleInputChange('deliveryAddress', e.target.value)}
-                      placeholder="Av. Principal, Edificio XYZ, Piso 3, Apto 5"
-                      className={errors.deliveryAddress ? 'border-destructive' : ''}
-                    />
-                    {errors.deliveryAddress && (
-                      <p className="text-xs text-destructive">{errors.deliveryAddress}</p>
-                    )}
-                  </div>
+                <RadioGroup
+                  value={deliveryType}
+                  onValueChange={(value) => setDeliveryType(value as DeliveryType)}
+                  className="grid grid-cols-2 gap-3"
+                >
+                  <Label
+                    htmlFor="type-pickup"
+                    className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                      deliveryType === 'pickup' 
+                        ? 'border-primary bg-primary/5' 
+                        : 'border-border hover:border-primary/50'
+                    }`}
+                  >
+                    <RadioGroupItem value="pickup" id="type-pickup" className="sr-only" />
+                    <Store className="h-5 w-5 text-primary shrink-0" />
+                    <div>
+                      <p className="font-medium">Pickup</p>
+                      <p className="text-xs text-muted-foreground">Retiro en local</p>
+                    </div>
+                  </Label>
                   
-                  <div className="space-y-2">
-                    <Label htmlFor="deliveryMapsUrl">
-                      Link de Google Maps <span className="text-muted-foreground font-normal">(opcional)</span>
-                    </Label>
-                    <Input
-                      id="deliveryMapsUrl"
-                      type="url"
-                      value={formData.deliveryMapsUrl}
-                      onChange={(e) => handleInputChange('deliveryMapsUrl', e.target.value)}
-                      placeholder="Pega aquí el enlace de Google Maps…"
-                      className={errors.deliveryMapsUrl ? 'border-destructive' : ''}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Recomendado para mayor precisión en la ubicación.
-                    </p>
-                    {errors.deliveryMapsUrl && (
-                      <p className="text-xs text-destructive">{errors.deliveryMapsUrl}</p>
-                    )}
+                  <Label
+                    htmlFor="type-delivery"
+                    className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                      deliveryType === 'delivery' 
+                        ? 'border-primary bg-primary/5' 
+                        : 'border-border hover:border-primary/50'
+                    }`}
+                  >
+                    <RadioGroupItem value="delivery" id="type-delivery" className="sr-only" />
+                    <MapPin className="h-5 w-5 text-primary shrink-0" />
+                    <div>
+                      <p className="font-medium">Delivery</p>
+                      <p className="text-xs text-muted-foreground">Envío a domicilio</p>
+                    </div>
+                  </Label>
+                </RadioGroup>
+
+                {/* Delivery Address Fields - Only show when delivery is selected */}
+                {deliveryType === 'delivery' && (
+                  <div className="mt-4 space-y-4 animate-in slide-in-from-top-2 duration-200">
+                    <div className="bg-secondary/10 border border-secondary/20 rounded-lg p-3 mb-4">
+                      <p className="text-sm text-secondary flex items-center gap-2">
+                        <span>⚠️</span>
+                        El costo del delivery <strong>no está incluido</strong> en el monto total y será notificado en el chat de WhatsApp.
+                      </p>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="deliveryAddress">Dirección de entrega *</Label>
+                      <Input
+                        id="deliveryAddress"
+                        value={formData.deliveryAddress}
+                        onChange={(e) => handleInputChange('deliveryAddress', e.target.value)}
+                        placeholder="Av. Principal, Edificio XYZ, Piso 3, Apto 5"
+                        className={errors.deliveryAddress ? 'border-destructive' : ''}
+                      />
+                      {errors.deliveryAddress && (
+                        <p className="text-xs text-destructive">{errors.deliveryAddress}</p>
+                      )}
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="deliveryMapsUrl">
+                        Link de Google Maps <span className="text-muted-foreground font-normal">(opcional)</span>
+                      </Label>
+                      <Input
+                        id="deliveryMapsUrl"
+                        type="url"
+                        value={formData.deliveryMapsUrl}
+                        onChange={(e) => handleInputChange('deliveryMapsUrl', e.target.value)}
+                        placeholder="Pega aquí el enlace de Google Maps…"
+                        className={errors.deliveryMapsUrl ? 'border-destructive' : ''}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Recomendado para mayor precisión en la ubicación.
+                      </p>
+                      {errors.deliveryMapsUrl && (
+                        <p className="text-xs text-destructive">{errors.deliveryMapsUrl}</p>
+                      )}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </CardContent>
           </Card>
