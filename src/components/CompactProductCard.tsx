@@ -51,14 +51,20 @@ export const CompactProductCard = ({ item, currency, displayMode = 'ambas' }: Co
         </Link>
         
         {/* Content */}
-        <div className="p-2 pt-1 flex flex-col flex-1 min-h-0">
+        <div className="p-2.5 pt-1.5 flex flex-col flex-1">
           <Link to={`/producto/${item.slug}`} className="block mb-1">
-            <h3 className="font-display text-sm font-bold leading-tight group-hover:text-primary transition-colors line-clamp-2 whitespace-normal h-10">
+            <h3 className="font-display text-sm font-bold leading-tight group-hover:text-primary transition-colors line-clamp-2 whitespace-normal min-h-[2.5rem]">
               {item.nombre}
             </h3>
           </Link>
           
-          <div className="mt-auto flex items-end justify-between gap-1 pt-2">
+          {item.descripcion_corta && (
+            <p className="text-xs text-muted-foreground line-clamp-2 whitespace-normal mb-2 leading-relaxed">
+              {item.descripcion_corta}
+            </p>
+          )}
+          
+          <div className="mt-auto flex items-end justify-between gap-1 pt-1">
             {renderPrice()}
             <AddToCartButton product={item} variant="icon" />
           </div>

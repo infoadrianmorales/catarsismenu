@@ -16,7 +16,7 @@ export const ProductCarousel = ({ items, currency, displayMode = 'ambas' }: Prod
         {items.map((item) => (
           <div 
             key={item.id} 
-            className="snap-start shrink-0 w-[160px] sm:w-[180px] h-[260px]"
+            className="snap-start shrink-0 w-[165px] sm:w-[185px]"
           >
             <CompactProductCard 
               item={item} 
