@@ -1,260 +1,163 @@
 
-# Plan: Integración Completa de Meta Pixel (Facebook Pixel)
+
+# Plan: Reorganización de Tabs de Órdenes
 
 ## Resumen
 
-Implementaremos el Meta Pixel para rastrear conversiones y optimizar campañas publicitarias en Facebook/Instagram. La integración incluirá configuración dinámica desde el panel de administración y eventos avanzados de e-commerce.
+Reorganizaremos las pestañas del panel de órdenes para reflejar mejor el flujo operativo del negocio, fusionando "Pagadas" y "Entregadas" en un solo tab, y separando las órdenes nuevas de las pendientes por tiempo.
 
 ---
 
-## Eventos a Implementar
+## Nueva Estructura de Tabs
 
-| Evento | Descripción | Ubicación |
-|--------|-------------|-----------|
-| **PageView** | Cada vista de página | Global (cambio de ruta) |
-| **ViewContent** | Ver página de producto | `ProductPage.tsx` |
-| **AddToCart** | Agregar producto al carrito | `AddToCartButton.tsx` |
-| **InitiateCheckout** | Entrar al checkout | `Checkout.tsx` |
-| **Purchase** | Compra completada | `Checkout.tsx` (éxito) |
-| **Contact** | Clic en WhatsApp | Hero, StickyBar, FloatingWA |
-| **Search** | Búsqueda de productos | `useSearch.ts` |
+| Tab | Estados Incluidos | Descripción | Icono |
+|-----|-------------------|-------------|-------|
+| **Nuevas** | `NEW` | Órdenes recién recibidas (< 60 min) | ⭐ Sparkles |
+| **Pendientes** | `IN_PROGRESS`, `PAYMENT_SUBMITTED` | Órdenes en espera de pago (> 60 min sin acción) | ⏰ Clock |
+| **Pagadas** | `PAID`, `DELIVERED` | Órdenes con pago confirmado o entregadas | ✅ CheckCircle |
+| **Canceladas** | `CANCELED` | Órdenes canceladas | ❌ XCircle |
+| **Todas** | Todos los estados | Vista completa | 📦 ShoppingBag |
 
 ---
 
-## Fase 1: Configuración en Base de Datos
+## Lógica de Clasificación Automática
 
-### 1.1 Nuevas claves en tabla `config`
+### Regla de los 60 minutos
 
-Se insertarán dos nuevas configuraciones:
-
-| Key | Valor Inicial | Descripción |
-|-----|---------------|-------------|
-| `meta_pixel_id` | `""` | ID del Pixel (15-16 dígitos) |
-| `meta_pixel_enabled` | `"false"` | Activa/desactiva el tracking |
-
----
-
-## Fase 2: Servicio Centralizado de Meta Pixel
-
-### 2.1 Crear `src/lib/metaPixel.ts`
-
-Servicio que manejará todas las interacciones con el Pixel:
+Las órdenes con estado `NEW` que tengan más de 60 minutos desde su creación se mostrarán automáticamente en la pestaña "Pendientes" en lugar de "Nuevas".
 
 ```text
-Funciones:
-├── initMetaPixel(pixelId: string)
-│   └── Inyecta el script base de Facebook dinámicamente
-│
-├── trackPageView()
-│   └── fbq('track', 'PageView')
-│
-├── trackViewContent(product)
-│   └── fbq('track', 'ViewContent', {
-│         content_ids: [id],
-│         content_name: nombre,
-│         content_category: categoria,
-│         content_type: 'product',
-│         value: precio_usd,
-│         currency: 'USD'
-│       })
-│
-├── trackAddToCart(product, quantity)
-│   └── fbq('track', 'AddToCart', {
-│         content_ids: [id],
-│         content_name: nombre,
-│         content_type: 'product',
-│         value: precio_usd * quantity,
-│         currency: 'USD'
-│       })
-│
-├── trackInitiateCheckout(items, subtotal)
-│   └── fbq('track', 'InitiateCheckout', {
-│         content_ids: items.map(i => i.id),
-│         num_items: totalItems,
-│         value: subtotal,
-│         currency: 'USD'
-│       })
-│
-├── trackPurchase(orderId, value, items)
-│   └── fbq('track', 'Purchase', {
-│         value,
-│         currency: 'USD',
-│         content_ids: items.map(i => i.id),
-│         order_id: orderId,
-│         num_items: items.length
-│       })
-│
-├── trackContact(source)
-│   └── fbq('track', 'Contact', {
-│         content_category: source
-│       })
-│
-└── trackSearch(query)
-    └── fbq('track', 'Search', {
-          search_string: query
-        })
+Flujo de clasificación:
+┌─────────────────────────────────────┐
+│      Orden creada (status: NEW)     │
+└─────────────────┬───────────────────┘
+                  │
+         ¿Tiene más de 60 min?
+                  │
+        ┌─────────┴─────────┐
+        │                   │
+       No                  Sí
+        │                   │
+        ▼                   ▼
+┌─────────────┐    ┌─────────────────┐
+│ Tab "Nuevas"│    │ Tab "Pendientes"│
+└─────────────┘    └─────────────────┘
 ```
 
-### 2.2 Consideraciones Técnicas
+### Criterio de Tiempo
 
-- El script se inyecta solo si hay Pixel ID configurado y habilitado
-- Verificación de `window.fbq` antes de cada llamada
-- Compatibilidad total con el sistema de analytics existente
-
----
-
-## Fase 3: Panel de Administración
-
-### 3.1 Nueva sección en `ConfigPanel.tsx`
-
-Se agregará una nueva tarjeta "Meta Pixel (Facebook)" con:
-
-| Campo | Descripción |
-|-------|-------------|
-| Pixel ID | Input para el ID de 15-16 dígitos |
-| Habilitado | Switch para activar/desactivar |
-| Estado | Badge verde si está activo |
-| Ayuda | Link a documentación de Meta |
-
-### 3.2 Validación
-
-- El Pixel ID debe ser numérico (15-16 dígitos)
-- Mostrar error visual si el formato es inválido
-- Guardado automático al modificar
+- **Nuevas**: Órdenes `NEW` creadas hace menos de 60 minutos
+- **Pendientes**: Órdenes `NEW` con más de 60 minutos + `IN_PROGRESS` + `PAYMENT_SUBMITTED`
 
 ---
 
-## Fase 4: Proveedor Global
+## Cambios en el Código
 
-### 4.1 Crear `src/components/MetaPixelProvider.tsx`
+### 1. Actualizar TAB_CONFIG
 
-Componente que:
-1. Obtiene el Pixel ID de la configuración
-2. Inicializa el Pixel si está configurado y habilitado
-3. Escucha cambios de ruta para disparar `PageView`
+Se modificará la configuración de pestañas:
 
-### 4.2 Integrar en `App.tsx`
+```text
+TAB_CONFIG actual:
+├── pending: ['NEW', 'IN_PROGRESS', 'PAYMENT_SUBMITTED']
+├── paid: ['PAID']
+├── delivered: ['DELIVERED']
+├── canceled: ['CANCELED']
+└── all: []
 
-Envolver la aplicación con el proveedor para tracking global.
+TAB_CONFIG nuevo:
+├── new: ['NEW'] (con filtro < 60 min)
+├── pending: ['IN_PROGRESS', 'PAYMENT_SUBMITTED', 'NEW > 60 min']
+├── paid: ['PAID', 'DELIVERED']
+├── canceled: ['CANCELED']
+└── all: []
+```
 
----
+### 2. Lógica de Filtrado Inteligente
 
-## Fase 5: Integración en Componentes
+Se implementará una función que clasifique las órdenes según:
+1. Estado de la orden
+2. Tiempo transcurrido desde la creación (para órdenes `NEW`)
 
-### 5.1 Eventos de Producto
+### 3. Actualizar KPIs
 
-| Archivo | Evento | Cuándo |
-|---------|--------|--------|
-| `ProductPage.tsx` | `ViewContent` | Al cargar la página de producto |
-| `AddToCartButton.tsx` | `AddToCart` | Al agregar producto al carrito |
+Los KPIs se ajustarán para reflejar la nueva estructura:
+- **Nuevas**: Cantidad de órdenes nuevas (< 60 min)
+- **Pendientes**: Órdenes que requieren seguimiento
+- **Pagadas hoy/semana**: Combinación de `PAID` + `DELIVERED`
+- **Canceladas**: Sin cambios
 
-### 5.2 Eventos de Checkout
+### 4. Actualizar Grid de Tabs
 
-| Archivo | Evento | Cuándo |
-|---------|--------|--------|
-| `Checkout.tsx` | `InitiateCheckout` | Al entrar al checkout |
-| `Checkout.tsx` | `Purchase` | Al completar la orden exitosamente |
-
-### 5.3 Eventos de Contacto
-
-| Archivo | Evento | Cuándo |
-|---------|--------|--------|
-| `HeroSection.tsx` | `Contact` | Clic en botón WhatsApp |
-| `StickyActionBar.tsx` | `Contact` | Clic en botón "Pedir" |
-| `FloatingWhatsApp.tsx` | `Contact` | Clic en botón flotante |
-
-### 5.4 Eventos de Búsqueda
-
-| Archivo | Evento | Cuándo |
-|---------|--------|--------|
-| `useSearch.ts` | `Search` | Al buscar productos (debounced) |
+El grid pasará de 5 columnas a 5 (mismo número, diferentes tabs):
+- Se elimina "Entregadas" 
+- Se renombra "Pendientes" → "Nuevas"
+- Se agrega nuevo "Pendientes" con lógica de tiempo
 
 ---
 
-## Archivos a Crear
-
-| Archivo | Propósito |
-|---------|-----------|
-| `src/lib/metaPixel.ts` | Servicio centralizado de Meta Pixel |
-| `src/components/MetaPixelProvider.tsx` | Proveedor global de inicialización |
-
-## Archivos a Modificar
+## Archivo a Modificar
 
 | Archivo | Cambios |
 |---------|---------|
-| `src/hooks/useConfig.ts` | Agregar campos `meta_pixel_id` y `meta_pixel_enabled` |
-| `src/components/admin/ConfigPanel.tsx` | Nueva sección de configuración del Pixel |
-| `src/App.tsx` | Integrar `MetaPixelProvider` |
-| `src/pages/ProductPage.tsx` | Agregar evento `ViewContent` |
-| `src/components/cart/AddToCartButton.tsx` | Agregar evento `AddToCart` |
-| `src/pages/Checkout.tsx` | Agregar eventos `InitiateCheckout` y `Purchase` |
-| `src/components/HeroSection.tsx` | Agregar evento `Contact` |
-| `src/components/StickyActionBar.tsx` | Agregar evento `Contact` |
-| `src/components/FloatingWhatsApp.tsx` | Agregar evento `Contact` |
-| `src/hooks/useSearch.ts` | Agregar evento `Search` |
+| `src/components/admin/OrdersPanel.tsx` | Actualizar TAB_CONFIG, lógica de filtrado, KPIs y etiquetas |
 
 ---
 
-## Cambios en Base de Datos
+## Detalles de Implementación
 
-### Migración SQL
-
-```sql
-INSERT INTO config (key, value) 
-VALUES 
-  ('meta_pixel_id', ''),
-  ('meta_pixel_enabled', 'false')
-ON CONFLICT (key) DO NOTHING;
-```
-
----
-
-## Flujo de Datos
+### Nueva Lógica de Clasificación
 
 ```text
-Usuario navega
-       │
-       ▼
-┌─────────────────────────────┐
-│   MetaPixelProvider         │
-│   - Inicializa Pixel        │
-│   - Escucha cambios ruta    │
-└──────────────┬──────────────┘
-               │
-     ┌─────────┴─────────┐
-     │                   │
-     ▼                   ▼
-PageView           Evento específico
-(automático)       (según acción)
-     │                   │
-     └─────────┬─────────┘
-               │
-               ▼
-        ┌─────────────┐
-        │  Meta Ads   │
-        │  Manager    │
-        └─────────────┘
+function classifyOrder(order):
+  if order.status == 'CANCELED':
+    return 'canceled'
+  if order.status in ['PAID', 'DELIVERED']:
+    return 'paid'
+  if order.status == 'NEW':
+    if minutesSinceCreation(order) < 60:
+      return 'new'
+    else:
+      return 'pending'
+  if order.status in ['IN_PROGRESS', 'PAYMENT_SUBMITTED']:
+    return 'pending'
+  return 'all'
 ```
+
+### Nuevos Iconos y Etiquetas
+
+| Tab | Icono | Etiqueta | Color Fondo |
+|-----|-------|----------|-------------|
+| Nuevas | Sparkles | "Nuevas" | Azul |
+| Pendientes | Clock | "Pendientes" | Amarillo/Naranja |
+| Pagadas | CheckCircle | "Pagadas" | Verde |
+| Canceladas | XCircle | "Canceladas" | Rojo |
+| Todas | ShoppingBag | "Todas" | Gris |
 
 ---
 
 ## Resultado Esperado
 
-1. **Panel de Admin**: Nueva sección para configurar Meta Pixel
-2. **Tracking Automático**: `PageView` en cada navegación
-3. **Eventos E-commerce**: `ViewContent`, `AddToCart`, `InitiateCheckout`, `Purchase`
-4. **Eventos Contacto**: Cada clic en WhatsApp registrado
-5. **Búsquedas**: Rastreo de qué buscan los usuarios
-6. **Sin código hardcoded**: El Pixel ID se configura desde el admin
-7. **Compatible**: El sistema de analytics interno sigue funcionando
+1. **Tab "Nuevas"**: Muestra solo órdenes `NEW` recientes (< 60 min) - foco en atención inmediata
+2. **Tab "Pendientes"**: Órdenes que necesitan seguimiento (> 60 min sin pago o en proceso)
+3. **Tab "Pagadas"**: Todas las órdenes exitosas (pagadas + entregadas) en un solo lugar
+4. **Eliminación de redundancia**: Ya no hay tab separado de "Entregadas"
+5. **Automatización**: Las órdenes se mueven automáticamente de "Nuevas" a "Pendientes" después de 60 min
 
 ---
 
-## Verificación Post-Implementación
+## Flujo Visual del Cliente
 
-Para verificar que el Pixel funciona:
+```text
+┌───────────┐    ┌───────────────┐    ┌──────────┐
+│  NUEVAS   │ →  │  PENDIENTES   │ →  │ PAGADAS  │
+│ (< 60min) │    │ (> 60min sin  │    │ (PAID o  │
+│           │    │  actualizar)  │    │DELIVERED)│
+└───────────┘    └───────────────┘    └──────────┘
+                         │
+                         ▼
+                  ┌────────────┐
+                  │ CANCELADAS │
+                  └────────────┘
+```
 
-1. Instalar extensión "Meta Pixel Helper" en Chrome
-2. Navegar por el sitio
-3. Verificar que los eventos aparecen en la extensión
-4. Confirmar en Meta Events Manager que los eventos llegan
