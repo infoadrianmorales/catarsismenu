@@ -38,13 +38,13 @@ export const CompactProductCard = ({ item, currency, displayMode = 'ambas' }: Co
       <CardContent className="p-0 flex flex-col h-full">
         {/* Image - Clickable to product detail */}
         <Link to={`/producto/${item.slug}`} className="block shrink-0">
-          <div className="relative p-1.5">
+          <div className="relative p-1 sm:p-1.5">
             <div className="relative aspect-square overflow-hidden rounded-lg bg-white border border-foreground/10 shadow-sm">
               <img 
                 src={item.imagen} 
                 alt={`Foto de ${item.nombre}`}
                 loading="lazy"
-                className="h-full w-full object-cover p-1.5 transition-transform duration-300 ease-out group-hover:scale-110"
+                className="h-full w-full object-cover p-1 sm:p-1.5 transition-transform duration-300 ease-out group-hover:scale-110 group-active:scale-105"
               />
             </div>
           </div>
