@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Config {
@@ -9,45 +10,45 @@ interface Config {
   maps_url: string;
 }
 
-export const useConfig = () => {
-  const [config, setConfig] = useState<Config>({
-    tasa_ves: 50,
-    whatsapp: '',
-    instagram_url: '',
-    tiktok_url: '',
-    maps_url: '',
+const defaultConfig: Config = {
+  tasa_ves: 50,
+  whatsapp: '',
+  instagram_url: '',
+  tiktok_url: '',
+  maps_url: '',
+};
+
+// Fetch all config from Supabase
+const fetchConfig = async (): Promise<Config> => {
+  const { data, error } = await supabase
+    .from('config')
+    .select('key, value');
+
+  if (error) throw error;
+
+  const configObj: Partial<Config> = {};
+  data?.forEach((item) => {
+    if (item.key === 'tasa_ves') {
+      configObj.tasa_ves = parseFloat(item.value);
+    } else if (['whatsapp', 'instagram_url', 'tiktok_url', 'maps_url'].includes(item.key)) {
+      (configObj as Record<string, string | number>)[item.key] = item.value;
+    }
   });
-  const [loading, setLoading] = useState(true);
 
-  const fetchConfig = useCallback(async () => {
-    const { data, error } = await supabase
-      .from('config')
-      .select('key, value');
+  return { ...defaultConfig, ...configObj };
+};
 
-    if (error) {
-      console.error('Error fetching config:', error);
-      return;
-    }
+export const useConfig = () => {
+  const { data: config, isLoading: loading, refetch } = useQuery({
+    queryKey: ['app-config'],
+    queryFn: fetchConfig,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+  });
 
-    if (data) {
-      const configObj: Partial<Config> = {};
-      data.forEach((item) => {
-        if (item.key === 'tasa_ves') {
-          configObj.tasa_ves = parseFloat(item.value);
-        } else if (item.key in configObj || ['whatsapp', 'instagram_url', 'tiktok_url', 'maps_url'].includes(item.key)) {
-          (configObj as Record<string, string | number>)[item.key] = item.value;
-        }
-      });
-      setConfig(prev => ({ ...prev, ...configObj }));
-    }
-    setLoading(false);
-  }, []);
-
-  useEffect(() => {
-    fetchConfig();
-  }, [fetchConfig]);
-
-  const updateConfig = async (key: string, value: string) => {
+  const updateConfig = useCallback(async (key: string, value: string) => {
     const { error } = await supabase
       .from('config')
       .update({ value })
@@ -57,13 +58,13 @@ export const useConfig = () => {
       throw error;
     }
 
-    await fetchConfig();
-  };
+    await refetch();
+  }, [refetch]);
 
   return {
-    config,
+    config: config ?? defaultConfig,
     loading,
     updateConfig,
-    refetch: fetchConfig,
+    refetch,
   };
 };
