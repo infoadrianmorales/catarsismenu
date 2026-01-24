@@ -185,15 +185,17 @@ ${itemLines}
       const cleanNumber = whatsappNumber.replace(/\D/g, '');
       const whatsappUrl = `https://wa.me/${cleanNumber}?text=${encodedMessage}`;
       
-      // Clear cart and redirect
+      // Clear cart first
       clearCart();
-      toast.success('¡Pedido creado! Abriendo WhatsApp...');
       
-      // Small delay to show toast
-      setTimeout(() => {
-        window.open(whatsappUrl, '_blank');
-        navigate('/orden-confirmada', { state: { orderId } });
-      }, 500);
+      // Store order info for confirmation page
+      sessionStorage.setItem('lastOrderId', orderId);
+      
+      // Open WhatsApp directly (not as popup to avoid blockers)
+      toast.success('¡Pedido creado! Redirigiendo a WhatsApp...');
+      
+      // Use location.href for better mobile compatibility
+      window.location.href = whatsappUrl;
 
     } catch (error) {
       console.error('Error creating order:', error);
