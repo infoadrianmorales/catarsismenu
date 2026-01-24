@@ -34,10 +34,10 @@ export const CompactProductCard = ({ item, currency, displayMode = 'ambas' }: Co
   };
 
   return (
-    <Card className="group overflow-hidden border-border/40 bg-card hover:border-primary/50 transition-all duration-200 hover:shadow-glow h-full">
+    <Card className="group overflow-hidden border-border/40 bg-card hover:border-primary/50 transition-all duration-200 hover:shadow-glow h-full flex flex-col">
       <CardContent className="p-0 flex flex-col h-full">
         {/* Image - Clickable to product detail */}
-        <Link to={`/producto/${item.slug}`} className="block">
+        <Link to={`/producto/${item.slug}`} className="block shrink-0">
           <div className="relative p-1.5">
             <div className="relative aspect-square overflow-hidden rounded-lg bg-white border border-foreground/10 shadow-sm">
               <img 
@@ -51,20 +51,14 @@ export const CompactProductCard = ({ item, currency, displayMode = 'ambas' }: Co
         </Link>
         
         {/* Content */}
-        <div className="p-2 pt-1 flex flex-col flex-1">
+        <div className="p-2 pt-1 flex flex-col flex-1 min-h-0">
           <Link to={`/producto/${item.slug}`} className="block mb-1">
-            <h3 className="font-display text-sm font-bold leading-tight group-hover:text-primary transition-colors line-clamp-2 whitespace-normal">
+            <h3 className="font-display text-sm font-bold leading-tight group-hover:text-primary transition-colors line-clamp-2 whitespace-normal h-10">
               {item.nombre}
             </h3>
           </Link>
           
-          {item.descripcion_corta && (
-            <p className="text-xs text-muted-foreground line-clamp-1 whitespace-normal mb-2">
-              {item.descripcion_corta}
-            </p>
-          )}
-          
-          <div className="mt-auto flex items-end justify-between gap-1">
+          <div className="mt-auto flex items-end justify-between gap-1 pt-2">
             {renderPrice()}
             <AddToCartButton product={item} variant="icon" />
           </div>

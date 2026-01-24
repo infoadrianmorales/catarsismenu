@@ -12,11 +12,11 @@ interface ProductCarouselProps {
 export const ProductCarousel = ({ items, currency, displayMode = 'ambas' }: ProductCarouselProps) => {
   return (
     <ScrollArea className="w-full whitespace-nowrap pb-4">
-      <div className="flex gap-4 snap-x snap-mandatory scroll-smooth">
+      <div className="flex gap-3 snap-x snap-mandatory scroll-smooth">
         {items.map((item) => (
           <div 
             key={item.id} 
-            className="snap-start shrink-0 w-[160px] sm:w-[180px]"
+            className="snap-start shrink-0 w-[160px] sm:w-[180px] h-[260px]"
           >
             <CompactProductCard 
               item={item} 
