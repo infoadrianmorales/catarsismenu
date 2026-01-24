@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import { FloatingWhatsApp } from "./components/FloatingWhatsApp";
+import { MetaPixelProvider } from "./components/MetaPixelProvider";
 
 // Lazy load non-critical pages
 const Legal = lazy(() => import("./pages/Legal"));
@@ -48,7 +49,7 @@ const AppContent = () => {
   const hideFloatingWhatsApp = location.pathname === '/admin' || location.pathname === '/auth';
 
   return (
-    <>
+    <MetaPixelProvider>
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/" element={<Index />} />
@@ -65,7 +66,7 @@ const AppContent = () => {
         </Routes>
       </Suspense>
       {!hideFloatingWhatsApp && <FloatingWhatsApp />}
-    </>
+    </MetaPixelProvider>
   );
 };
 

@@ -8,6 +8,8 @@ interface Config {
   instagram_url: string;
   tiktok_url: string;
   maps_url: string;
+  meta_pixel_id: string;
+  meta_pixel_enabled: boolean;
 }
 
 const defaultConfig: Config = {
@@ -16,6 +18,8 @@ const defaultConfig: Config = {
   instagram_url: '',
   tiktok_url: '',
   maps_url: '',
+  meta_pixel_id: '',
+  meta_pixel_enabled: false,
 };
 
 // Fetch all config from Supabase
@@ -30,8 +34,10 @@ const fetchConfig = async (): Promise<Config> => {
   data?.forEach((item) => {
     if (item.key === 'tasa_ves') {
       configObj.tasa_ves = parseFloat(item.value);
-    } else if (['whatsapp', 'instagram_url', 'tiktok_url', 'maps_url'].includes(item.key)) {
-      (configObj as Record<string, string | number>)[item.key] = item.value;
+    } else if (['whatsapp', 'instagram_url', 'tiktok_url', 'maps_url', 'meta_pixel_id'].includes(item.key)) {
+      (configObj as Record<string, string | number | boolean>)[item.key] = item.value;
+    } else if (item.key === 'meta_pixel_enabled') {
+      configObj.meta_pixel_enabled = item.value === 'true';
     }
   });
 

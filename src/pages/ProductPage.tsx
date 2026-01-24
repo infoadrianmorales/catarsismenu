@@ -9,7 +9,8 @@ import { useCurrency } from '@/hooks/useCurrency';
 import { useProducts } from '@/hooks/useProducts';
 import { useCart } from '@/contexts/CartContext';
 import { toast } from 'sonner';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
+import { trackViewContent, trackAddToCart } from '@/lib/metaPixel';
 
 const ProductPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -26,9 +27,22 @@ const ProductPage = () => {
   const quantity = product ? getItemQuantity(product.id) : 0;
   const isOrderable = product ? isProductOrderable(product) : false;
 
+  // Track ViewContent when product is loaded
+  useEffect(() => {
+    if (product) {
+      trackViewContent({
+        id: product.id,
+        nombre: product.nombre,
+        categoria: product.categoria,
+        precio_usd: product.precio_usd,
+      });
+    }
+  }, [product?.id]);
+
   const handleAddToCart = () => {
     if (product && addToCart(product)) {
       toast.success(`${product.nombre} agregado al carrito`);
+      trackAddToCart({ id: product.id, nombre: product.nombre, precio_usd: product.precio_usd }, 1);
     }
   };
 

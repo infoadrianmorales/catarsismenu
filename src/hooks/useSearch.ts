@@ -1,10 +1,31 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { MenuItem, MenuCategory } from '@/types/menu';
+import { trackSearch } from '@/lib/metaPixel';
 
 export const useSearch = (items: MenuItem[]) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<MenuCategory>('todos');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Track search with debounce
+  useEffect(() => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    
+    if (searchQuery.trim()) {
+      searchTimeoutRef.current = setTimeout(() => {
+        trackSearch(searchQuery);
+      }, 1000); // 1 second debounce
+    }
+    
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [searchQuery]);
 
   const filteredItems = useMemo(() => {
     let filtered = items;
