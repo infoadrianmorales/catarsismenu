@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 
 interface AddToCartButtonProps {
   product: MenuItem;
-  variant?: 'default' | 'compact';
+  variant?: 'default' | 'compact' | 'icon';
 }
 
 export const AddToCartButton = ({ product, variant = 'default' }: AddToCartButtonProps) => {
@@ -48,6 +48,18 @@ export const AddToCartButton = ({ product, variant = 'default' }: AddToCartButto
   };
 
   if (quantity === 0) {
+    if (variant === 'icon') {
+      return (
+        <Button
+          size="icon"
+          onClick={handleAdd}
+          className="h-8 w-8 bg-primary hover:bg-primary/90 shrink-0"
+        >
+          <Plus className="h-4 w-4" />
+        </Button>
+      );
+    }
+    
     return (
       <Button
         size={variant === 'compact' ? 'sm' : 'default'}
