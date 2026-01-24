@@ -86,6 +86,7 @@ const Checkout = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
+  const [orderNumber, setOrderNumber] = useState<string | null>(null);
 
   const prices = getPrices(subtotal);
   const whatsappNumber = config?.whatsapp || '584249056438';
@@ -125,7 +126,7 @@ const Checkout = () => {
     return phone.replace(/[\s\-\(\)]/g, '');
   };
 
-  const generateWhatsAppMessage = (orderIdParam: string): string => {
+  const generateWhatsAppMessage = (orderNum: string): string => {
     const itemLines = items.map(item => {
       const lineTotal = item.precio_usd * item.quantity;
       const linePrices = getPrices(lineTotal);
@@ -177,7 +178,7 @@ _Por favor envíame los datos para realizar el pago_ 🙏
 Teléfono: ${normalizePhone(formData.phone)}
 Correo: ${formData.email.toLowerCase()}
 
-*Orden:* #${orderIdParam.slice(0, 8).toUpperCase()}`;
+*Orden:* ${orderNum}`;
 
     return message;
   };
@@ -222,11 +223,10 @@ Correo: ${formData.email.toLowerCase()}
 
       const customerId = customerResult || null;
 
-      // Create order in database
+      // Create order in database - let Postgres generate the order_number
       const newOrderId = crypto.randomUUID();
-      const whatsappMessage = generateWhatsAppMessage(newOrderId);
       
-      const { error: orderError } = await supabase
+      const { data: insertedOrder, error: orderError } = await supabase
         .from('orders')
         .insert({
           id: newOrderId,
@@ -246,10 +246,23 @@ Correo: ${formData.email.toLowerCase()}
           subtotal: subtotal,
           total: subtotal,
           status: 'NEW',
-          whatsapp_message: whatsappMessage,
-        });
+          whatsapp_message: '', // Placeholder, will update after
+        })
+        .select('order_number')
+        .single();
 
       if (orderError) throw orderError;
+
+      const generatedOrderNumber = insertedOrder?.order_number || `#${newOrderId.slice(0, 8).toUpperCase()}`;
+      
+      // Generate WhatsApp message with the real order number
+      const whatsappMessage = generateWhatsAppMessage(generatedOrderNumber);
+      
+      // Update the order with the actual WhatsApp message
+      await supabase
+        .from('orders')
+        .update({ whatsapp_message: whatsappMessage })
+        .eq('id', newOrderId);
 
       // Create order items
       const orderItems = items.map(item => ({
@@ -272,7 +285,9 @@ Correo: ${formData.email.toLowerCase()}
       
       // Store order info
       setOrderId(newOrderId);
+      setOrderNumber(generatedOrderNumber);
       sessionStorage.setItem('lastOrderId', newOrderId);
+      sessionStorage.setItem('lastOrderNumber', generatedOrderNumber);
       
       // Open WhatsApp
       const encodedMessage = encodeURIComponent(whatsappMessage);
@@ -663,12 +678,12 @@ Correo: ${formData.email.toLowerCase()}
               </p>
             </div>
 
-            {/* Order ID Badge */}
-            {orderId && (
+            {/* Order Number Badge */}
+            {(orderNumber || orderId) && (
               <div className="inline-flex items-center gap-2 bg-muted/50 rounded-full px-4 py-2 mb-6">
                 <span className="text-xs text-muted-foreground">Orden:</span>
-                <span className="font-mono font-medium text-sm">
-                  #{orderId.slice(0, 8).toUpperCase()}
+                <span className="font-mono font-bold text-sm">
+                  {orderNumber || `#${orderId?.slice(0, 8).toUpperCase()}`}
                 </span>
               </div>
             )}
