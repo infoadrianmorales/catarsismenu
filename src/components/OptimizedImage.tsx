@@ -49,13 +49,13 @@ const parseProductUrl = (url: string): { basePath: string; isWebP: boolean; quer
   };
 };
 
-// Generate srcset for responsive images
-const generateSrcSet = (basePath: string, format: 'webp' | 'jpg'): string => {
+// Generate srcset for responsive images (includes query string for cache busting)
+const generateSrcSet = (basePath: string, format: 'webp' | 'jpg', queryString: string = ''): string => {
   const ext = format;
-  return `${basePath}_200.${ext} 200w, ${basePath}_400.${ext} 400w, ${basePath}.${ext} 800w`;
+  return `${basePath}_200.${ext}${queryString} 200w, ${basePath}_400.${ext}${queryString} 400w, ${basePath}.${ext}${queryString} 800w`;
 };
 
-// Intersection Observer for lazy loading
+// Mobile-friendly Intersection Observer with fallbacks
 const useIntersectionObserver = (options?: IntersectionObserverInit) => {
   const [isIntersecting, setIsIntersecting] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -64,15 +64,39 @@ const useIntersectionObserver = (options?: IntersectionObserverInit) => {
     const element = ref.current;
     if (!element) return;
 
+    // Fallback 1: If IntersectionObserver not supported, load immediately
+    if (typeof IntersectionObserver === 'undefined') {
+      setIsIntersecting(true);
+      return;
+    }
+
+    // Fallback 2: Safety timer for mobile browsers that may not fire observer
+    const safetyTimer = setTimeout(() => {
+      setIsIntersecting(true);
+    }, 1200);
+
+    // Fallback 3: Check if already in viewport on mount
+    const rect = element.getBoundingClientRect();
+    const inViewport = rect.top < window.innerHeight + 200 && rect.bottom > -200;
+    if (inViewport) {
+      setIsIntersecting(true);
+      clearTimeout(safetyTimer);
+      return;
+    }
+
     const observer = new IntersectionObserver(([entry]) => {
       if (entry.isIntersecting) {
         setIsIntersecting(true);
+        clearTimeout(safetyTimer);
         observer.disconnect();
       }
-    }, { rootMargin: '100px', threshold: 0.01, ...options });
+    }, { rootMargin: '200px', threshold: 0.01, ...options });
 
     observer.observe(element);
-    return () => observer.disconnect();
+    return () => {
+      clearTimeout(safetyTimer);
+      observer.disconnect();
+    };
   }, []);
 
   return { ref, isIntersecting };
@@ -118,8 +142,8 @@ export const OptimizedImage = memo(({
       };
     }
 
-    // For WebP (new optimized images), use variants
-    const srcSet = generateSrcSet(parsed.basePath, 'webp');
+    // For WebP (new optimized images), use variants with query string
+    const srcSet = generateSrcSet(parsed.basePath, 'webp', parsed.queryString);
     
     // Default sizes based on variant
     const defaultSizes = variant === 'thumb' 
@@ -128,11 +152,11 @@ export const OptimizedImage = memo(({
         ? '(max-width: 640px) 150px, 185px' 
         : '400px';
 
-    // Get the appropriate variant URL
+    // Get the appropriate variant URL with query string
     const variantSize = IMAGE_SIZES[variant];
     const variantSrc = variantSize === 800 
-      ? `${parsed.basePath}.webp`
-      : `${parsed.basePath}_${variantSize}.webp`;
+      ? `${parsed.basePath}.webp${parsed.queryString}`
+      : `${parsed.basePath}_${variantSize}.webp${parsed.queryString}`;
 
     return {
       src: variantSrc,
@@ -141,6 +165,7 @@ export const OptimizedImage = memo(({
       usesPicture: true,
       format: 'webp',
       basePath: parsed.basePath,
+      queryString: parsed.queryString,
     };
   }, [src, variant, sizes]);
 
