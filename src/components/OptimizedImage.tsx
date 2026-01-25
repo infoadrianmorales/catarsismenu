@@ -21,24 +21,31 @@ const isProductStorageUrl = (url: string): boolean => {
 };
 
 // Parse product image URL to get base path and detect format
-const parseProductUrl = (url: string): { basePath: string; isWebP: boolean; hasVariants: boolean } | null => {
+const parseProductUrl = (url: string): { basePath: string; isWebP: boolean; queryString: string } | null => {
   if (!isProductStorageUrl(url)) return null;
   
+  // Extract query string if present (for cache busting)
+  const queryMatch = url.match(/(\?.*)?$/);
+  const queryString = queryMatch?.[1] || '';
+  
+  // Remove query string for parsing
+  const cleanUrl = url.replace(/\?.*$/, '');
+  
   // Match patterns like: slug.webp, slug_400.webp, slug.jpg, slug_400.jpg
-  const match = url.match(/\/products\/([^/?]+?)(_\d+)?\.(webp|jpg|jpeg)(\?.*)?$/i);
+  const match = cleanUrl.match(/\/products\/([^/]+?)(_\d+)?\.(webp|jpg|jpeg)$/i);
   if (!match) return null;
   
   const [, slug, , format] = match;
   const isWebP = format.toLowerCase() === 'webp';
   
   // Extract base URL (everything before /products/)
-  const baseUrlMatch = url.match(/^(.+\/products\/)/);
+  const baseUrlMatch = cleanUrl.match(/^(.+\/products\/)/);
   if (!baseUrlMatch) return null;
   
   return {
     basePath: `${baseUrlMatch[1]}${slug}`,
     isWebP,
-    hasVariants: true,
+    queryString,
   };
 };
 
