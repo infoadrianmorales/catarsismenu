@@ -1,113 +1,132 @@
 
-# Plan: Corregir bloqueo de ventanas emergentes en WhatsApp
+# Plan: Corregir carga de imágenes en móvil - Eliminar interferencia del zoom
 
 ## Problema Identificado
 
-El navegador está bloqueando la redirección a WhatsApp porque se usa `window.open()` con `_blank`:
+Las imágenes no cargan correctamente en móvil debido a la combinación de:
 
-```javascript
-// Checkout.tsx línea 429
-window.open(whatsappUrl, '_blank');  // ← BLOQUEADO como popup
+1. **`transition-transform duration-300`** - Crea capa de composición GPU
+2. **`group-hover:scale-110`** - Transform que afecta el layout inicial
+3. **`opacity: 0` → `opacity: 100`** - Transición simultánea con transform
+4. **Múltiples `overflow: hidden`** - ScrollArea + contenedor imagen
+
+```
+┌────────────────────────────────────────────────────────┐
+│  ScrollArea (overflow: hidden)                         │
+│  ├── Viewport (overflow: hidden)                       │
+│  │   └── Card                                          │
+│  │       └── div (overflow: hidden, rounded-lg)        │
+│  │           └── OptimizedImage container              │
+│  │               └── img (transition-transform + scale)│
+│  │                   ↑                                 │
+│  │                   PROBLEMA: GPU layer + opacity     │
+│  │                   transition interfieren en móvil   │
+└────────────────────────────────────────────────────────┘
 ```
 
-Los navegadores móviles (especialmente Chrome en Android y Safari en iOS) bloquean `window.open()` cuando:
-1. No es resultado directo de un click del usuario
-2. Se ejecuta después de operaciones asíncronas (como guardar en base de datos)
+En navegadores móviles (especialmente Safari iOS y Chrome Android), cuando:
+- Una imagen está en múltiples contenedores con `overflow: hidden`
+- Tiene `transition-transform` aplicado
+- Comienza con `opacity: 0`
 
-En el checkout, primero se ejecutan varias llamadas a la base de datos y **después** se intenta abrir WhatsApp, lo que el navegador interpreta como popup no solicitado.
+El navegador puede no renderizar la imagen correctamente hasta que haya interacción del usuario.
 
 ---
 
 ## Solución
 
-Cambiar de `window.open()` a `window.location.href` para la redirección del checkout. Esto navega la página actual en lugar de abrir una nueva ventana, evitando completamente el bloqueo de popups.
+### Enfoque 1: Separar las transiciones de transform y opacity
 
-```text
-┌─────────────────────────────────────────────┐
-│         Usuario hace click en Enviar        │
-└─────────────────────────────────────────────┘
-                    │
-                    ▼
-┌─────────────────────────────────────────────┐
-│ Guardar orden en base de datos              │
-│ (operaciones asíncronas)                    │
-└─────────────────────────────────────────────┘
-                    │
-                    ▼
-┌─────────────────────────────────────────────┐
-│ ANTES: window.open() ← BLOQUEADO            │
-│ AHORA: window.location.href ← FUNCIONA      │
-└─────────────────────────────────────────────┘
-                    │
-                    ▼
-┌─────────────────────────────────────────────┐
-│ Usuario navega a WhatsApp                   │
-│ (sin popup, sin bloqueo)                    │
-└─────────────────────────────────────────────┘
-```
+Mover el efecto de zoom a un **contenedor envolvente** en lugar de la imagen directamente, y simplificar la transición de opacity.
+
+### Enfoque 2: Usar media query para deshabilitar zoom en móvil
+
+Aplicar el efecto de zoom solo en desktop (`sm:` breakpoint) donde no causa problemas.
+
+### Enfoque 3: Cambiar a will-change para optimizar compositing
+
+Agregar `will-change: transform` para preparar el navegador, pero esto puede empeorar el problema en móviles con poca memoria.
+
+**Recomendación**: Combinar Enfoque 1 y 2 - Separar la animación y deshabilitarla en móvil.
 
 ---
 
 ## Cambios Técnicos
 
-### Archivo: `src/pages/Checkout.tsx`
+### Archivo: `src/components/CompactProductCard.tsx`
 
-**Línea 429 - Cambio principal:**
-
-```javascript
-// ANTES (bloqueado como popup):
-window.open(whatsappUrl, '_blank');
-
-// DESPUÉS (navegación directa, sin bloqueo):
-window.location.href = whatsappUrl;
+**Problema actual (línea 50):**
+```jsx
+<OptimizedImage 
+  className="h-full w-full object-cover p-1 sm:p-1.5 transition-transform duration-300 ease-out group-hover:scale-110 group-active:scale-105"
+/>
 ```
 
-Este cambio es seguro porque:
-- El usuario ya completó el checkout
-- El carrito ya fue limpiado
-- La orden ya está guardada en la base de datos
-- La página de éxito se mostrará cuando el usuario regrese
+La transición de transform está en el mismo elemento que maneja opacity, causando conflictos de GPU layers.
 
-### Botones auxiliares (sin cambios necesarios)
+**Solución:**
+1. Mover el zoom al contenedor `.aspect-square` en lugar de la imagen
+2. Deshabilitar zoom en móvil (solo aplicar en `sm:` y superiores)
+3. Simplificar clases en la imagen
 
-Los siguientes componentes pueden mantener `window.open()` porque:
-- Son clicks directos del usuario (no hay operaciones asíncronas previas)
-- No requieren guardar datos antes de redirigir
+```jsx
+{/* Contenedor con el efecto zoom - solo desktop */}
+<div className="relative aspect-square overflow-hidden rounded-lg bg-white border border-foreground/10 shadow-sm sm:transition-transform sm:duration-300 sm:ease-out sm:group-hover:scale-105">
+  <OptimizedImage 
+    className="h-full w-full object-cover p-1 sm:p-1.5"
+    // Sin transition-transform ni scale
+  />
+</div>
+```
 
-| Componente | Comportamiento actual | Cambio |
-|------------|----------------------|--------|
-| `FloatingWhatsApp.tsx` | `window.open()` | Sin cambios (click directo) |
-| `StickyActionBar.tsx` | `window.open()` | Sin cambios (click directo) |
-| `HeroSection.tsx` | `window.open()` | Sin cambios (click directo) |
+### Archivo: `src/components/OptimizedImage.tsx`
+
+**Mejora adicional:**
+Simplificar la transición de opacity para que no interfiera con transform:
+
+```jsx
+// Antes
+className={cn(
+  "transition-opacity duration-300",
+  loaded ? "opacity-100" : "opacity-0",
+  className
+)}
+
+// Después - Sin transición de opacity, aparecer inmediatamente
+className={cn(
+  loaded ? "opacity-100" : "opacity-0",
+  className
+)}
+```
+
+O usar una transición más corta:
+
+```jsx
+className={cn(
+  "transition-opacity duration-150",
+  loaded ? "opacity-100" : "opacity-0",
+  className
+)}
+```
 
 ---
 
-## Flujo de Usuario Después del Cambio
+## Resumen de Cambios
 
-1. Usuario completa el formulario de checkout
-2. Click en "Enviar pedido por WhatsApp"
-3. Se guarda la orden en la base de datos
-4. **La página actual navega a WhatsApp** (sin ventana emergente)
-5. Usuario envía el mensaje en WhatsApp
-6. Usuario regresa a la app (botón atrás o link)
-7. Si regresa a `/checkout`, verá la pantalla de éxito si hay `lastOrderId` en sessionStorage
-
----
-
-## Compatibilidad
-
-| Navegador | `window.open()` después de async | `window.location.href` después de async |
-|-----------|----------------------------------|----------------------------------------|
-| Chrome Android | Bloqueado | Funciona |
-| Safari iOS | Bloqueado | Funciona |
-| Firefox | A veces bloqueado | Funciona |
-| Chrome Desktop | A veces bloqueado | Funciona |
+| Archivo | Cambio |
+|---------|--------|
+| `src/components/CompactProductCard.tsx` | Mover zoom al contenedor, deshabilitarlo en móvil |
+| `src/components/OptimizedImage.tsx` | Reducir/eliminar transición de opacity |
+| `src/components/MenuCard.tsx` | Aplicar misma corrección de zoom |
 
 ---
 
 ## Resultado Esperado
 
-- El checkout redirigirá correctamente a WhatsApp sin ser bloqueado
-- El mensaje con el pedido se abrirá en la app de WhatsApp
-- La orden quedará guardada en la base de datos
-- El usuario podrá regresar a ver la confirmación
+| Dispositivo | Comportamiento |
+|-------------|---------------|
+| **Móvil** | Imágenes cargan inmediatamente sin efecto zoom |
+| **Tablet** | Imágenes cargan, zoom sutil en hover |
+| **Desktop** | Comportamiento actual mantenido con zoom en hover |
+
+Las imágenes deberían cargar correctamente en todos los dispositivos al eliminar la interferencia entre las transiciones de transform y opacity en la imagen.
