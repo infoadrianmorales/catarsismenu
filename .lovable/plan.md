@@ -1,132 +1,159 @@
 
-# Plan: Corregir carga de imágenes en móvil - Eliminar interferencia del zoom
 
-## Problema Identificado
+# Plan: Reemplazar carrusel por grid completo de productos
 
-Las imágenes no cargan correctamente en móvil debido a la combinación de:
+## Problema
 
-1. **`transition-transform duration-300`** - Crea capa de composición GPU
-2. **`group-hover:scale-110`** - Transform que afecta el layout inicial
-3. **`opacity: 0` → `opacity: 100`** - Transición simultánea con transform
-4. **Múltiples `overflow: hidden`** - ScrollArea + contenedor imagen
-
-```
-┌────────────────────────────────────────────────────────┐
-│  ScrollArea (overflow: hidden)                         │
-│  ├── Viewport (overflow: hidden)                       │
-│  │   └── Card                                          │
-│  │       └── div (overflow: hidden, rounded-lg)        │
-│  │           └── OptimizedImage container              │
-│  │               └── img (transition-transform + scale)│
-│  │                   ↑                                 │
-│  │                   PROBLEMA: GPU layer + opacity     │
-│  │                   transition interfieren en móvil   │
-└────────────────────────────────────────────────────────┘
-```
-
-En navegadores móviles (especialmente Safari iOS y Chrome Android), cuando:
-- Una imagen está en múltiples contenedores con `overflow: hidden`
-- Tiene `transition-transform` aplicado
-- Comienza con `opacity: 0`
-
-El navegador puede no renderizar la imagen correctamente hasta que haya interacción del usuario.
-
----
+El carrusel horizontal (`ProductCarousel`) sigue causando problemas de carga de imágenes en dispositivos móviles, a pesar de las optimizaciones previas. La combinación de `ScrollArea`, `overflow: hidden`, y lazy loading no funciona correctamente en todos los navegadores móviles.
 
 ## Solución
 
-### Enfoque 1: Separar las transiciones de transform y opacity
-
-Mover el efecto de zoom a un **contenedor envolvente** en lugar de la imagen directamente, y simplificar la transición de opacity.
-
-### Enfoque 2: Usar media query para deshabilitar zoom en móvil
-
-Aplicar el efecto de zoom solo en desktop (`sm:` breakpoint) donde no causa problemas.
-
-### Enfoque 3: Cambiar a will-change para optimizar compositing
-
-Agregar `will-change: transform` para preparar el navegador, pero esto puede empeorar el problema en móviles con poca memoria.
-
-**Recomendación**: Combinar Enfoque 1 y 2 - Separar la animación y deshabilitarla en móvil.
+Eliminar el componente de carrusel y mostrar los productos en un grid tradicional que carga las imágenes de forma estándar.
 
 ---
 
 ## Cambios Técnicos
 
-### Archivo: `src/components/CompactProductCard.tsx`
+### 1. Modificar `CategorySection.tsx`
 
-**Problema actual (línea 50):**
-```jsx
-<OptimizedImage 
-  className="h-full w-full object-cover p-1 sm:p-1.5 transition-transform duration-300 ease-out group-hover:scale-110 group-active:scale-105"
-/>
+Reemplazar el `ProductCarousel` por un grid de productos usando `MenuCard`:
+
+```text
+ANTES:
+┌─────────────────────────────────────────────────────┐
+│ Título Categoría                      Ver todo →    │
+├─────────────────────────────────────────────────────┤
+│ [Card][Card][Card][Card] ← scroll horizontal →      │
+└─────────────────────────────────────────────────────┘
+
+DESPUÉS:
+┌─────────────────────────────────────────────────────┐
+│ Título Categoría                      Ver todo →    │
+├─────────────────────────────────────────────────────┤
+│ [Card] [Card] [Card] [Card]                         │
+│ [Card] [Card] [Card] [Card]                         │
+│ ... (todos los productos visibles)                  │
+└─────────────────────────────────────────────────────┘
 ```
 
-La transición de transform está en el mismo elemento que maneja opacity, causando conflictos de GPU layers.
+**Cambios:**
+- Importar `MenuCard` en lugar de `ProductCarousel`
+- Usar grid responsivo: 2 columnas en móvil, 3 en tablet, 4 en desktop
+- Eliminar la dependencia del hook de visibilidad del carrusel
 
-**Solución:**
-1. Mover el zoom al contenedor `.aspect-square` en lugar de la imagen
-2. Deshabilitar zoom en móvil (solo aplicar en `sm:` y superiores)
-3. Simplificar clases en la imagen
+### 2. Actualizar `MenuCard.tsx` (opcional)
 
-```jsx
-{/* Contenedor con el efecto zoom - solo desktop */}
-<div className="relative aspect-square overflow-hidden rounded-lg bg-white border border-foreground/10 shadow-sm sm:transition-transform sm:duration-300 sm:ease-out sm:group-hover:scale-105">
-  <OptimizedImage 
-    className="h-full w-full object-cover p-1 sm:p-1.5"
-    // Sin transition-transform ni scale
-  />
-</div>
-```
+El `MenuCard` ya usa `<img>` estándar con `loading="lazy"` del navegador, lo cual es más confiable que la implementación personalizada en móvil. No requiere cambios.
 
-### Archivo: `src/components/OptimizedImage.tsx`
+### 3. Archivo `ProductCarousel.tsx`
 
-**Mejora adicional:**
-Simplificar la transición de opacity para que no interfiera con transform:
+Puede conservarse para uso futuro o eliminarse. No es crítico para esta corrección.
 
-```jsx
-// Antes
-className={cn(
-  "transition-opacity duration-300",
-  loaded ? "opacity-100" : "opacity-0",
-  className
-)}
+---
 
-// Después - Sin transición de opacity, aparecer inmediatamente
-className={cn(
-  loaded ? "opacity-100" : "opacity-0",
-  className
-)}
-```
+## Código Propuesto
 
-O usar una transición más corta:
+### `src/components/CategorySection.tsx`
 
-```jsx
-className={cn(
-  "transition-opacity duration-150",
-  loaded ? "opacity-100" : "opacity-0",
-  className
-)}
+```tsx
+import { Link } from 'react-router-dom';
+import { ChevronRight } from 'lucide-react';
+import { MenuItem, Currency } from '@/types/menu';
+import { PriceDisplayMode } from '@/hooks/useCurrency';
+import { MenuCard } from './MenuCard';
+
+interface CategorySectionProps {
+  slug: string;
+  title: string;
+  subtitle?: string;
+  items: MenuItem[];
+  currency: Currency;
+  displayMode?: PriceDisplayMode;
+}
+
+export const CategorySection = ({ 
+  slug, 
+  title, 
+  subtitle, 
+  items, 
+  currency, 
+  displayMode = 'ambas' 
+}: CategorySectionProps) => {
+  if (items.length === 0) return null;
+
+  return (
+    <section className="py-6">
+      <div className="container px-4">
+        {/* Header con título y CTA "Ver todo" */}
+        <div className="flex items-center justify-between mb-4">
+          <Link 
+            to={`/categoria/${slug}`}
+            className="group flex items-center gap-2 hover:text-primary transition-colors"
+          >
+            <h2 className="text-xl md:text-2xl font-display font-black text-foreground group-hover:text-primary transition-colors">
+              {title}
+            </h2>
+            <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+          </Link>
+          
+          <Link 
+            to={`/categoria/${slug}`}
+            className="text-sm font-medium text-primary hover:text-primary/80 hover:underline transition-colors"
+          >
+            Ver todo
+          </Link>
+        </div>
+
+        {subtitle && (
+          <p className="text-muted-foreground text-sm mb-4 max-w-2xl">
+            {subtitle}
+          </p>
+        )}
+
+        {/* Productos en grid - carga estándar del navegador */}
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {items.map((item) => (
+            <MenuCard 
+              key={item.id}
+              item={item} 
+              currency={currency} 
+              displayMode={displayMode}
+            />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};
 ```
 
 ---
 
-## Resumen de Cambios
+## Resumen de Archivos
 
-| Archivo | Cambio |
+| Archivo | Acción |
 |---------|--------|
-| `src/components/CompactProductCard.tsx` | Mover zoom al contenedor, deshabilitarlo en móvil |
-| `src/components/OptimizedImage.tsx` | Reducir/eliminar transición de opacity |
-| `src/components/MenuCard.tsx` | Aplicar misma corrección de zoom |
+| `src/components/CategorySection.tsx` | Modificar: reemplazar carrusel por grid |
+| `src/components/ProductCarousel.tsx` | Sin cambios (puede eliminarse después) |
+| `src/components/MenuCard.tsx` | Sin cambios |
+
+---
+
+## Beneficios
+
+| Aspecto | Antes (Carrusel) | Después (Grid) |
+|---------|------------------|----------------|
+| Carga de imágenes | Problemática en móvil | Nativa del navegador |
+| Visibilidad | Solo 2-3 productos | Todos visibles |
+| Scroll | Horizontal (confuso) | Vertical (natural) |
+| Compatibilidad | Requiere hacks | Funciona en todos |
 
 ---
 
 ## Resultado Esperado
 
-| Dispositivo | Comportamiento |
-|-------------|---------------|
-| **Móvil** | Imágenes cargan inmediatamente sin efecto zoom |
-| **Tablet** | Imágenes cargan, zoom sutil en hover |
-| **Desktop** | Comportamiento actual mantenido con zoom en hover |
+- Las imágenes cargarán correctamente en todos los dispositivos
+- Los usuarios verán todos los productos de cada categoría sin necesidad de scroll horizontal
+- La navegación será más intuitiva con scroll vertical estándar
+- El lazy loading nativo del navegador (`loading="lazy"`) manejará la carga eficientemente
 
-Las imágenes deberían cargar correctamente en todos los dispositivos al eliminar la interferencia entre las transiciones de transform y opacity en la imagen.
