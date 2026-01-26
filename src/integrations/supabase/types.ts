@@ -496,6 +496,27 @@ export type Database = {
       }
     }
     Functions: {
+      create_order_and_return_number: {
+        Args: {
+          p_currency_mode: string
+          p_customer_id: string
+          p_delivery_address: string
+          p_delivery_maps_url: string
+          p_delivery_type: string
+          p_email: string
+          p_exchange_rate: number
+          p_first_name: string
+          p_id: string
+          p_last_name: string
+          p_notes: string
+          p_payment_currency: string
+          p_payment_method: string
+          p_phone: string
+          p_subtotal: number
+          p_total: number
+        }
+        Returns: string
+      }
       find_or_create_customer: {
         Args: {
           p_email: string
