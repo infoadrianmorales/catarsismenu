@@ -1,111 +1,129 @@
 
-# Plan: Corregir visualización de imágenes existentes
+# Plan: Corregir carga de imágenes en carruseles móviles
 
-## Problema
-Las imágenes de productos no se muestran porque el componente `OptimizedImage` intenta cargar variantes (`_400.jpg`, `_200.jpg`) que no existen. Solo las imágenes originales (`producto.jpg`) están disponibles.
+## Problema Identificado
 
-## Causa Raíz
-El código actual asume que todas las imágenes tienen variantes de tamaño:
+Las imágenes dentro de los carruseles horizontales (`ProductCarousel`) no se cargan correctamente en dispositivos móviles porque:
 
-```text
-URL entrada:    products/chicken-crunch.jpg?t=123456
-URL generada:   products/chicken-crunch_400.jpg  ← NO EXISTE
-Resultado:      Error 404, imagen no se muestra
+1. El componente `ScrollArea` de Radix UI crea un **viewport interno** con `overflow: hidden`
+2. El `IntersectionObserver` usa el viewport de la ventana principal
+3. Las imágenes dentro del scroll horizontal **nunca "intersectan"** con el viewport principal aunque sean visibles en pantalla
+4. El timer de seguridad de 1.2s puede no ser suficiente para todos los productos
+
+```
+┌────────────────────────────────────────────────┐
+│         Viewport Principal (window)             │
+│  ┌──────────────────────────────────────────┐  │
+│  │       ScrollArea (overflow: hidden)       │  │
+│  │  ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐ │  │
+│  │  │ IMG │ │ IMG │ │ IMG │ │ IMG │ │ IMG │ │  │
+│  │  │  ✓  │ │  ✓  │ │  X  │ │  X  │ │  X  │ │  │
+│  │  └─────┘ └─────┘ └─────┘ └─────┘ └─────┘ │  │
+│  │   │◄──Visible──►│◄───Oculto en scroll───►│  │
+│  └──────────────────────────────────────────┘  │
+│                                                 │
+│    IntersectionObserver no detecta las         │
+│    imágenes ocultas en el scroll horizontal    │
+└────────────────────────────────────────────────┘
 ```
 
+---
+
 ## Solución
-Modificar la lógica en `OptimizedImage.tsx` para:
-1. **Imágenes JPEG (legacy):** Usar URL original directamente, sin variantes
-2. **Imágenes WebP (nuevas optimizadas):** Usar variantes `_200.webp`, `_400.webp`, `.webp`
+
+Cargar **todas** las imágenes de un carrusel cuando la **sección** del carrusel entra en viewport, en lugar de observar cada imagen individualmente.
+
+### Enfoque 1: Simplificar OptimizedImage para carruseles
+
+**Archivo: `src/components/ProductCarousel.tsx`**
+
+Pasar `loading="eager"` a las imágenes dentro del carrusel cuando la sección sea visible:
+
+```text
+Cambios:
+├── Usar IntersectionObserver a nivel de sección (no de imagen)
+├── Cuando la sección es visible, cargar TODAS las imágenes del carrusel
+└── Evitar el problema del viewport interno de ScrollArea
+```
+
+### Enfoque 2: Forzar carga en CompactProductCard cuando está en carrusel
+
+**Archivo: `src/components/CompactProductCard.tsx`**
+
+Agregar prop opcional `forceLoad` que bypasea el lazy loading:
+
+```text
+interface CompactProductCardProps {
+  item: MenuItem;
+  currency: Currency;
+  displayMode?: PriceDisplayMode;
+  forceLoad?: boolean;  // <-- Nueva prop
+}
+```
 
 ---
 
 ## Cambios Técnicos
 
-### Archivo: `src/components/OptimizedImage.tsx`
+### Archivo 1: `src/components/ProductCarousel.tsx`
 
-**Modificar la función `parseProductUrl`** para detectar si hay variantes reales:
+Implementar detección de visibilidad a nivel de carrusel y pasar la señal a los cards:
 
 ```text
-Lógica actual:
-├── Detectar formato (.jpg o .webp)
-├── Generar URLs de variantes (_200, _400)
-└── Usar variante según 'variant' prop
-
-Lógica corregida:
-├── Detectar formato (.jpg o .webp)
-├── SI es JPEG → usar URL original (sin variantes)
-├── SI es WebP → generar URLs de variantes
-└── Preservar query string (?t=timestamp)
+1. Agregar hook useIntersectionObserver al contenedor del carrusel
+2. Cuando isVisible = true, pasar loading="eager" a CompactProductCard
+3. Las imágenes cargarán inmediatamente cuando la sección sea visible
 ```
 
-**Cambio específico en líneas 91-128:**
+### Archivo 2: `src/components/CompactProductCard.tsx`
+
+Agregar soporte para forzar carga inmediata:
 
 ```text
-ANTES:
-const format = parsed.isWebP ? 'webp' : 'jpg';
-const variantSrc = variantSize === 800 
-  ? `${parsed.basePath}.${format}`
-  : `${parsed.basePath}_${variantSize}.${format}`;
+1. Agregar prop 'forceLoad?: boolean'
+2. Pasar loading="eager" a OptimizedImage cuando forceLoad=true
+```
 
-DESPUÉS:
-// Para JPEG (imágenes legacy), usar URL original
-if (!parsed.isWebP) {
-  return { src, srcSet: undefined, sizes: undefined, usesPicture: false };
-}
-// Para WebP (nuevas optimizadas), usar variantes
-const variantSrc = variantSize === 800 
-  ? `${parsed.basePath}.webp`
-  : `${parsed.basePath}_${variantSize}.webp`;
+### Archivo 3: `src/components/OptimizedImage.tsx`
+
+Asegurar que `loading="eager"` bypasee completamente el IntersectionObserver:
+
+```text
+Línea 119 ya tiene: const shouldLoad = loading === 'eager' || isIntersecting;
+Esto ya funciona correctamente, solo necesitamos pasar "eager" desde el carrusel.
 ```
 
 ---
 
-## Comportamiento Esperado
-
-| Tipo de Imagen | URL Entrada | URL Usada |
-|----------------|-------------|-----------|
-| JPEG (existente) | `chicken-crunch.jpg?t=123` | `chicken-crunch.jpg?t=123` ✅ |
-| WebP (nueva) | `chicken-crunch.webp` | `chicken-crunch_400.webp` ✅ |
-
----
-
-## Diagrama de Flujo
+## Flujo de Carga Corregido
 
 ```text
 ┌─────────────────────────────────────────────┐
-│           OptimizedImage                    │
-│    src="products/hamburguesa.jpg?t=123"    │
+│         Usuario hace scroll                  │
 └─────────────────────────────────────────────┘
                     │
                     ▼
-         ┌──────────────────────┐
-         │ ¿Es imagen de        │
-         │ producto storage?    │
-         └──────────────────────┘
-                    │
-            Sí      │
-                    ▼
-         ┌──────────────────────┐
-         │ ¿Formato es WebP?    │
-         └──────────────────────┘
-            │               │
-     No (JPEG)          Sí (WebP)
-            │               │
-            ▼               ▼
-   ┌────────────────┐  ┌────────────────┐
-   │ Usar URL       │  │ Generar srcset │
-   │ original       │  │ con variantes  │
-   │ (sin cambios)  │  │ _200, _400     │
-   └────────────────┘  └────────────────┘
-            │               │
-            └───────┬───────┘
+┌─────────────────────────────────────────────┐
+│ ProductCarousel detecta que está visible    │
+│ (IntersectionObserver en contenedor)        │
+└─────────────────────────────────────────────┘
                     │
                     ▼
-         ┌──────────────────────┐
-         │   Renderizar <img>   │
-         │   o <picture>        │
-         └──────────────────────┘
+┌─────────────────────────────────────────────┐
+│ Pasa forceLoad=true a TODOS los cards       │
+└─────────────────────────────────────────────┘
+                    │
+                    ▼
+┌─────────────────────────────────────────────┐
+│ CompactProductCard pasa loading="eager"     │
+│ a OptimizedImage                            │
+└─────────────────────────────────────────────┘
+                    │
+                    ▼
+┌─────────────────────────────────────────────┐
+│ TODAS las imágenes del carrusel cargan      │
+│ inmediatamente (incluidas las ocultas)      │
+└─────────────────────────────────────────────┘
 ```
 
 ---
@@ -114,7 +132,24 @@ const variantSrc = variantSize === 800
 
 | Archivo | Cambio |
 |---------|--------|
-| `src/components/OptimizedImage.tsx` | Ajustar lógica para que imágenes JPEG usen URL original sin intentar cargar variantes |
+| `src/components/ProductCarousel.tsx` | Agregar detección de visibilidad y pasar `forceLoad` a cards |
+| `src/components/CompactProductCard.tsx` | Agregar prop `forceLoad` y pasar `loading="eager"` a imagen |
 
-## Resultado
-Las imágenes existentes (JPEG) se mostrarán correctamente de inmediato. Las nuevas imágenes subidas (WebP optimizado) usarán las variantes responsivas automáticamente.
+---
+
+## Beneficios de esta Solución
+
+1. **Resuelve el problema raíz**: Las imágenes cargan cuando la sección es visible, sin importar el scroll interno
+2. **Mantiene lazy loading global**: Las secciones que no están en viewport aún no cargarán
+3. **Compatible con móviles**: No depende del viewport interno de ScrollArea
+4. **Performance optimizada**: Solo carga imágenes de secciones visibles (6-8 productos a la vez)
+5. **Sin breaking changes**: El comportamiento fuera de carruseles no cambia
+
+---
+
+## Resultado Esperado
+
+En móvil/tablet:
+- Todas las imágenes de cada sección del carrusel cargarán correctamente
+- El scroll horizontal mostrará las imágenes pre-cargadas sin delay
+- Las secciones no visibles seguirán con lazy loading normal
