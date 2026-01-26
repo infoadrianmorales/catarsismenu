@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
 import { MenuItem, Currency } from '@/types/menu';
 import { PriceDisplayMode } from '@/hooks/useCurrency';
-import { ProductCarousel } from './ProductCarousel';
+import { MenuCard } from './MenuCard';
 
 interface CategorySectionProps {
   slug: string;
@@ -52,12 +52,17 @@ export const CategorySection = ({
           </p>
         )}
 
-        {/* Products - Always use carousel for consistent sizing */}
-        <ProductCarousel 
-          items={items} 
-          currency={currency} 
-          displayMode={displayMode} 
-        />
+        {/* Products in grid - standard browser loading */}
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {items.map((item) => (
+            <MenuCard 
+              key={item.id}
+              item={item} 
+              currency={currency} 
+              displayMode={displayMode}
+            />
+          ))}
+        </div>
       </div>
     </section>
   );
