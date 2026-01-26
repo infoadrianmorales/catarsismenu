@@ -43,11 +43,12 @@ export const CompactProductCard = memo(({ item, currency, displayMode = 'ambas',
         {/* Image - Clickable to product detail */}
         <Link to={`/producto/${item.slug}`} className="block shrink-0">
           <div className="relative p-1 sm:p-1.5">
-            <div className="relative aspect-square overflow-hidden rounded-lg bg-white border border-foreground/10 shadow-sm">
+            {/* Zoom effect on container, only on desktop to avoid mobile rendering issues */}
+            <div className="relative aspect-square overflow-hidden rounded-lg bg-white border border-foreground/10 shadow-sm sm:transition-transform sm:duration-300 sm:ease-out sm:group-hover:scale-105">
               <OptimizedImage 
                 src={item.imagen} 
                 alt={`Foto de ${item.nombre}`}
-                className="h-full w-full object-cover p-1 sm:p-1.5 transition-transform duration-300 ease-out group-hover:scale-110 group-active:scale-105"
+                className="h-full w-full object-cover p-1 sm:p-1.5"
                 containerClassName="h-full w-full"
                 variant="card"
                 sizes="(max-width: 640px) 150px, 185px"
