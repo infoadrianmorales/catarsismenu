@@ -10,9 +10,11 @@ interface CompactProductCardProps {
   item: MenuItem;
   currency: Currency;
   displayMode?: PriceDisplayMode;
+  /** Force immediate image loading (bypasses lazy loading) */
+  forceLoad?: boolean;
 }
 
-export const CompactProductCard = memo(({ item, currency, displayMode = 'ambas' }: CompactProductCardProps) => {
+export const CompactProductCard = memo(({ item, currency, displayMode = 'ambas', forceLoad = false }: CompactProductCardProps) => {
   const { getPrices } = useCurrency();
   const prices = getPrices(item.precio_usd);
 
@@ -49,6 +51,7 @@ export const CompactProductCard = memo(({ item, currency, displayMode = 'ambas' 
                 containerClassName="h-full w-full"
                 variant="card"
                 sizes="(max-width: 640px) 150px, 185px"
+                loading={forceLoad ? 'eager' : 'lazy'}
               />
             </div>
           </div>
