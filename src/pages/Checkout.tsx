@@ -359,40 +359,35 @@ Correo: ${formData.email.toLowerCase()}
 
       const customerId = customerResult || null;
 
-      // Create order in database - let Postgres generate the order_number
+      // Create order using SECURITY DEFINER function to bypass RLS
       const newOrderId = crypto.randomUUID();
       
-      const { data: insertedOrder, error: orderError } = await supabase
-        .from('orders')
-        .insert({
-          id: newOrderId,
-          customer_id: customerId,
-          first_name: formData.firstName.trim(),
-          last_name: formData.lastName.trim(),
-          phone: normalizePhone(formData.phone),
-          email: formData.email.toLowerCase().trim(),
-          currency_mode: paymentCurrency,
-          payment_currency: paymentCurrency,
-          exchange_rate: paymentCurrency === 'VES' ? exchangeRate : null,
-          payment_method: formData.paymentMethod,
-          notes: formData.notes.trim() || null,
-          delivery_type: deliveryType,
-          delivery_address: deliveryType === 'delivery' ? formData.deliveryAddress.trim() || null : null,
-          delivery_maps_url: deliveryType === 'delivery' ? formData.deliveryMapsUrl.trim() || null : null,
-          subtotal: subtotal,
-          total: subtotal,
-          status: 'NEW',
-          whatsapp_message: '', // Placeholder, will update after
-        })
-        .select('order_number')
-        .single();
+      const { data: generatedOrderNumber, error: orderError } = await supabase
+        .rpc('create_order_and_return_number', {
+          p_id: newOrderId,
+          p_customer_id: customerId,
+          p_first_name: formData.firstName.trim(),
+          p_last_name: formData.lastName.trim(),
+          p_phone: normalizePhone(formData.phone),
+          p_email: formData.email.toLowerCase().trim(),
+          p_currency_mode: paymentCurrency,
+          p_payment_currency: paymentCurrency,
+          p_exchange_rate: paymentCurrency === 'VES' ? exchangeRate : null,
+          p_payment_method: formData.paymentMethod,
+          p_notes: formData.notes.trim() || null,
+          p_delivery_type: deliveryType,
+          p_delivery_address: deliveryType === 'delivery' ? formData.deliveryAddress.trim() || null : null,
+          p_delivery_maps_url: deliveryType === 'delivery' ? formData.deliveryMapsUrl.trim() || null : null,
+          p_subtotal: subtotal,
+          p_total: subtotal,
+        });
 
       if (orderError) throw orderError;
 
-      const generatedOrderNumber = insertedOrder?.order_number || `#${newOrderId.slice(0, 8).toUpperCase()}`;
+      const orderNum = generatedOrderNumber || `#${newOrderId.slice(0, 8).toUpperCase()}`;
       
       // Generate WhatsApp message with the real order number
-      const whatsappMessage = generateWhatsAppMessage(generatedOrderNumber);
+      const whatsappMessage = generateWhatsAppMessage(orderNum);
       
       // Update the order with the actual WhatsApp message
       await supabase
@@ -422,9 +417,9 @@ Correo: ${formData.email.toLowerCase()}
       
       // Store order info
       setOrderId(newOrderId);
-      setOrderNumber(generatedOrderNumber);
+      setOrderNumber(orderNum);
       sessionStorage.setItem('lastOrderId', newOrderId);
-      sessionStorage.setItem('lastOrderNumber', generatedOrderNumber);
+      sessionStorage.setItem('lastOrderNumber', orderNum);
       
       // Open WhatsApp
       const encodedMessage = encodeURIComponent(whatsappMessage);
@@ -435,7 +430,7 @@ Correo: ${formData.email.toLowerCase()}
       
       // Track Meta Pixel events (using saved cart data)
       trackPurchase(
-        generatedOrderNumber,
+        orderNum,
         cartSubtotal,
         cartItemsForTracking
       );
