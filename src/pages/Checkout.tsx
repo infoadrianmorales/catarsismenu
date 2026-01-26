@@ -426,7 +426,7 @@ Correo: ${formData.email.toLowerCase()}
       const cleanNumber = whatsappNumber.replace(/\D/g, '');
       const whatsappUrl = `https://wa.me/${cleanNumber}?text=${encodedMessage}`;
       
-      window.open(whatsappUrl, '_blank');
+      window.location.href = whatsappUrl;
       
       // Track Meta Pixel events (using saved cart data)
       trackPurchase(
