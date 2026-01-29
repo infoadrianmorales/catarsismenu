@@ -56,6 +56,7 @@ export type Database = {
       config: {
         Row: {
           id: string
+          is_public: boolean | null
           key: string
           updated_at: string | null
           updated_by: string | null
@@ -63,6 +64,7 @@ export type Database = {
         }
         Insert: {
           id?: string
+          is_public?: boolean | null
           key: string
           updated_at?: string | null
           updated_by?: string | null
@@ -70,6 +72,7 @@ export type Database = {
         }
         Update: {
           id?: string
+          is_public?: boolean | null
           key?: string
           updated_at?: string | null
           updated_by?: string | null
@@ -453,6 +456,27 @@ export type Database = {
         }
         Relationships: []
       }
+      rate_limits: {
+        Row: {
+          action_type: string
+          created_at: string | null
+          id: string
+          identifier: string
+        }
+        Insert: {
+          action_type: string
+          created_at?: string | null
+          id?: string
+          identifier: string
+        }
+        Update: {
+          action_type?: string
+          created_at?: string | null
+          id?: string
+          identifier?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -496,27 +520,60 @@ export type Database = {
       }
     }
     Functions: {
-      create_order_and_return_number: {
+      check_rate_limit: {
         Args: {
-          p_currency_mode: string
-          p_customer_id: string
-          p_delivery_address: string
-          p_delivery_maps_url: string
-          p_delivery_type: string
-          p_email: string
-          p_exchange_rate: number
-          p_first_name: string
-          p_id: string
-          p_last_name: string
-          p_notes: string
-          p_payment_currency: string
-          p_payment_method: string
-          p_phone: string
-          p_subtotal: number
-          p_total: number
+          p_action: string
+          p_identifier: string
+          p_max_attempts: number
+          p_window_minutes: number
         }
-        Returns: string
+        Returns: boolean
       }
+      cleanup_rate_limits: { Args: never; Returns: undefined }
+      create_order_and_return_number:
+        | {
+            Args: {
+              p_currency_mode: string
+              p_customer_id: string
+              p_delivery_address: string
+              p_delivery_maps_url: string
+              p_delivery_type: string
+              p_email: string
+              p_exchange_rate: number
+              p_first_name: string
+              p_id: string
+              p_last_name: string
+              p_notes: string
+              p_payment_currency: string
+              p_payment_method: string
+              p_phone: string
+              p_subtotal: number
+              p_total: number
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_currency_mode: string
+              p_customer_id: string
+              p_delivery_address: string
+              p_delivery_maps_url: string
+              p_delivery_type: string
+              p_email: string
+              p_exchange_rate: number
+              p_first_name: string
+              p_id: string
+              p_last_name: string
+              p_notes: string
+              p_payment_currency: string
+              p_payment_method: string
+              p_phone: string
+              p_session_id?: string
+              p_subtotal: number
+              p_total: number
+            }
+            Returns: string
+          }
       find_or_create_customer: {
         Args: {
           p_email: string
@@ -526,6 +583,7 @@ export type Database = {
         }
         Returns: string
       }
+      get_client_session_id: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

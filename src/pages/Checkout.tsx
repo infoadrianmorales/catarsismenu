@@ -380,9 +380,18 @@ Correo: ${formData.email.toLowerCase()}
           p_delivery_maps_url: deliveryType === 'delivery' ? formData.deliveryMapsUrl.trim() || null : null,
           p_subtotal: subtotal,
           p_total: subtotal,
+          p_session_id: getSessionId(),
         });
 
-      if (orderError) throw orderError;
+      if (orderError) {
+        // Handle rate limit error specifically
+        if (orderError.message?.includes('Rate limit exceeded')) {
+          toast.error('Has excedido el límite de pedidos. Por favor intenta más tarde.');
+          setIsSubmitting(false);
+          return;
+        }
+        throw orderError;
+      }
 
       const orderNum = generatedOrderNumber || `#${newOrderId.slice(0, 8).toUpperCase()}`;
       
