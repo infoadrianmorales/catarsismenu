@@ -24,37 +24,103 @@ const Legal = () => {
         </Button>
         
         <div className="max-w-2xl mx-auto space-y-8">
-          <h1 className="text-3xl md:text-4xl font-display font-black text-foreground">
-            Aviso Legal
-          </h1>
+          <div>
+            <h1 className="text-3xl md:text-4xl font-display font-black text-foreground">
+              Términos y Condiciones
+            </h1>
+            <p className="text-lg text-muted-foreground mt-2">Menú Catarsis</p>
+          </div>
+          
+          <p className="text-muted-foreground leading-relaxed">
+            Al usar el sitio web de Catarsis, aceptas estos Términos y Condiciones. Si no estás de acuerdo, por favor, no lo uses.
+          </p>
           
           <section className="space-y-4">
             <h2 className="text-xl font-display font-bold text-foreground">
-              Precios
+              1) ¿Qué hace este sitio?
             </h2>
             <p className="text-muted-foreground leading-relaxed">
-              Los precios en VES (Bolívares) pueden variar según la tasa diaria definida por administración. 
-              Los precios mostrados son referenciales y pueden estar sujetos a cambios sin previo aviso.
+              Este sitio funciona como menú + carrito para solicitar comida (delivery o retiro, según aplique). 
+              No se paga dentro de la web. Al finalizar, el sistema genera un mensaje/enlace a WhatsApp con tu 
+              pedido completo para que lo confirmes con nuestro equipo.
             </p>
           </section>
           
           <section className="space-y-4">
             <h2 className="text-xl font-display font-bold text-foreground">
-              Imágenes
+              2) Pedidos y disponibilidad
+            </h2>
+            <ul className="text-muted-foreground leading-relaxed space-y-2 list-disc list-inside">
+              <li>Los productos, descripciones y precios mostrados pueden cambiar.</li>
+              <li>La disponibilidad puede variar (puede haber items agotados).</li>
+              <li>Enviar el pedido por WhatsApp es una solicitud, y el pedido queda confirmado únicamente cuando Catarsis lo valida por WhatsApp (incluyendo tiempos, costos de envío y método de pago si aplica).</li>
+            </ul>
+          </section>
+          
+          <section className="space-y-4">
+            <h2 className="text-xl font-display font-bold text-foreground">
+              3) Datos personales
             </h2>
             <p className="text-muted-foreground leading-relaxed">
-              Las imágenes mostradas son de referencia. La presentación final del producto puede variar. 
-              Disponibilidad de productos sujeta a inventario.
+              Para poder procesar tu solicitud, necesitaremos algunos datos como nombre, teléfono y dirección/referencias. 
+              Te comprometes a que la información sea real y correcta.
             </p>
           </section>
           
           <section className="space-y-4">
             <h2 className="text-xl font-display font-bold text-foreground">
-              Contacto
+              4) Uso permitido
+            </h2>
+            <ul className="text-muted-foreground leading-relaxed space-y-2 list-disc list-inside">
+              <li>No uses el sitio para fines ilegales, fraude o abuso del servicio.</li>
+              <li>El contenido del sitio (textos, fotos, logo, diseño) es de Catarsis y no puede copiarse sin permiso.</li>
+            </ul>
+          </section>
+          
+          <section className="space-y-4">
+            <h2 className="text-xl font-display font-bold text-foreground">
+              5) WhatsApp (servicio de tercero)
             </h2>
             <p className="text-muted-foreground leading-relaxed">
-              Para consultas, pedidos especiales o información adicional, contáctanos a través de 
-              nuestras redes sociales o WhatsApp.
+              WhatsApp es una plataforma externa. Al usar el enlace, aceptas sus términos y políticas. 
+              Catarsis no controla su funcionamiento.
+            </p>
+          </section>
+          
+          <section className="space-y-4">
+            <h2 className="text-xl font-display font-bold text-foreground">
+              6) Responsabilidad
+            </h2>
+            <p className="text-muted-foreground leading-relaxed">
+              Catarsis no se hace responsable por fallas técnicas del sitio, caídas del servicio o problemas de conexión. 
+              Tampoco por daños derivados del uso del sitio o de WhatsApp.
+            </p>
+          </section>
+          
+          <section className="space-y-4">
+            <h2 className="text-xl font-display font-bold text-foreground">
+              7) Cambios a estos términos
+            </h2>
+            <p className="text-muted-foreground leading-relaxed">
+              Podemos actualizar estos términos en cualquier momento. Te recomendamos revisarlos ocasionalmente.
+            </p>
+          </section>
+          
+          <section className="space-y-4">
+            <h2 className="text-xl font-display font-bold text-foreground">
+              8) Legislación
+            </h2>
+            <p className="text-muted-foreground leading-relaxed">
+              Estos términos se rigen por las leyes de Venezuela y cualquier disputa se atenderá en Lechería, Anzoátegui.
+            </p>
+          </section>
+          
+          <section className="space-y-4">
+            <h2 className="text-xl font-display font-bold text-foreground">
+              9) Contacto
+            </h2>
+            <p className="text-muted-foreground leading-relaxed">
+              Para dudas o soporte, contáctanos por el WhatsApp disponible en el sitio.
             </p>
           </section>
         </div>

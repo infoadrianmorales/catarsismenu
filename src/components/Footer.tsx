@@ -88,7 +88,7 @@ export const Footer = () => {
             href="/legal" 
             className="text-xs text-muted-foreground hover:text-primary transition-colors underline"
           >
-            Aviso legal
+            Términos y condiciones
           </a>
         </div>
       </div>
