@@ -1,163 +1,115 @@
 
-# Plan: Sistema Dual - Modo Local vs Delivery
+# Plan: Actualizar Página de Términos y Condiciones
 
 ## Resumen
 
-Implementar un sistema de contexto que detecte automáticamente el modo de visualización basándose en la URL, adaptando la interfaz para cada caso de uso.
-
-| Modo | URL | Características |
-|------|-----|-----------------|
-| **Delivery** | `/` | Hero con slides, todos los CTAs, carrito, WhatsApp flotante |
-| **Local** | `/menu` | Hero estático (1 imagen), solo Instagram, sin carrito, sin WhatsApp |
+Reemplazar el contenido actual de "Aviso Legal" con los nuevos "Términos y Condiciones" proporcionados, y actualizar las referencias en el Footer.
 
 ---
 
-## Archivos a Crear/Modificar
+## Archivos a Modificar
 
-| Archivo | Acción | Descripción |
-|---------|--------|-------------|
-| `src/contexts/ViewModeContext.tsx` | Crear | Contexto para detectar y compartir el modo |
-| `src/pages/MenuLocal.tsx` | Crear | Página del menú local |
-| `src/components/HeroSection.tsx` | Modificar | Aceptar prop `mode` para adaptar comportamiento |
-| `src/App.tsx` | Modificar | Agregar ruta `/menu` y provider del contexto |
+| Archivo | Cambio |
+|---------|--------|
+| `src/pages/Legal.tsx` | Reemplazar contenido completo con los 9 puntos de T&C |
+| `src/components/Footer.tsx` | Cambiar texto "Aviso legal" por "Términos y condiciones" |
 
 ---
 
-## Detalles Técnicos
+## Cambios en Legal.tsx
 
-### 1. ViewModeContext
+### Título Principal
+- **Antes**: "Aviso Legal"
+- **Después**: "Términos y Condiciones"
 
-```typescript
-type ViewMode = 'delivery' | 'local';
+### Subtítulo
+Agregar párrafo introductorio:
+> "Al usar el sitio web de Catarsis, aceptas estos Términos y Condiciones. Si no estás de acuerdo, por favor, no lo uses."
 
-interface ViewModeContextType {
-  mode: ViewMode;
-  isDeliveryMode: boolean;
-  isLocalMode: boolean;
-}
-```
+### Secciones (9 en total)
 
-El contexto detectará el modo basándose en:
-- Ruta `/menu` → modo local
-- Query param `?mode=local` → modo local
-- Cualquier otra cosa → modo delivery
-
-### 2. HeroSection Adaptativo
-
-**Modo Delivery (actual):**
-- Carousel de slides desde la base de datos
-- Flechas de navegación y dots
-- Botones: WhatsApp, Instagram, Cómo llegar
-
-**Modo Local (nuevo):**
-- Imagen estática única (primer slide o fallback)
-- Sin carousel, sin flechas, sin dots
-- Solo botón de Instagram
-
-```text
-┌─────────────────────────────────────────┐
-│                                         │
-│         [Imagen Hero Estática]          │
-│                                         │
-│           ┌─────────────────┐           │
-│           │  📸 Instagram   │           │
-│           └─────────────────┘           │
-│  ════════════════════════════════════   │  ← Tape divider
-└─────────────────────────────────────────┘
-```
-
-### 3. Página MenuLocal
-
-Nueva página simplificada que:
-- Usa `HeroSection` con `mode="local"`
-- Muestra el menú completo por categorías
-- Sin `FloatingCartButton`
-- Sin `StickyActionBar` (o versión simplificada sin carrito/WhatsApp)
-- Sin `FloatingWhatsApp`
-
-### 4. Componentes Ocultados en Modo Local
-
-| Componente | Delivery | Local |
-|------------|----------|-------|
-| Hero Carousel | ✅ | ❌ (imagen única) |
-| Botón WhatsApp (Hero) | ✅ | ❌ |
-| Botón Cómo llegar (Hero) | ✅ | ❌ |
-| Botón Instagram (Hero) | ✅ | ✅ |
-| FloatingCartButton | ✅ | ❌ |
-| StickyActionBar | ✅ | ❌ o simplificado |
-| FloatingWhatsApp | ✅ | ❌ |
-| Botón "Agregar" en productos | ✅ | ❌ |
+| # | Título | Contenido resumido |
+|---|--------|-------------------|
+| 1 | ¿Qué hace este sitio? | Menú + carrito, no se paga en web, enlace a WhatsApp |
+| 2 | Pedidos y disponibilidad | Precios/disponibilidad pueden cambiar, confirmación por WhatsApp |
+| 3 | Datos personales | Nombre, teléfono, dirección requeridos |
+| 4 | Uso permitido | No uso ilegal, contenido protegido |
+| 5 | WhatsApp (servicio de tercero) | Plataforma externa, sus propios términos |
+| 6 | Responsabilidad | No responsable por fallas técnicas |
+| 7 | Cambios a estos términos | Pueden actualizarse en cualquier momento |
+| 8 | Legislación | Leyes de Venezuela, Lechería |
+| 9 | Contacto | WhatsApp del sitio |
 
 ---
 
-## URLs para QR Codes
+## Cambios en Footer.tsx
 
-**Para el local (tablets/QR):**
-```
-https://catarsismenu.lovable.app/menu
-```
+**Línea 91** - Cambiar texto del enlace:
 
-**Para delivery/marketing:**
-```
-https://catarsismenu.lovable.app
+```tsx
+// Antes
+Aviso legal
+
+// Después
+Términos y condiciones
 ```
 
 ---
 
-## Flujo de Tracking Meta Pixel
-
-Ambos modos tendrán tracking, pero con eventos diferenciados:
-
-| Evento | Delivery | Local |
-|--------|----------|-------|
-| PageView | ✅ con `mode=delivery` | ✅ con `mode=local` |
-| ViewContent | ✅ | ✅ |
-| AddToCart | ✅ | ❌ |
-| InitiateCheckout | ✅ | ❌ |
-| Purchase | ✅ | ❌ |
-| Contact (WhatsApp) | ✅ | ❌ |
-
-Esto te permitirá segmentar audiencias en Meta Ads basándote en el comportamiento.
-
----
-
-## Resultado Visual - Modo Local
+## Estructura Visual Final
 
 ```text
 ┌────────────────────────────────────────────┐
-│ [Logo Catarsis]              [USD│VES]     │  Header simplificado
+│ ← Volver al menú                           │
 ├────────────────────────────────────────────┤
 │                                            │
-│           [Imagen Hero Única]              │  Sin carousel
+│  TÉRMINOS Y CONDICIONES                    │
+│  ──────────────────────                    │
+│  Menú Catarsis                             │
 │                                            │
-│              [📸 Instagram]                │  Solo este CTA
+│  Al usar el sitio web de Catarsis...       │
 │                                            │
-│  ═══════ TAPE DIVIDER ════════════════     │
+│  1) ¿Qué hace este sitio?                  │
+│     [contenido]                            │
+│                                            │
+│  2) Pedidos y disponibilidad               │
+│     • Los productos pueden cambiar...      │
+│     • La disponibilidad puede variar...    │
+│     • Enviar pedido es una solicitud...    │
+│                                            │
+│  3) Datos personales                       │
+│     [contenido]                            │
+│                                            │
+│  4) Uso permitido                          │
+│     • No uses para fines ilegales...       │
+│     • Contenido protegido...               │
+│                                            │
+│  5) WhatsApp (servicio de tercero)         │
+│     [contenido]                            │
+│                                            │
+│  6) Responsabilidad                        │
+│     [contenido]                            │
+│                                            │
+│  7) Cambios a estos términos               │
+│     [contenido]                            │
+│                                            │
+│  8) Legislación                            │
+│     Venezuela, Lechería, Anzoátegui        │
+│                                            │
+│  9) Contacto                               │
+│     [contenido]                            │
+│                                            │
 ├────────────────────────────────────────────┤
-│  🔥 Best Seller                            │
-│  ┌────┐ ┌────┐ ┌────┐ ┌────┐              │  Sin botón agregar
-│  │ 🍔 │ │ 🍕 │ │ 🥗 │ │ 🍹 │              │
-│  └────┘ └────┘ └────┘ └────┘              │
-│                                            │
-│  🍔 Hamburguesas Gourmet                   │
-│  ┌────┐ ┌────┐ ┌────┐ ┌────┐              │
-│  │    │ │    │ │    │ │    │              │
-│  └────┘ └────┘ └────┘ └────┘              │
-│                                            │
-│  [Footer con redes sociales]               │
+│  [Footer]                                  │
+│  © 2025 Catarsis                           │
+│  Términos y condiciones  ← actualizado     │
 └────────────────────────────────────────────┘
-                  ↑
-         Sin StickyActionBar
-         Sin FloatingWhatsApp
-         Sin FloatingCartButton
 ```
 
 ---
 
-## Pasos de Implementación
+## Notas de Implementación
 
-1. **Crear ViewModeContext** - Contexto que detecta el modo por URL
-2. **Modificar HeroSection** - Aceptar prop `mode` para cambiar comportamiento
-3. **Crear MenuLocal.tsx** - Página simplificada para el local
-4. **Actualizar App.tsx** - Agregar ruta `/menu` y wrapper del contexto
-5. **Adaptar tracking** - Incluir `mode` en eventos de Meta Pixel
+- Para la sección 8 (Legislación), usaré "Venezuela" como país y "Lechería, Anzoátegui" como ciudad, basándome en la información del Footer
+- Las listas con viñetas (secciones 2 y 4) usarán elementos `<ul>` para mejor legibilidad
+- Se mantiene el mismo estilo visual (fuentes, colores, espaciado) del diseño actual
