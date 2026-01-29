@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useCurrency, PriceDisplayMode } from '@/hooks/useCurrency';
 import { AddToCartButton } from '@/components/cart/AddToCartButton';
 import { OptimizedImage } from '@/components/OptimizedImage';
+import { useViewMode } from '@/contexts/ViewModeContext';
 
 interface CompactProductCardProps {
   item: MenuItem;
@@ -15,6 +16,7 @@ interface CompactProductCardProps {
 }
 
 export const CompactProductCard = memo(({ item, currency, displayMode = 'ambas', forceLoad = false }: CompactProductCardProps) => {
+  const { isLocalMode } = useViewMode();
   const { getPrices } = useCurrency();
   const prices = getPrices(item.precio_usd);
 
@@ -72,7 +74,7 @@ export const CompactProductCard = memo(({ item, currency, displayMode = 'ambas',
           
           <div className="mt-auto flex items-end justify-between gap-1 pt-1">
             {renderPrice()}
-            <AddToCartButton product={item} variant="icon" />
+            {!isLocalMode && <AddToCartButton product={item} variant="icon" />}
           </div>
         </div>
       </CardContent>

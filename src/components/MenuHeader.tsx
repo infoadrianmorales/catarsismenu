@@ -3,6 +3,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { PriceDisplayMode } from '@/hooks/useCurrency';
 import { CartDrawer } from '@/components/cart/CartDrawer';
+import { useViewMode } from '@/contexts/ViewModeContext';
 import logoCatarsis from '@/assets/logo-catarsis.png';
 
 interface MenuHeaderProps {
@@ -12,6 +13,7 @@ interface MenuHeaderProps {
 }
 
 export const MenuHeader = ({ currency, onCurrencyToggle, displayMode = 'ambas' }: MenuHeaderProps) => {
+  const { isLocalMode } = useViewMode();
   // Only show currency toggle if display mode is 'ambas'
   const showCurrencyToggle = displayMode === 'ambas';
 
@@ -65,8 +67,8 @@ export const MenuHeader = ({ currency, onCurrencyToggle, displayMode = 'ambas' }
             </div>
           )}
 
-          {/* Cart Drawer */}
-          <CartDrawer />
+          {/* Cart Drawer - hidden in local mode */}
+          {!isLocalMode && <CartDrawer />}
         </div>
       </div>
     </header>

@@ -2,6 +2,7 @@ import { MenuItem, Currency } from '@/types/menu';
 import { Card, CardContent } from '@/components/ui/card';
 import { useCurrency, PriceDisplayMode } from '@/hooks/useCurrency';
 import { AddToCartButton } from '@/components/cart/AddToCartButton';
+import { useViewMode } from '@/contexts/ViewModeContext';
 
 interface MenuCardProps {
   item: MenuItem;
@@ -10,6 +11,7 @@ interface MenuCardProps {
 }
 
 export const MenuCard = ({ item, currency, displayMode = 'ambas' }: MenuCardProps) => {
+  const { isLocalMode } = useViewMode();
   const { getPrices } = useCurrency();
   const prices = getPrices(item.precio_usd);
 
@@ -72,7 +74,7 @@ export const MenuCard = ({ item, currency, displayMode = 'ambas' }: MenuCardProp
           {/* Prices and Add to Cart */}
           <div className="flex items-center justify-between gap-2">
             {renderPrices()}
-            <AddToCartButton product={item} variant="compact" />
+            {!isLocalMode && <AddToCartButton product={item} variant="compact" />}
           </div>
         </div>
       </CardContent>
