@@ -1,58 +1,122 @@
-# Plan de Implementación: Mejoras de Seguridad
 
-## Estado: ✅ COMPLETADO
 
-Todas las fases de seguridad han sido implementadas exitosamente.
+# Plan: Reestructurar Mensaje de WhatsApp
 
----
+## Resumen
 
-## Resumen de Cambios Implementados
-
-### ✅ Fase 1: RLS para pending_checkouts
-- Función `get_client_session_id()` creada para validar sesiones
-- Políticas actualizadas: solo el dueño de la sesión puede leer/actualizar/eliminar su checkout
-- Admins mantienen acceso completo
-
-### ✅ Fase 2: Validación en RLS de orders/order_items
-- Política `Anyone can insert valid orders` con validaciones:
-  - `total > 0`, `subtotal >= 0`
-  - Nombre, apellido, teléfono (min 7 chars), email (regex)
-  - Método de pago requerido
-- Política `Anyone can insert valid order_items` con validaciones:
-  - `quantity > 0`, `unit_price_snapshot >= 0`, `line_total >= 0`
-  - `product_name_snapshot` no vacío
-
-### ✅ Fase 3: Separación de Config Público/Privado
-- Columna `is_public` agregada a tabla `config`
-- Configuraciones privadas: `tasa_manual`, `rate_source`, `bcv_last_sync`, `bcv_source`
-- Política actualizada: usuarios anónimos solo ven config público
-
-### ✅ Fase 4: Rate Limiting
-- Tabla `rate_limits` creada con RLS (sin acceso directo)
-- Función `check_rate_limit()` implementada
-- Función `create_order_and_return_number()` actualizada con parámetro `p_session_id`
-- Límite: 5 pedidos por hora por sesión
-- Frontend actualizado para manejar error de rate limit
-
-### ⚠️ Fase 5: Leaked Password Protection
-- **Requiere acción manual**: Habilitar en Lovable Cloud > Authentication > Settings
+Mover el número de orden para que aparezca inmediatamente después del saludo inicial, mejorando la visibilidad y facilitando el seguimiento del pedido.
 
 ---
 
-## Advertencias del Linter (Aceptables)
+## Estructura Actual vs Nueva
 
-Las siguientes políticas permisivas son **intencionales**:
-
-| Tabla | Política | Razón |
-|-------|----------|-------|
-| `customers` | INSERT con `true` | Checkout anónimo necesita crear clientes |
-| `pending_checkouts` | INSERT con `true` | Tracking de carritos abandonados |
-
-La extensión en `public` schema es un warning existente no relacionado con esta migración.
+| Posición | Estructura Actual | Nueva Estructura |
+|----------|-------------------|------------------|
+| 1 | Saludo (nombre) | Saludo (nombre) |
+| 2 | Pedido (items) | **Número de orden** ✨ |
+| 3 | Total | Pedido (items) |
+| 4 | Entrega | Total |
+| 5 | Método de pago | Entrega |
+| 6 | Datos del cliente | Método de pago |
+| 7 | Número de orden | Datos del cliente |
 
 ---
 
-## Archivos Modificados
+## Archivo a Modificar
 
-- `src/pages/Checkout.tsx`: Agregado `p_session_id` al RPC y manejo de error rate limit
-- Base de datos: 4 nuevas funciones, 1 nueva tabla, políticas RLS actualizadas
+| Archivo | Cambio |
+|---------|--------|
+| `src/pages/Checkout.tsx` | Reorganizar función `generateWhatsAppMessage` |
+
+---
+
+## Cambio Específico (líneas 296-315)
+
+### Antes
+```text
+Hola 👋 Soy Juan Pérez. Quiero realizar el siguiente pedido en Catarsis.
+
+*Pedido:*
+- 2x Burger Classic — $12.00
+...
+*Orden:* CAT-0042
+```
+
+### Después
+```text
+Hola 👋 Soy Juan Pérez. Quiero realizar el siguiente pedido en Catarsis.
+
+*Orden:* CAT-0042
+
+*Pedido:*
+- 2x Burger Classic — $12.00
+...
+```
+
+---
+
+## Código Actualizado
+
+```typescript
+const generateWhatsAppMessage = (orderNum: string): string => {
+  // ... código existente para itemLines, totalStr, entregaSection ...
+
+  const message = `Hola 👋 Soy ${formData.firstName} ${formData.lastName}. Quiero realizar el siguiente pedido en Catarsis.
+
+*Orden:* ${orderNum}
+
+*Pedido:*
+${itemLines}
+
+*Total: ${totalStr}*${entregaSection}
+
+*💳 Método de pago preferido:*
+Moneda: ${paymentCurrency === 'USD' ? 'Dólares (USD)' : 'Bolívares (VES)'}
+Método: ${paymentMethodLabel}
+
+_Por favor envíame los datos para realizar el pago_ 🙏
+
+*Datos del cliente:*
+Teléfono: ${normalizePhone(formData.phone)}
+Correo: ${formData.email.toLowerCase()}`;
+
+  return message;
+};
+```
+
+---
+
+## Resultado Visual
+
+```text
+Hola 👋 Soy María García. Quiero realizar el siguiente pedido en Catarsis.
+
+*Orden:* CAT-0123
+
+*Pedido:*
+- 2x Burger Classic — $12.00
+- 1x Pizza Pepperoni — $15.00
+
+*Total: $27.00*
+
+*Entrega: Pickup (Retiro en local) 🏪*
+
+*💳 Método de pago preferido:*
+Moneda: Dólares (USD)
+Método: Zelle
+
+_Por favor envíame los datos para realizar el pago_ 🙏
+
+*Datos del cliente:*
+Teléfono: 04241234567
+Correo: maria@email.com
+```
+
+---
+
+## Beneficios
+
+- **Identificación rápida**: El número de orden es visible de inmediato al recibir el mensaje
+- **Mejor seguimiento**: Facilita buscar y referenciar pedidos en el historial de WhatsApp
+- **Profesionalismo**: Estructura más organizada y orientada al negocio
+
