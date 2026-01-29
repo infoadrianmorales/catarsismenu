@@ -1,92 +1,163 @@
 
-# Plan: Corregir Scroll al Inicio en Navegación
+# Plan: Sistema Dual - Modo Local vs Delivery
 
-## Problema Identificado
+## Resumen
 
-Cuando el usuario navega a `/carrito` (u otras páginas) desde la página principal, el navegador mantiene la posición de scroll anterior. Esto causa que la página del carrito aparezca mostrando el contenido desde abajo o desde una posición intermedia, en lugar de comenzar desde arriba.
+Implementar un sistema de contexto que detecte automáticamente el modo de visualización basándose en la URL, adaptando la interfaz para cada caso de uso.
 
-**Causa técnica**: React Router no tiene configurado el scroll restoration automático.
-
----
-
-## Solución
-
-Crear un componente `ScrollToTop` que detecte cambios de ruta y ejecute `window.scrollTo(0, 0)` para restablecer el scroll al inicio de cada página.
+| Modo | URL | Características |
+|------|-----|-----------------|
+| **Delivery** | `/` | Hero con slides, todos los CTAs, carrito, WhatsApp flotante |
+| **Local** | `/menu` | Hero estático (1 imagen), solo Instagram, sin carrito, sin WhatsApp |
 
 ---
 
-## Cambios Técnicos
+## Archivos a Crear/Modificar
 
-### 1. Crear componente `ScrollToTop.tsx`
+| Archivo | Acción | Descripción |
+|---------|--------|-------------|
+| `src/contexts/ViewModeContext.tsx` | Crear | Contexto para detectar y compartir el modo |
+| `src/pages/MenuLocal.tsx` | Crear | Página del menú local |
+| `src/components/HeroSection.tsx` | Modificar | Aceptar prop `mode` para adaptar comportamiento |
+| `src/App.tsx` | Modificar | Agregar ruta `/menu` y provider del contexto |
 
-Nuevo archivo: `src/components/ScrollToTop.tsx`
+---
 
-```tsx
-import { useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+## Detalles Técnicos
 
-export const ScrollToTop = () => {
-  const { pathname } = useLocation();
+### 1. ViewModeContext
 
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [pathname]);
+```typescript
+type ViewMode = 'delivery' | 'local';
 
-  return null;
-};
+interface ViewModeContextType {
+  mode: ViewMode;
+  isDeliveryMode: boolean;
+  isLocalMode: boolean;
+}
 ```
 
-Este componente:
-- Escucha cambios en `pathname` usando `useLocation()`
-- Ejecuta `window.scrollTo(0, 0)` cada vez que cambia la ruta
-- No renderiza nada (retorna `null`)
+El contexto detectará el modo basándose en:
+- Ruta `/menu` → modo local
+- Query param `?mode=local` → modo local
+- Cualquier otra cosa → modo delivery
 
-### 2. Agregar ScrollToTop a App.tsx
+### 2. HeroSection Adaptativo
 
-Modificar `src/App.tsx` para incluir el componente dentro del `BrowserRouter`:
+**Modo Delivery (actual):**
+- Carousel de slides desde la base de datos
+- Flechas de navegación y dots
+- Botones: WhatsApp, Instagram, Cómo llegar
 
-```tsx
-import { ScrollToTop } from './components/ScrollToTop';
+**Modo Local (nuevo):**
+- Imagen estática única (primer slide o fallback)
+- Sin carousel, sin flechas, sin dots
+- Solo botón de Instagram
 
-const AppContent = () => {
-  const location = useLocation();
-  const hideFloatingWhatsApp = location.pathname === '/admin' || location.pathname === '/auth';
+```text
+┌─────────────────────────────────────────┐
+│                                         │
+│         [Imagen Hero Estática]          │
+│                                         │
+│           ┌─────────────────┐           │
+│           │  📸 Instagram   │           │
+│           └─────────────────┘           │
+│  ════════════════════════════════════   │  ← Tape divider
+└─────────────────────────────────────────┘
+```
 
-  return (
-    <MetaPixelProvider>
-      <ScrollToTop /> {/* ← Agregar aquí */}
-      <Suspense fallback={<PageLoader />}>
-        <Routes>
-          {/* ... rutas existentes ... */}
-        </Routes>
-      </Suspense>
-      {!hideFloatingWhatsApp && <FloatingWhatsApp />}
-    </MetaPixelProvider>
-  );
-};
+### 3. Página MenuLocal
+
+Nueva página simplificada que:
+- Usa `HeroSection` con `mode="local"`
+- Muestra el menú completo por categorías
+- Sin `FloatingCartButton`
+- Sin `StickyActionBar` (o versión simplificada sin carrito/WhatsApp)
+- Sin `FloatingWhatsApp`
+
+### 4. Componentes Ocultados en Modo Local
+
+| Componente | Delivery | Local |
+|------------|----------|-------|
+| Hero Carousel | ✅ | ❌ (imagen única) |
+| Botón WhatsApp (Hero) | ✅ | ❌ |
+| Botón Cómo llegar (Hero) | ✅ | ❌ |
+| Botón Instagram (Hero) | ✅ | ✅ |
+| FloatingCartButton | ✅ | ❌ |
+| StickyActionBar | ✅ | ❌ o simplificado |
+| FloatingWhatsApp | ✅ | ❌ |
+| Botón "Agregar" en productos | ✅ | ❌ |
+
+---
+
+## URLs para QR Codes
+
+**Para el local (tablets/QR):**
+```
+https://catarsismenu.lovable.app/menu
+```
+
+**Para delivery/marketing:**
+```
+https://catarsismenu.lovable.app
 ```
 
 ---
 
-## Resumen de Archivos
+## Flujo de Tracking Meta Pixel
 
-| Archivo | Acción |
-|---------|--------|
-| `src/components/ScrollToTop.tsx` | Crear - Componente de scroll restoration |
-| `src/App.tsx` | Modificar - Agregar ScrollToTop al layout |
+Ambos modos tendrán tracking, pero con eventos diferenciados:
 
----
+| Evento | Delivery | Local |
+|--------|----------|-------|
+| PageView | ✅ con `mode=delivery` | ✅ con `mode=local` |
+| ViewContent | ✅ | ✅ |
+| AddToCart | ✅ | ❌ |
+| InitiateCheckout | ✅ | ❌ |
+| Purchase | ✅ | ❌ |
+| Contact (WhatsApp) | ✅ | ❌ |
 
-## Comportamiento Esperado
-
-| Acción | Antes | Después |
-|--------|-------|---------|
-| Click en botón flotante del carrito | Página carga desde posición de scroll anterior | Página carga desde arriba |
-| Navegar a cualquier página | Mantiene scroll | Siempre inicia desde arriba |
-| Volver al menú desde carrito | Posición inconsistente | Inicia desde arriba |
+Esto te permitirá segmentar audiencias en Meta Ads basándote en el comportamiento.
 
 ---
 
-## Resultado
+## Resultado Visual - Modo Local
 
-Todas las navegaciones entre páginas iniciarán con el scroll en la posición `(0, 0)`, proporcionando una experiencia de usuario consistente y esperada.
+```text
+┌────────────────────────────────────────────┐
+│ [Logo Catarsis]              [USD│VES]     │  Header simplificado
+├────────────────────────────────────────────┤
+│                                            │
+│           [Imagen Hero Única]              │  Sin carousel
+│                                            │
+│              [📸 Instagram]                │  Solo este CTA
+│                                            │
+│  ═══════ TAPE DIVIDER ════════════════     │
+├────────────────────────────────────────────┤
+│  🔥 Best Seller                            │
+│  ┌────┐ ┌────┐ ┌────┐ ┌────┐              │  Sin botón agregar
+│  │ 🍔 │ │ 🍕 │ │ 🥗 │ │ 🍹 │              │
+│  └────┘ └────┘ └────┘ └────┘              │
+│                                            │
+│  🍔 Hamburguesas Gourmet                   │
+│  ┌────┐ ┌────┐ ┌────┐ ┌────┐              │
+│  │    │ │    │ │    │ │    │              │
+│  └────┘ └────┘ └────┘ └────┘              │
+│                                            │
+│  [Footer con redes sociales]               │
+└────────────────────────────────────────────┘
+                  ↑
+         Sin StickyActionBar
+         Sin FloatingWhatsApp
+         Sin FloatingCartButton
+```
+
+---
+
+## Pasos de Implementación
+
+1. **Crear ViewModeContext** - Contexto que detecta el modo por URL
+2. **Modificar HeroSection** - Aceptar prop `mode` para cambiar comportamiento
+3. **Crear MenuLocal.tsx** - Página simplificada para el local
+4. **Actualizar App.tsx** - Agregar ruta `/menu` y wrapper del contexto
+5. **Adaptar tracking** - Incluir `mode` en eventos de Meta Pixel
