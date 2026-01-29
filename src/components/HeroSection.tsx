@@ -5,16 +5,26 @@ import { MessageCircle, Instagram, MapPin, ChevronLeft, ChevronRight } from 'luc
 import { useHeroSlides } from '@/hooks/useHeroSlides';
 import heroImageFallback from '@/assets/banner-hero.png';
 import { trackContact } from '@/lib/metaPixel';
+import { ViewMode } from '@/contexts/ViewModeContext';
 
-export const HeroSection = () => {
+interface HeroSectionProps {
+  mode?: ViewMode;
+}
+
+export const HeroSection = ({ mode = 'delivery' }: HeroSectionProps) => {
   const { activeSlides, loading } = useHeroSlides();
+  const isLocalMode = mode === 'local';
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
   // Use slides from DB or fallback to static image
-  const slides = activeSlides.length > 0 
+  const allSlides = activeSlides.length > 0 
     ? activeSlides.map(s => s.image_url) 
     : [heroImageFallback];
+  
+  // In local mode, only show the first slide (static)
+  const slides = isLocalMode ? [allSlides[0]] : allSlides;
+  const showCarousel = !isLocalMode && slides.length > 1;
 
   const goToNext = useCallback(() => {
     setCurrentIndex((prev) => (prev + 1) % slides.length);
@@ -76,8 +86,8 @@ export const HeroSection = () => {
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
       </div>
 
-      {/* Navigation Arrows (only if multiple slides) */}
-      {slides.length > 1 && (
+      {/* Navigation Arrows (only if carousel mode) */}
+      {showCarousel && (
         <>
           <button
             onClick={() => { goToPrev(); setIsAutoPlaying(false); }}
@@ -96,8 +106,8 @@ export const HeroSection = () => {
         </>
       )}
 
-      {/* Dot indicators (only if multiple slides) */}
-      {slides.length > 1 && (
+      {/* Dot indicators (only if carousel mode) */}
+      {showCarousel && (
         <div className="absolute bottom-32 left-1/2 -translate-x-1/2 z-20 flex gap-2">
           {slides.map((_, index) => (
             <button
@@ -114,42 +124,51 @@ export const HeroSection = () => {
         </div>
       )}
       
-      {/* Content - Only CTA Buttons */}
+      {/* Content - CTA Buttons */}
       <div className="relative z-10 container px-4 pb-16 pt-8 text-center">
-        {/* CTA Buttons */}
         <div className="flex flex-wrap items-center justify-center gap-3">
-          <Button 
-            size="lg" 
-            onClick={handleWhatsAppClick}
-            className="bg-accent hover:bg-accent/90 text-accent-foreground font-bold gap-2"
-          >
-            <MessageCircle className="h-5 w-5" />
-            Pedir por WhatsApp
-          </Button>
+          {/* WhatsApp Button - Only in Delivery mode */}
+          {!isLocalMode && (
+            <Button 
+              size="lg" 
+              onClick={handleWhatsAppClick}
+              className="bg-accent hover:bg-accent/90 text-accent-foreground font-bold gap-2"
+            >
+              <MessageCircle className="h-5 w-5" />
+              Pedir por WhatsApp
+            </Button>
+          )}
           
+          {/* Instagram Button - Always visible */}
           <Button 
-            variant="outline" 
+            variant={isLocalMode ? "default" : "outline"}
             size="lg"
             asChild
-            className="border-border/50 hover:bg-primary hover:text-primary-foreground hover:border-primary gap-2"
+            className={isLocalMode 
+              ? "bg-secondary hover:bg-secondary/90 text-secondary-foreground font-bold gap-2"
+              : "border-border/50 hover:bg-primary hover:text-primary-foreground hover:border-primary gap-2"
+            }
           >
             <a href={appConfig.instagram_url} target="_blank" rel="noopener noreferrer">
               <Instagram className="h-5 w-5" />
-              Ver en Instagram
+              {isLocalMode ? 'Síguenos en Instagram' : 'Ver en Instagram'}
             </a>
           </Button>
           
-          <Button 
-            variant="ghost" 
-            size="lg"
-            asChild
-            className="text-muted-foreground hover:text-foreground gap-2"
-          >
-            <a href={appConfig.maps_url} target="_blank" rel="noopener noreferrer">
-              <MapPin className="h-5 w-5" />
-              Cómo llegar
-            </a>
-          </Button>
+          {/* Location Button - Only in Delivery mode */}
+          {!isLocalMode && (
+            <Button 
+              variant="ghost" 
+              size="lg"
+              asChild
+              className="text-muted-foreground hover:text-foreground gap-2"
+            >
+              <a href={appConfig.maps_url} target="_blank" rel="noopener noreferrer">
+                <MapPin className="h-5 w-5" />
+                Cómo llegar
+              </a>
+            </Button>
+          )}
         </div>
       </div>
       

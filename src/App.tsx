@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { CartProvider } from "@/contexts/CartContext";
+import { ViewModeProvider } from "@/contexts/ViewModeContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -21,6 +22,7 @@ const Checkout = lazy(() => import("./pages/Checkout"));
 const OrderConfirmed = lazy(() => import("./pages/OrderConfirmed"));
 const CategoryPage = lazy(() => import("./pages/CategoryPage"));
 const ProductPage = lazy(() => import("./pages/ProductPage"));
+const MenuLocal = lazy(() => import("./pages/MenuLocal"));
 
 // Configure QueryClient with optimized defaults
 const queryClient = new QueryClient({
@@ -47,28 +49,32 @@ const PageLoader = () => (
 
 const AppContent = () => {
   const location = useLocation();
-  const hideFloatingWhatsApp = location.pathname === '/admin' || location.pathname === '/auth';
+  // Hide floating WhatsApp on admin, auth, and local menu pages
+  const hideFloatingWhatsApp = ['/admin', '/auth', '/menu'].includes(location.pathname);
 
   return (
-    <MetaPixelProvider>
-      <ScrollToTop />
-      <Suspense fallback={<PageLoader />}>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/categoria/:slug" element={<CategoryPage />} />
-          <Route path="/producto/:slug" element={<ProductPage />} />
-          <Route path="/legal" element={<Legal />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/admin" element={<Admin />} />
-          <Route path="/carrito" element={<Cart />} />
-          <Route path="/checkout" element={<Checkout />} />
-          <Route path="/orden-confirmada" element={<OrderConfirmed />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </Suspense>
-      {!hideFloatingWhatsApp && <FloatingWhatsApp />}
-    </MetaPixelProvider>
+    <ViewModeProvider>
+      <MetaPixelProvider>
+        <ScrollToTop />
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/menu" element={<MenuLocal />} />
+            <Route path="/categoria/:slug" element={<CategoryPage />} />
+            <Route path="/producto/:slug" element={<ProductPage />} />
+            <Route path="/legal" element={<Legal />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/admin" element={<Admin />} />
+            <Route path="/carrito" element={<Cart />} />
+            <Route path="/checkout" element={<Checkout />} />
+            <Route path="/orden-confirmada" element={<OrderConfirmed />} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
+        {!hideFloatingWhatsApp && <FloatingWhatsApp />}
+      </MetaPixelProvider>
+    </ViewModeProvider>
   );
 };
 
