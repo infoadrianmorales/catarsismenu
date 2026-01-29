@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Loader2, LogOut, Settings, Package, Megaphone, Users, Layers, ShoppingBag, UserCheck, CreditCard, Image } from 'lucide-react';
+import { Loader2, LogOut, Settings, Package, Megaphone, Users, Layers, ShoppingBag, UserCheck, CreditCard, Image, BarChart3 } from 'lucide-react';
+import { AnalyticsPanel } from '@/components/admin/AnalyticsPanel';
 import { ConfigPanel } from '@/components/admin/ConfigPanel';
 import { ProductsPanel } from '@/components/admin/ProductsPanel';
 import { PromotionsPanel } from '@/components/admin/PromotionsPanel';
@@ -73,8 +74,12 @@ const Admin = () => {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6">
-        <Tabs defaultValue="orders" className="w-full">
-          <TabsList className="grid w-full grid-cols-9 mb-6">
+        <Tabs defaultValue="analytics" className="w-full">
+          <TabsList className="grid w-full grid-cols-10 mb-6">
+            <TabsTrigger value="analytics" className="gap-2">
+              <BarChart3 className="h-4 w-4" />
+              <span className="hidden sm:inline">Analíticas</span>
+            </TabsTrigger>
             <TabsTrigger value="orders" className="gap-2">
               <ShoppingBag className="h-4 w-4" />
               <span className="hidden sm:inline">Órdenes</span>
@@ -112,6 +117,10 @@ const Admin = () => {
               <span className="hidden sm:inline">Usuarios</span>
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="analytics">
+            <AnalyticsPanel />
+          </TabsContent>
 
           <TabsContent value="orders">
             <OrdersPanel />
