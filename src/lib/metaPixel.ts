@@ -62,11 +62,16 @@ const canTrack = (): boolean => {
 };
 
 /**
- * Track PageView event
+ * Track PageView event with optional mode parameter
  */
-export const trackPageView = (): void => {
+export const trackPageView = (mode?: 'delivery' | 'local'): void => {
   if (!canTrack()) return;
-  window.fbq('track', 'PageView');
+  
+  if (mode) {
+    window.fbq('track', 'PageView', { content_category: mode });
+  } else {
+    window.fbq('track', 'PageView');
+  }
 };
 
 /**
