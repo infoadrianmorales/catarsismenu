@@ -1,9 +1,10 @@
 
-# Plan: Actualizar Página de Términos y Condiciones
+
+# Plan: Cambiar Ruta de /legal a /terminos-y-condiciones
 
 ## Resumen
 
-Reemplazar el contenido actual de "Aviso Legal" con los nuevos "Términos y Condiciones" proporcionados, y actualizar las referencias en el Footer.
+Actualizar la URL de la página de términos y condiciones de `/legal` a `/terminos-y-condiciones` para que sea consistente con el nuevo nombre.
 
 ---
 
@@ -11,105 +12,46 @@ Reemplazar el contenido actual de "Aviso Legal" con los nuevos "Términos y Cond
 
 | Archivo | Cambio |
 |---------|--------|
-| `src/pages/Legal.tsx` | Reemplazar contenido completo con los 9 puntos de T&C |
-| `src/components/Footer.tsx` | Cambiar texto "Aviso legal" por "Términos y condiciones" |
+| `src/App.tsx` | Cambiar ruta `/legal` a `/terminos-y-condiciones` |
+| `src/components/Footer.tsx` | Actualizar href de `/legal` a `/terminos-y-condiciones` |
 
 ---
 
-## Cambios en Legal.tsx
+## Cambios Específicos
 
-### Título Principal
-- **Antes**: "Aviso Legal"
-- **Después**: "Términos y Condiciones"
-
-### Subtítulo
-Agregar párrafo introductorio:
-> "Al usar el sitio web de Catarsis, aceptas estos Términos y Condiciones. Si no estás de acuerdo, por favor, no lo uses."
-
-### Secciones (9 en total)
-
-| # | Título | Contenido resumido |
-|---|--------|-------------------|
-| 1 | ¿Qué hace este sitio? | Menú + carrito, no se paga en web, enlace a WhatsApp |
-| 2 | Pedidos y disponibilidad | Precios/disponibilidad pueden cambiar, confirmación por WhatsApp |
-| 3 | Datos personales | Nombre, teléfono, dirección requeridos |
-| 4 | Uso permitido | No uso ilegal, contenido protegido |
-| 5 | WhatsApp (servicio de tercero) | Plataforma externa, sus propios términos |
-| 6 | Responsabilidad | No responsable por fallas técnicas |
-| 7 | Cambios a estos términos | Pueden actualizarse en cualquier momento |
-| 8 | Legislación | Leyes de Venezuela, Lechería |
-| 9 | Contacto | WhatsApp del sitio |
-
----
-
-## Cambios en Footer.tsx
-
-**Línea 91** - Cambiar texto del enlace:
+### 1. App.tsx (línea 65)
 
 ```tsx
 // Antes
-Aviso legal
+<Route path="/legal" element={<Legal />} />
 
 // Después
-Términos y condiciones
+<Route path="/terminos-y-condiciones" element={<Legal />} />
+```
+
+### 2. Footer.tsx (línea 88)
+
+```tsx
+// Antes
+<a href="/legal" ...>
+
+// Después
+<a href="/terminos-y-condiciones" ...>
 ```
 
 ---
 
-## Estructura Visual Final
+## Resultado
 
-```text
-┌────────────────────────────────────────────┐
-│ ← Volver al menú                           │
-├────────────────────────────────────────────┤
-│                                            │
-│  TÉRMINOS Y CONDICIONES                    │
-│  ──────────────────────                    │
-│  Menú Catarsis                             │
-│                                            │
-│  Al usar el sitio web de Catarsis...       │
-│                                            │
-│  1) ¿Qué hace este sitio?                  │
-│     [contenido]                            │
-│                                            │
-│  2) Pedidos y disponibilidad               │
-│     • Los productos pueden cambiar...      │
-│     • La disponibilidad puede variar...    │
-│     • Enviar pedido es una solicitud...    │
-│                                            │
-│  3) Datos personales                       │
-│     [contenido]                            │
-│                                            │
-│  4) Uso permitido                          │
-│     • No uses para fines ilegales...       │
-│     • Contenido protegido...               │
-│                                            │
-│  5) WhatsApp (servicio de tercero)         │
-│     [contenido]                            │
-│                                            │
-│  6) Responsabilidad                        │
-│     [contenido]                            │
-│                                            │
-│  7) Cambios a estos términos               │
-│     [contenido]                            │
-│                                            │
-│  8) Legislación                            │
-│     Venezuela, Lechería, Anzoátegui        │
-│                                            │
-│  9) Contacto                               │
-│     [contenido]                            │
-│                                            │
-├────────────────────────────────────────────┤
-│  [Footer]                                  │
-│  © 2025 Catarsis                           │
-│  Términos y condiciones  ← actualizado     │
-└────────────────────────────────────────────┘
-```
+| Aspecto | Antes | Después |
+|---------|-------|---------|
+| URL | `/legal` | `/terminos-y-condiciones` |
+| Texto del enlace | Términos y condiciones | Términos y condiciones |
+| Componente | Legal.tsx | Legal.tsx (sin cambios) |
 
 ---
 
-## Notas de Implementación
+## Nota
 
-- Para la sección 8 (Legislación), usaré "Venezuela" como país y "Lechería, Anzoátegui" como ciudad, basándome en la información del Footer
-- Las listas con viñetas (secciones 2 y 4) usarán elementos `<ul>` para mejor legibilidad
-- Se mantiene el mismo estilo visual (fuentes, colores, espaciado) del diseño actual
+El archivo `Legal.tsx` no necesita ser renombrado ya que solo afecta la organización interna del código. La URL visible para el usuario será `/terminos-y-condiciones`.
+
