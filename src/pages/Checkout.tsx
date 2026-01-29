@@ -295,6 +295,8 @@ const Checkout = () => {
 
     const message = `Hola 👋 Soy ${formData.firstName} ${formData.lastName}. Quiero realizar el siguiente pedido en Catarsis.
 
+*Orden:* ${orderNum}
+
 *Pedido:*
 ${itemLines}
 
@@ -308,9 +310,7 @@ _Por favor envíame los datos para realizar el pago_ 🙏
 
 *Datos del cliente:*
 Teléfono: ${normalizePhone(formData.phone)}
-Correo: ${formData.email.toLowerCase()}
-
-*Orden:* ${orderNum}`;
+Correo: ${formData.email.toLowerCase()}`;
 
     return message;
   };
