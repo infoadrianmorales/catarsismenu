@@ -1,68 +1,131 @@
 
 
-# Plan: Habilitar Cócteles para Delivery
+# Plan: Ocultar Carrito en Modo Local (/menu)
 
 ## Problema Identificado
 
-Los cócteles no se pueden agregar al carrito debido a que tienen `is_orderable = false` en la base de datos, aunque ya eliminamos la restricción del código frontend.
+La página `/menu` (modo local para QR en el restaurante) muestra elementos de e-commerce que no deberían aparecer:
 
-### Diagnóstico
+| Elemento | Estado Actual | Estado Esperado |
+|----------|---------------|-----------------|
+| CartDrawer en header | ✅ Visible | ❌ Oculto |
+| Botones "Agregar" en productos | ✅ Visible | ❌ Ocultos |
+| FloatingWhatsApp | ✅ Oculto | ✅ Oculto |
 
-| Restricción | Estado | Ubicación |
-|-------------|--------|-----------|
-| Array `NON_ORDERABLE_CATEGORIES` | ✅ Eliminada | `CartContext.tsx` línea 30 |
-| Campo `is_orderable` en BD | ❌ `false` | Tabla `products` (coctelería) |
+El contexto `ViewModeContext` ya detecta correctamente el modo, pero los componentes no lo utilizan.
 
-El código en líneas 61-64 de `CartContext.tsx` verifica este campo:
-```typescript
-if ('is_orderable' in product && product.is_orderable === false) {
-  return false;
-}
-```
+---
 
 ## Solución
 
-Actualizar el campo `is_orderable` a `true` para todos los productos de la categoría "cocteleria" en la base de datos.
+Modificar los componentes para que consulten el `ViewModeContext` y oculten la funcionalidad del carrito cuando `isLocalMode = true`.
 
 ---
 
-## Cambio Requerido
+## Archivos a Modificar
 
-| Tipo | Descripción |
-|------|-------------|
-| Migración SQL | Actualizar `is_orderable = true` para categoría cocteleria |
+| Archivo | Cambio |
+|---------|--------|
+| `src/components/MenuHeader.tsx` | Ocultar `CartDrawer` en modo local |
+| `src/components/MenuCard.tsx` | Ocultar `AddToCartButton` en modo local |
+| `src/components/CompactProductCard.tsx` | Ocultar `AddToCartButton` en modo local |
 
-### Consulta SQL
+---
 
-```sql
-UPDATE products 
-SET is_orderable = true 
-WHERE categoria = 'cocteleria';
+## Cambios Detallados
+
+### 1. MenuHeader.tsx
+
+```tsx
+// Agregar import
+import { useViewMode } from '@/contexts/ViewModeContext';
+
+// Dentro del componente
+const { isLocalMode } = useViewMode();
+
+// Condicionar CartDrawer
+{!isLocalMode && <CartDrawer />}
+```
+
+### 2. MenuCard.tsx
+
+```tsx
+// Agregar import
+import { useViewMode } from '@/contexts/ViewModeContext';
+
+// Dentro del componente
+const { isLocalMode } = useViewMode();
+
+// Condicionar AddToCartButton - en modo local solo muestra precio
+<div className="flex items-center justify-between gap-2">
+  {renderPrices()}
+  {!isLocalMode && <AddToCartButton product={item} variant="compact" />}
+</div>
+```
+
+### 3. CompactProductCard.tsx
+
+```tsx
+// Agregar import
+import { useViewMode } from '@/contexts/ViewModeContext';
+
+// Dentro del componente
+const { isLocalMode } = useViewMode();
+
+// Condicionar AddToCartButton
+<div className="mt-auto flex items-end justify-between gap-1 pt-1">
+  {renderPrice()}
+  {!isLocalMode && <AddToCartButton product={item} variant="icon" />}
+</div>
 ```
 
 ---
 
-## Productos Afectados
+## Resultado Visual
 
-| Producto | Estado Actual | Nuevo Estado |
-|----------|---------------|--------------|
-| Sangría | `is_orderable: false` | `is_orderable: true` |
-| Rum Old Fashioned Tonic | `is_orderable: false` | `is_orderable: true` |
-| Flowers | `is_orderable: false` | `is_orderable: true` |
-| Catarsis Punch | `is_orderable: false` | `is_orderable: true` |
-| Margarita on the Rocks | `is_orderable: false` | `is_orderable: true` |
-| Long Island Tea | `is_orderable: false` | `is_orderable: true` |
-| Green Gin | `is_orderable: false` | `is_orderable: true` |
-| Whipped | `is_orderable: false` | `is_orderable: true` |
-| Le Fraisier | `is_orderable: false` | `is_orderable: true` |
-| Southside Berry | `is_orderable: false` | `is_orderable: true` |
+### Modo Delivery (/)
+```text
+┌─────────────────────────────────────┐
+│ [Logo]               [USD/VES] [🛒] │  ← CartDrawer visible
+├─────────────────────────────────────┤
+│  ┌─────────┐  ┌─────────┐          │
+│  │ 🍔      │  │ 🍕      │          │
+│  │ Burger  │  │ Pizza   │          │
+│  │ $12     │  │ $15     │          │
+│  │  [+]    │  │  [+]    │          │  ← Botones visibles
+│  └─────────┘  └─────────┘          │
+└─────────────────────────────────────┘
+```
+
+### Modo Local (/menu)
+```text
+┌─────────────────────────────────────┐
+│ [Logo]               [USD/VES]      │  ← Sin CartDrawer
+├─────────────────────────────────────┤
+│  ┌─────────┐  ┌─────────┐          │
+│  │ 🍔      │  │ 🍕      │          │
+│  │ Burger  │  │ Pizza   │          │
+│  │ $12     │  │ $15     │          │
+│  │         │  │         │          │  ← Sin botones
+│  └─────────┘  └─────────┘          │
+└─────────────────────────────────────┘
+```
 
 ---
 
-## Resultado Esperado
+## Resumen de Cambios
 
-Después de la migración:
-- Los cócteles mostrarán el botón "Agregar" en lugar de "Solo en el local"
-- Los usuarios podrán agregar cócteles al carrito
-- Los cócteles se incluirán en pedidos de delivery
+| Archivo | Líneas Modificadas |
+|---------|-------------------|
+| `MenuHeader.tsx` | +3 líneas (import + hook + condición) |
+| `MenuCard.tsx` | +3 líneas |
+| `CompactProductCard.tsx` | +3 líneas |
+
+---
+
+## Beneficios
+
+- **Experiencia limpia**: Clientes en el local ven solo el menú, sin distracciones de e-commerce
+- **Código reutilizable**: Los mismos componentes funcionan en ambos modos
+- **Mantenimiento fácil**: Un solo contexto controla todo el comportamiento
 
