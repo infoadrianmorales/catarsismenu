@@ -62,7 +62,7 @@ const AppContent = () => {
             <Route path="/menu" element={<MenuLocal />} />
             <Route path="/categoria/:slug" element={<CategoryPage />} />
             <Route path="/producto/:slug" element={<ProductPage />} />
-            <Route path="/legal" element={<Legal />} />
+            <Route path="/terminos-y-condiciones" element={<Legal />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/carrito" element={<Cart />} />

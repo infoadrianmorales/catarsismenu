@@ -85,7 +85,7 @@ export const Footer = () => {
             © {new Date().getFullYear()} Catarsis — Drinks & Food. Todos los derechos reservados.
           </p>
           <a 
-            href="/legal" 
+            href="/terminos-y-condiciones" 
             className="text-xs text-muted-foreground hover:text-primary transition-colors underline"
           >
             Términos y condiciones
