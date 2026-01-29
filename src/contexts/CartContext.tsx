@@ -27,7 +27,7 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 const STORAGE_KEY = 'catarsis_cart';
 
 // Categories that cannot be ordered (for pickup only)
-const NON_ORDERABLE_CATEGORIES = ['cocteleria', 'cocteles', 'cocktails'];
+const NON_ORDERABLE_CATEGORIES: string[] = [];
 
 // Simple UUID validation
 const isValidUUID = (id: string): boolean => {
