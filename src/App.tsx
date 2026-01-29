@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import { FloatingWhatsApp } from "./components/FloatingWhatsApp";
 import { MetaPixelProvider } from "./components/MetaPixelProvider";
+import { ScrollToTop } from "./components/ScrollToTop";
 
 // Lazy load non-critical pages
 const Legal = lazy(() => import("./pages/Legal"));
@@ -50,6 +51,7 @@ const AppContent = () => {
 
   return (
     <MetaPixelProvider>
+      <ScrollToTop />
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/" element={<Index />} />
