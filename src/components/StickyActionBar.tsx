@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { PriceDisplayMode } from '@/hooks/useCurrency';
-import { CartDrawer } from '@/components/cart/CartDrawer';
 import { trackContact } from '@/lib/metaPixel';
 
 interface StickyActionBarProps {
@@ -91,9 +90,6 @@ export const StickyActionBar = ({ currency, onCurrencyToggle, displayMode = 'amb
             >
               <Share2 className="h-5 w-5" />
             </Button>
-            
-            {/* Cart Drawer - Prominent in mobile */}
-            <CartDrawer variant="sticky" />
             
             <Button
               size="sm"

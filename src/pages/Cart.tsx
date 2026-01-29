@@ -198,10 +198,11 @@ const Cart = () => {
                 
                 <Button 
                   variant="outline" 
-                  className="w-full"
+                  className="w-full gap-2"
                   onClick={() => navigate('/')}
                 >
-                  Seguir Comprando
+                  <ArrowLeft className="h-4 w-4" />
+                  Volver al Menú
                 </Button>
               </CardContent>
             </Card>

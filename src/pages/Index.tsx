@@ -8,6 +8,7 @@ import { StickyActionBar } from '@/components/StickyActionBar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCurrency } from '@/hooks/useCurrency';
 import { useProducts } from '@/hooks/useProducts';
+import { FloatingCartButton } from '@/components/cart/FloatingCartButton';
 
 const categoryConfig = [
   { slug: 'best-seller', title: '🔥 Best Seller', subtitle: 'Los favoritos de nuestros clientes' },
@@ -87,7 +88,9 @@ const Index = () => {
       
       <Footer />
       
-      <StickyActionBar 
+      <FloatingCartButton />
+      
+      <StickyActionBar
         currency={currency}
         onCurrencyToggle={toggleCurrency}
         displayMode={displayMode}

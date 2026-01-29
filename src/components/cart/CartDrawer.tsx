@@ -43,10 +43,6 @@ export const CartDrawer = ({ variant = 'header' }: CartDrawerProps) => {
     navigate('/checkout');
   };
 
-  const handleViewCart = () => {
-    setOpen(false);
-    navigate('/carrito');
-  };
 
   const formatPrice = (priceUsd: number) => {
     const p = getPrices(priceUsd);
@@ -236,13 +232,14 @@ export const CartDrawer = ({ variant = 'header' }: CartDrawerProps) => {
                   <ShoppingBag className="h-5 w-5" />
                   Finalizar Compra
                 </Button>
+              <SheetClose asChild>
                 <Button 
                   variant="outline" 
                   className="w-full"
-                  onClick={handleViewCart}
                 >
-                  Ver carrito completo
+                  Seguir comprando
                 </Button>
+              </SheetClose>
               </div>
             </div>
           </>
