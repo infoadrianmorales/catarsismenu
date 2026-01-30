@@ -43,7 +43,7 @@ const Index = () => {
   const { currency, toggleCurrency, displayMode } = useCurrency();
   const { products, featuredProducts, bestSellers, loading } = useProducts();
   
-  // Use search hook for filtering
+  // Use search hook for filtering - pass bestSellers for virtual category
   const {
     searchQuery,
     setSearchQuery,
@@ -52,7 +52,7 @@ const Index = () => {
     filteredItems,
     clearFilters,
     hasFilters
-  } = useSearch(products);
+  } = useSearch(products, bestSellers);
 
   const groupedProducts = useMemo(() => {
     const groups: Record<string, typeof products> = {};
