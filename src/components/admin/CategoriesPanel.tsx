@@ -32,7 +32,7 @@ import { CSS } from '@dnd-kit/utilities';
 
 // Available icons for categories
 const AVAILABLE_ICONS = [
-  'Utensils', 'UtensilsCrossed', 'Soup', 'Beef', 'Sandwich', 'Pizza', 
+  'Utensils', 'UtensilsCrossed', 'Soup', 'Beef', 'Hamburger', 'Sandwich', 'Pizza', 
   'Flame', 'Salad', 'Wine', 'Beer', 'Coffee', 'Cake', 'IceCream',
   'Cookie', 'Croissant', 'Egg', 'Fish', 'Drumstick', 'Cherry',
   'Apple', 'Carrot', 'Milk', 'GlassWater', 'Martini', 'CupSoda'
