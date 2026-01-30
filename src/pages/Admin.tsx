@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Loader2, LogOut, Settings, Package, Megaphone, Users, Layers, ShoppingBag, UserCheck, CreditCard, Image, BarChart3 } from 'lucide-react';
+import { Loader2, LogOut, Settings, Package, Megaphone, Users, Layers, ShoppingBag, UserCheck, Image, BarChart3 } from 'lucide-react';
 import { AnalyticsPanel } from '@/components/admin/AnalyticsPanel';
 import { ConfigPanel } from '@/components/admin/ConfigPanel';
 import { ProductsPanel } from '@/components/admin/ProductsPanel';
@@ -12,7 +12,6 @@ import { UsersPanel } from '@/components/admin/UsersPanel';
 import { CategoriesPanel } from '@/components/admin/CategoriesPanel';
 import { OrdersPanel } from '@/components/admin/OrdersPanel';
 import { CustomersPanel } from '@/components/admin/CustomersPanel';
-import { PaymentMethodsPanel } from '@/components/admin/PaymentMethodsPanel';
 import { HeroSlidesPanel } from '@/components/admin/HeroSlidesPanel';
 
 const Admin = () => {
@@ -75,7 +74,7 @@ const Admin = () => {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6">
         <Tabs defaultValue="analytics" className="w-full">
-          <TabsList className="grid w-full grid-cols-10 mb-6">
+          <TabsList className="grid w-full grid-cols-9 mb-6">
             <TabsTrigger value="analytics" className="gap-2">
               <BarChart3 className="h-4 w-4" />
               <span className="hidden sm:inline">Analíticas</span>
@@ -87,10 +86,6 @@ const Admin = () => {
             <TabsTrigger value="customers" className="gap-2">
               <UserCheck className="h-4 w-4" />
               <span className="hidden sm:inline">Clientes</span>
-            </TabsTrigger>
-            <TabsTrigger value="payments" className="gap-2">
-              <CreditCard className="h-4 w-4" />
-              <span className="hidden sm:inline">Pagos</span>
             </TabsTrigger>
             <TabsTrigger value="hero" className="gap-2">
               <Image className="h-4 w-4" />
@@ -128,10 +123,6 @@ const Admin = () => {
 
           <TabsContent value="customers">
             <CustomersPanel />
-          </TabsContent>
-
-          <TabsContent value="payments">
-            <PaymentMethodsPanel />
           </TabsContent>
 
           <TabsContent value="hero">
