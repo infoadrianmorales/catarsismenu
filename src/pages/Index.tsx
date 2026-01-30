@@ -3,11 +3,14 @@ import { MenuHeader } from '@/components/MenuHeader';
 import { HeroSection } from '@/components/HeroSection';
 import { FeaturedProducts } from '@/components/FeaturedProducts';
 import { CategorySection } from '@/components/CategorySection';
+import { SearchAndFilter } from '@/components/SearchAndFilter';
+import { FilteredProductsGrid } from '@/components/FilteredProductsGrid';
 import { Footer } from '@/components/Footer';
 import { StickyActionBar } from '@/components/StickyActionBar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCurrency } from '@/hooks/useCurrency';
 import { useProducts } from '@/hooks/useProducts';
+import { useSearch } from '@/hooks/useSearch';
 import { FloatingCartButton } from '@/components/cart/FloatingCartButton';
 
 const categoryConfig = [
@@ -22,9 +25,34 @@ const categoryConfig = [
   { slug: 'postres', title: 'Postres', subtitle: 'El final perfecto' },
 ];
 
+// Map category slugs to display labels
+const categoryLabels: Record<string, string> = {
+  'todos': 'Todos',
+  'best-seller': 'Best Seller',
+  'entradas': 'Entradas',
+  'hamburguesas': 'Hamburguesas',
+  'emparedados': 'Emparedados',
+  'pizzas': 'Pizzas',
+  'parrilla': 'Parrilla',
+  'ensaladas': 'Ensaladas',
+  'cocteleria': 'Coctelería',
+  'postres': 'Postres',
+};
+
 const Index = () => {
   const { currency, toggleCurrency, displayMode } = useCurrency();
   const { products, featuredProducts, bestSellers, loading } = useProducts();
+  
+  // Use search hook for filtering
+  const {
+    searchQuery,
+    setSearchQuery,
+    selectedCategory,
+    setSelectedCategory,
+    filteredItems,
+    clearFilters,
+    hasFilters
+  } = useSearch(products);
 
   const groupedProducts = useMemo(() => {
     const groups: Record<string, typeof products> = {};
@@ -56,7 +84,15 @@ const Index = () => {
         displayMode={displayMode}
       />
       
-      {/* Category Sections */}
+      {/* Search and Category Filter */}
+      <SearchAndFilter
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        selectedCategory={selectedCategory}
+        onCategoryChange={setSelectedCategory}
+      />
+      
+      {/* Conditional rendering: filtered grid or category sections */}
       {loading ? (
         <div className="container px-4 py-8 space-y-8">
           {[...Array(3)].map((_, i) => (
@@ -70,6 +106,15 @@ const Index = () => {
             </div>
           ))}
         </div>
+      ) : hasFilters ? (
+        <FilteredProductsGrid
+          items={filteredItems}
+          currency={currency}
+          displayMode={displayMode}
+          onClearFilters={clearFilters}
+          searchQuery={searchQuery}
+          categoryLabel={categoryLabels[selectedCategory]}
+        />
       ) : (
         <div className="space-y-2">
           {categoryConfig.map(cat => (
