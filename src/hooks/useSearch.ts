@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { MenuItem, MenuCategory } from '@/types/menu';
 import { trackSearch } from '@/lib/metaPixel';
 
-export const useSearch = (items: MenuItem[]) => {
+export const useSearch = (items: MenuItem[], bestSellers: MenuItem[] = []) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<MenuCategory>('todos');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -28,6 +28,22 @@ export const useSearch = (items: MenuItem[]) => {
   }, [searchQuery]);
 
   const filteredItems = useMemo(() => {
+    // For best-seller category, use the bestSellers array directly
+    if (selectedCategory === 'best-seller') {
+      let filtered = bestSellers;
+      
+      // Apply search filter if present
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase().trim();
+        filtered = filtered.filter(item =>
+          item.nombre.toLowerCase().includes(query) ||
+          item.descripcion_corta.toLowerCase().includes(query)
+        );
+      }
+      
+      return filtered;
+    }
+
     let filtered = items;
 
     // Filter by category
@@ -53,7 +69,7 @@ export const useSearch = (items: MenuItem[]) => {
 
     // Sort by orden
     return filtered.sort((a, b) => a.orden - b.orden);
-  }, [items, searchQuery, selectedCategory, selectedTags]);
+  }, [items, bestSellers, searchQuery, selectedCategory, selectedTags]);
 
   const handleCategoryChange = useCallback((category: MenuCategory) => {
     setSelectedCategory(category);
