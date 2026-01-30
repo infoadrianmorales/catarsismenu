@@ -50,7 +50,7 @@ const PageLoader = () => (
 const AppContent = () => {
   const location = useLocation();
   // Hide floating WhatsApp on admin, auth, and local menu pages
-  const hideFloatingWhatsApp = ['/admin', '/auth', '/menu'].includes(location.pathname);
+  const hideFloatingWhatsApp = ['/admin', '/auth', '/local'].includes(location.pathname);
 
   return (
     <ViewModeProvider>
@@ -59,7 +59,7 @@ const AppContent = () => {
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/menu" element={<MenuLocal />} />
+            <Route path="/local" element={<MenuLocal />} />
             <Route path="/categoria/:slug" element={<CategoryPage />} />
             <Route path="/producto/:slug" element={<ProductPage />} />
             <Route path="/terminos-y-condiciones" element={<Legal />} />
