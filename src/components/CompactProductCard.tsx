@@ -6,6 +6,7 @@ import { useCurrency, PriceDisplayMode } from '@/hooks/useCurrency';
 import { AddToCartButton } from '@/components/cart/AddToCartButton';
 import { OptimizedImage } from '@/components/OptimizedImage';
 import { useViewMode } from '@/contexts/ViewModeContext';
+import { ExpandableText } from '@/components/ExpandableText';
 
 interface CompactProductCardProps {
   item: MenuItem;
@@ -68,9 +69,9 @@ export const CompactProductCard = memo(({ item, currency, displayMode = 'ambas',
             </h3>
           </Link>
           
-          <p className="text-xs text-muted-foreground line-clamp-2 whitespace-normal mb-2 leading-relaxed min-h-[2rem]">
-            {item.descripcion_corta || '\u00A0'}
-          </p>
+          <div className="mb-2 min-h-[2rem]">
+            <ExpandableText text={item.descripcion_corta || ''} maxLines={2} />
+          </div>
           
           <div className="mt-auto flex items-end justify-between gap-1 pt-1">
             {renderPrice()}

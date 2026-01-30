@@ -3,6 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useCurrency, PriceDisplayMode } from '@/hooks/useCurrency';
 import { AddToCartButton } from '@/components/cart/AddToCartButton';
 import { useViewMode } from '@/contexts/ViewModeContext';
+import { ExpandableText } from '@/components/ExpandableText';
 
 interface MenuCardProps {
   item: MenuItem;
@@ -66,9 +67,11 @@ export const MenuCard = ({ item, currency, displayMode = 'ambas' }: MenuCardProp
             <h3 className="font-display text-lg font-bold leading-tight group-hover:text-primary transition-colors">
               {item.nombre}
             </h3>
-            <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">
-              {item.descripcion_corta}
-            </p>
+            <ExpandableText 
+              text={item.descripcion_corta || ''} 
+              maxLines={2} 
+              className="text-sm"
+            />
           </div>
           
           {/* Prices and Add to Cart */}
