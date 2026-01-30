@@ -1,193 +1,143 @@
 
 
-# Plan: Agregar Búsqueda con Filtro por Categoría
+# Plan: Actualizar Nombres, Descripciones y Precios de Productos
 
-## Objetivo
+## Resumen
 
-Permitir a los clientes filtrar productos por categoría (hamburguesas, pizzas, entradas, etc.) usando una barra de navegación horizontal con tabs, tanto en la página de delivery (/) como en la de local (/local).
-
----
-
-## Componentes Existentes (Reutilizables)
-
-| Componente | Estado | Ubicación |
-|------------|--------|-----------|
-| `CategoryFilter` | Listo | `src/components/CategoryFilter.tsx` |
-| `useSearch` hook | Listo | `src/hooks/useSearch.ts` |
-| `SearchBar` | Listo | `src/components/SearchBar.tsx` |
+Actualizar masivamente los productos existentes en la base de datos con los nuevos nombres, descripciones y precios proporcionados.
 
 ---
 
-## Arquitectura Propuesta
+## Análisis de Cambios
 
-```text
-┌─────────────────────────────────────────────────────────────┐
-│                        MenuHeader                            │
-├─────────────────────────────────────────────────────────────┤
-│                        HeroSection                           │
-├─────────────────────────────────────────────────────────────┤
-│  ┌─────────────────────────────────────────────────────┐    │
-│  │         🔍 Buscar por nombre o ingrediente...        │    │  ← SearchBar
-│  └─────────────────────────────────────────────────────┘    │
-├─────────────────────────────────────────────────────────────┤
-│  [Todos] [Best Seller] [Entradas] [Hamburguesas] [Pizzas]...│  ← CategoryFilter (sticky)
-├─────────────────────────────────────────────────────────────┤
-│                                                              │
-│    Productos filtrados según categoría seleccionada         │
-│                                                              │
-└─────────────────────────────────────────────────────────────┘
-```
+### Ajustes de Nombres de Productos
 
----
+Algunos productos requieren renombrarse para coincidir con los nuevos datos:
 
-## Comportamiento
+| Actual | Nuevo |
+|--------|-------|
+| Alitas de Pollo Catarsis | Alitas de Pollo |
+| Tequeños Clásicos (6 u.) | Tequeños |
+| Smash Catarsis | Smash |
+| Margarita Catarsis | Margarita |
+| Ceviche Mixto Tropical | Ceviche Mixto |
+| Papas con Queso y Tocineta | Papas con Queso Fundido |
 
-| Selección | Resultado |
-|-----------|-----------|
-| "Todos" (default) | Muestra todas las secciones por categoría como actualmente |
-| "Hamburguesas" | Muestra solo productos de hamburguesas en un grid |
-| Búsqueda + Categoría | Combina ambos filtros |
+### Ajustes de Precios Significativos
+
+| Producto | Precio Actual | Precio Nuevo |
+|----------|---------------|--------------|
+| Alitas de Pollo | $12.00 | $9.99 |
+| Ceviche Mixto | $18.00 | $12.49 |
+| Hamburguesas (varias) | $11-16 | $9.49-15.99 |
+| Pizzas | $14-18 | $8.49-10.99 |
+| Parrillas | $18-35 | $12.49-17.49 |
+| Cocteles (todos) | $7-10 | $4.99 |
 
 ---
 
-## Cambios Requeridos
+## Implementación
 
-### 1. Crear Componente Combinado: `SearchAndFilter.tsx`
+### Paso 1: Actualizar productos de Entradas
+Ejecutar UPDATE para cada producto de la categoría "entradas":
+- Alitas de Pollo: $9.99
+- Aros de Cebolla: $3.99
+- Ceviche Mixto: $12.49
+- Chili con Papas: $8.49
+- Papas con Queso Fundido: $6.49
+- Ración de Papas: $3.99
+- Rebozados del Mar: $12.99
+- Tenders de Pollo: $8.99
+- Tequeños: $5.99
+- Crispy Bites: $10.99
 
-Nuevo componente que integra SearchBar + CategoryFilter:
+### Paso 2: Actualizar productos de Hamburguesas
+- Chicken Crunch: $10.99
+- Clásica Americana: $10.99
+- Shrimp Crunch: $10.99
+- Texmex: $10.99
+- BBQ Champions: $10.99
+- Chicken Spicy: $10.99
+- Smash: $15.99
+- Onion Queen: $10.99
+- Honeyholic Burger: $10.99
+- Double Cheesy: $9.49
+- Chicken Slow: $9.49
 
-```tsx
-// src/components/SearchAndFilter.tsx
-interface SearchAndFilterProps {
-  searchQuery: string;
-  onSearchChange: (value: string) => void;
-  selectedCategory: MenuCategory;
-  onCategoryChange: (category: MenuCategory) => void;
-}
-```
+### Paso 3: Actualizar productos de Emparedados
+- Chicken Crunch Americano: $10.99
+- Fondue de Lomito: $11.99
+- Perla Negra: $10.99
 
-### 2. Modificar `Index.tsx`
+### Paso 4: Actualizar productos de Pizzas
+- Margarita: $8.49
+- Paradise: $9.99
+- Pepperoni: $9.99
+- Tasty: $10.99
+- Veggie: $9.99
 
-- Importar y usar `useSearch` hook
-- Agregar `SearchAndFilter` después de `FeaturedProducts`
-- Renderizado condicional:
-  - Si `selectedCategory === 'todos'` y no hay búsqueda: mostrar secciones agrupadas
-  - Si hay filtro activo: mostrar productos filtrados en grid único
+### Paso 5: Actualizar productos de Parrillas
+- Parrilla Mar y Tierra: $17.49
+- Parrilla Mixta: $12.49
+- Parrilla de Pollo: $12.49
+- Parrilla de Lomito: $13.49
+- Parrilla de Mariscos: $17.49
 
-### 3. Modificar `MenuLocal.tsx`
+### Paso 6: Actualizar productos de Ensaladas
+- César con Langostino: $11.99
+- César de Pollo: $9.99
+- César Clásica: $7.49
 
-- Aplicar los mismos cambios que en Index
-- El componente `CategoryFilter` usará el mismo styling
+### Paso 7: Actualizar productos de Cocteles
+Todos los cocteles a $4.99:
+- Catarsis Punch
+- Whipped
+- Le Fraisier
+- Naranjo (NUEVO - agregar)
+- Flowers
+- Rum Old Fashioned Tonic
+- Sangría
+- Long Island Tea
+- Margarita On the Rocks
+- Green Gin
+- Southside Berry
 
----
-
-## Archivos a Crear/Modificar
-
-| Archivo | Acción |
-|---------|--------|
-| `src/components/SearchAndFilter.tsx` | Crear |
-| `src/pages/Index.tsx` | Modificar |
-| `src/pages/MenuLocal.tsx` | Modificar |
-
----
-
-## Flujo de Usuario
-
-1. El cliente ve el menú con todas las secciones organizadas por categoría
-2. Puede tocar un tab de categoría (ej: "Hamburguesas")
-3. El menú muestra solo los productos de esa categoría
-4. Puede combinar con búsqueda de texto
-5. Botón "Todos" regresa a la vista completa
-
----
-
-## Diseño Visual del Filtro
-
-```text
-┌────────────────────────────────────────────────────────────────────┐
-│ [📱 Todos] [🔥 Best Seller] [🍽️ Entradas] [🍔 Hamburguesas] [🥪]... │
-└────────────────────────────────────────────────────────────────────┘
-         ↑                          ↑
-    Activo (amarillo)         Inactivo (outline)
-```
-
-- Scroll horizontal en móvil
-- Sticky debajo del header
-- Iconos + texto para cada categoría
-
----
-
-## Detalles Técnicos
-
-### SearchAndFilter.tsx
-
-```tsx
-import { SearchBar } from './SearchBar';
-import { CategoryFilter } from './CategoryFilter';
-import { MenuCategory } from '@/types/menu';
-
-interface Props {
-  searchQuery: string;
-  onSearchChange: (value: string) => void;
-  selectedCategory: MenuCategory;
-  onCategoryChange: (category: MenuCategory) => void;
-}
-
-export const SearchAndFilter = ({
-  searchQuery,
-  onSearchChange,
-  selectedCategory,
-  onCategoryChange
-}: Props) => {
-  return (
-    <>
-      <SearchBar value={searchQuery} onChange={onSearchChange} />
-      <CategoryFilter 
-        selectedCategory={selectedCategory} 
-        onCategoryChange={onCategoryChange} 
-      />
-    </>
-  );
-};
-```
-
-### Lógica de renderizado en Index/MenuLocal
-
-```tsx
-const { 
-  searchQuery, 
-  setSearchQuery, 
-  selectedCategory, 
-  setSelectedCategory, 
-  filteredItems, 
-  hasFilters 
-} = useSearch(products);
-
-// Si hay filtros activos, mostrar grid filtrado
-// Si no, mostrar secciones por categoría como antes
-{hasFilters ? (
-  <FilteredProductsGrid items={filteredItems} ... />
-) : (
-  <CategorySections ... />
-)}
-```
+### Paso 8: Actualizar productos de Postres
+- Brownie con Helado: $6.99
+- Sweet Bites: $5.99
 
 ---
 
-## Resultado Esperado
+## Producto Nuevo Detectado
 
-| Antes | Después |
-|-------|---------|
-| Solo scroll por secciones | Tabs para saltar a categoría |
-| Sin búsqueda en home | Búsqueda integrada con filtros |
-| Navegación lineal | Acceso rápido a cualquier categoría |
+Se detectó un coctel que no existe en la base de datos:
+- **Naranjo**: Ginebra clásica con notas cítricas de limón y gajos de mandarina, finalizada con agua tónica. - $4.99
+
+Este producto será agregado a la categoría "cocteleria".
 
 ---
 
-## Beneficios
+## Archivos a Modificar
 
-- **UX mejorada**: Clientes encuentran productos más rápido
-- **Consistencia**: Mismo comportamiento en `/` y `/local`
-- **Reutilización**: Usa componentes existentes
-- **Mobile-first**: Scroll horizontal optimizado para táctil
+| Tipo | Cambio |
+|------|--------|
+| Base de datos | ~47 UPDATEs + 1 INSERT |
+| Código | Ninguno (datos dinámicos desde Supabase) |
+
+---
+
+## Método de Ejecución
+
+Usaré migraciones SQL para actualizar todos los productos de forma atómica. Cada UPDATE incluirá:
+- `nombre`: Nombre actualizado
+- `descripcion_corta`: Nueva descripción
+- `precio_usd`: Nuevo precio
+
+---
+
+## Verificación Post-Implementación
+
+1. Revisar la página `/local` para confirmar precios actualizados
+2. Verificar que los productos aparecen correctamente en cada categoría
+3. Confirmar que el nuevo coctel "Naranjo" aparece en Coctelería
 
