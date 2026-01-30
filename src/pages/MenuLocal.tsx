@@ -10,32 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useCurrency } from '@/hooks/useCurrency';
 import { useProducts } from '@/hooks/useProducts';
 import { useSearch } from '@/hooks/useSearch';
-
-const categoryConfig = [
-  { slug: 'best-seller', title: '🔥 Best Seller', subtitle: 'Los favoritos de nuestros clientes' },
-  { slug: 'entradas', title: 'Entradas & Aperitivos', subtitle: 'El comienzo perfecto' },
-  { slug: 'hamburguesas', title: 'Hamburguesas Gourmet', subtitle: 'Jugosas y sabrosas' },
-  { slug: 'emparedados', title: 'Emparedados Premium', subtitle: 'Artesanales con calidad' },
-  { slug: 'pizzas', title: 'Pizzas Artesanales', subtitle: 'Masa horneada a la perfección' },
-  { slug: 'parrilla', title: 'Parrilla', subtitle: 'Carnes en su punto perfecto' },
-  { slug: 'ensaladas', title: 'Ensaladas Frescas', subtitle: 'Opciones ligeras y nutritivas' },
-  { slug: 'cocteleria', title: 'Coctelería Premium', subtitle: 'Combinaciones únicas' },
-  { slug: 'postres', title: 'Postres', subtitle: 'El final perfecto' },
-];
-
-// Map category slugs to display labels
-const categoryLabels: Record<string, string> = {
-  'todos': 'Todos',
-  'best-seller': 'Best Seller',
-  'entradas': 'Entradas',
-  'hamburguesas': 'Hamburguesas',
-  'emparedados': 'Emparedados',
-  'pizzas': 'Pizzas',
-  'parrilla': 'Parrilla',
-  'ensaladas': 'Ensaladas',
-  'cocteleria': 'Coctelería',
-  'postres': 'Postres',
-};
+import { usePublicCategories } from '@/hooks/usePublicCategories';
 
 /**
  * MenuLocal - Simplified menu page for in-store QR scanning
@@ -49,7 +24,8 @@ const categoryLabels: Record<string, string> = {
  */
 const MenuLocal = () => {
   const { currency, toggleCurrency, displayMode } = useCurrency();
-  const { products, featuredProducts, bestSellers, loading } = useProducts();
+  const { products, featuredProducts, bestSellers, loading: productsLoading } = useProducts();
+  const { sectionCategories, categoryLabels, loading: categoriesLoading } = usePublicCategories();
   
   // Use search hook for filtering - pass bestSellers for virtual category
   const {
@@ -62,19 +38,23 @@ const MenuLocal = () => {
     hasFilters
   } = useSearch(products, bestSellers);
 
+  const loading = productsLoading || categoriesLoading;
+
   const groupedProducts = useMemo(() => {
     const groups: Record<string, typeof products> = {};
     
     // Best sellers first
     groups['best-seller'] = bestSellers;
     
-    // Group by category
-    categoryConfig.slice(1).forEach(cat => {
-      groups[cat.slug] = products.filter(p => p.categoria === cat.slug);
+    // Group by category slug from DB categories
+    sectionCategories.forEach(cat => {
+      if (cat.slug !== 'best-seller') {
+        groups[cat.slug] = products.filter(p => p.categoria === cat.slug);
+      }
     });
     
     return groups;
-  }, [products, bestSellers]);
+  }, [products, bestSellers, sectionCategories]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -126,12 +106,12 @@ const MenuLocal = () => {
         />
       ) : (
         <div className="space-y-2">
-          {categoryConfig.map(cat => (
+          {sectionCategories.map(cat => (
             <CategorySection
               key={cat.slug}
               slug={cat.slug}
-              title={cat.title}
-              subtitle={cat.subtitle}
+              title={cat.slug === 'best-seller' ? `🔥 ${cat.nombre}` : cat.nombre}
+              subtitle={cat.descripcion || ''}
               items={groupedProducts[cat.slug] || []}
               currency={currency}
               displayMode={displayMode}

@@ -9,58 +9,25 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCurrency } from '@/hooks/useCurrency';
 import { useProducts } from '@/hooks/useProducts';
+import { usePublicCategories } from '@/hooks/usePublicCategories';
 import { useState, useMemo } from 'react';
 import { SEO } from '@/components/SEO';
-
-const categoryTitles: Record<string, { title: string; subtitle: string }> = {
-  entradas: {
-    title: 'Entradas & Aperitivos',
-    subtitle: 'El comienzo perfecto para una experiencia gastronómica inolvidable.',
-  },
-  hamburguesas: {
-    title: 'Hamburguesas Gourmet',
-    subtitle: 'Nuestras hamburguesas gourmet son jugosas y sabrosas. Ingredientes frescos combinados a la perfección.',
-  },
-  emparedados: {
-    title: 'Emparedados Premium',
-    subtitle: 'Sándwiches artesanales con ingredientes de primera calidad.',
-  },
-  pizzas: {
-    title: 'Pizzas Artesanales',
-    subtitle: 'Masa artesanal horneada a la perfección con ingredientes de primera calidad.',
-  },
-  parrilla: {
-    title: 'Parrilla',
-    subtitle: 'Carnes y mariscos a la parrilla, preparados en su punto perfecto.',
-  },
-  ensaladas: {
-    title: 'Ensaladas Frescas',
-    subtitle: 'Opciones ligeras y nutritivas con ingredientes frescos del día.',
-  },
-  cocteleria: {
-    title: 'Coctelería Premium',
-    subtitle: 'Combinaciones únicas y refrescantes que te transportan a otro nivel.',
-  },
-  postres: {
-    title: 'Postres',
-    subtitle: 'El final perfecto para una experiencia deliciosa.',
-  },
-  'best-seller': {
-    title: '🔥 Best Seller',
-    subtitle: 'Los favoritos de nuestros clientes. Los platos más pedidos del menú.',
-  },
-};
 
 const CategoryPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const { currency, toggleCurrency, displayMode } = useCurrency();
-  const { products, bestSellers, loading } = useProducts();
+  const { products, bestSellers, loading: productsLoading } = useProducts();
+  const { getCategoryBySlug, loading: categoriesLoading } = usePublicCategories();
   const [searchQuery, setSearchQuery] = useState('');
 
-  const categoryInfo = categoryTitles[slug || ''] || { 
-    title: slug?.charAt(0).toUpperCase() + (slug?.slice(1) || ''), 
-    subtitle: '' 
-  };
+  const loading = productsLoading || categoriesLoading;
+
+  // Get category info from DB
+  const categoryInfo = getCategoryBySlug(slug || '');
+  
+  // Fallback for unknown categories
+  const displayTitle = categoryInfo?.nombre || (slug?.charAt(0).toUpperCase() + (slug?.slice(1) || ''));
+  const displaySubtitle = categoryInfo?.descripcion || '';
 
   const categoryProducts = useMemo(() => {
     let items = slug === 'best-seller' 
@@ -82,8 +49,8 @@ const CategoryPage = () => {
   return (
     <div className="min-h-screen bg-background">
       <SEO 
-        title={categoryInfo.title}
-        description={categoryInfo.subtitle || `${categoryInfo.title} en Catarsis Drinks & Food`}
+        title={displayTitle}
+        description={displaySubtitle || `${displayTitle} en Catarsis Drinks & Food`}
         url={`/categoria/${slug}`}
       />
       <MenuHeader 
@@ -102,11 +69,11 @@ const CategoryPage = () => {
           </Button>
           <div>
             <h1 className="text-2xl md:text-3xl font-display font-black text-foreground">
-              {categoryInfo.title}
+              {slug === 'best-seller' ? `🔥 ${displayTitle}` : displayTitle}
             </h1>
-            {categoryInfo.subtitle && (
+            {displaySubtitle && (
               <p className="text-muted-foreground text-sm mt-1">
-                {categoryInfo.subtitle}
+                {displaySubtitle}
               </p>
             )}
           </div>
@@ -117,7 +84,7 @@ const CategoryPage = () => {
           <SearchBar 
             value={searchQuery} 
             onChange={setSearchQuery}
-            placeholder={`Buscar en ${categoryInfo.title}...`}
+            placeholder={`Buscar en ${displayTitle}...`}
           />
         </div>
 
