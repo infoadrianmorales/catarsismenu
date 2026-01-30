@@ -10,6 +10,7 @@ import { Loader2, Upload, X } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Database } from '@/integrations/supabase/types';
 import { generateResponsiveImages, blobToFile, getImagePaths, getImageExtension } from '@/lib/imageProcessor';
+import { useCategories } from '@/hooks/useCategories';
 
 type ProductCategory = Database['public']['Enums']['product_category'];
 
@@ -32,20 +33,10 @@ interface ProductFormProps {
   onCancel: () => void;
 }
 
-const CATEGORIES = [
-  { value: 'entradas', label: 'Entradas' },
-  { value: 'hamburguesas', label: 'Hamburguesas' },
-  { value: 'emparedados', label: 'Emparedados' },
-  { value: 'pizzas', label: 'Pizzas' },
-  { value: 'parrilla', label: 'Parrilla' },
-  { value: 'ensaladas', label: 'Ensaladas' },
-  { value: 'cocteleria', label: 'Coctelería' },
-  { value: 'postres', label: 'Postres' },
-];
-
 
 
 export const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
+  const { categories, loading: categoriesLoading } = useCategories();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(product?.imagen_url || null);
@@ -228,9 +219,9 @@ export const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) 
               <SelectValue placeholder="Selecciona categoría" />
             </SelectTrigger>
             <SelectContent>
-              {CATEGORIES.map(cat => (
-                <SelectItem key={cat.value} value={cat.value}>
-                  {cat.label}
+              {categories.filter(c => c.activo).map(cat => (
+                <SelectItem key={cat.slug} value={cat.slug}>
+                  {cat.nombre}
                 </SelectItem>
               ))}
             </SelectContent>

@@ -1,14 +1,15 @@
-export type MenuCategory = 
-  | 'todos'
-  | 'best-seller'
-  | 'entradas' 
-  | 'hamburguesas' 
-  | 'emparedados' 
-  | 'pizzas' 
-  | 'parrilla' 
-  | 'ensaladas' 
-  | 'cocteleria' 
-  | 'postres';
+// Dynamic category type - now loaded from database
+export type MenuCategory = string;
+
+// Category interface for public menu display
+export interface PublicCategory {
+  id: string;
+  slug: string;
+  nombre: string;
+  descripcion: string | null;
+  icono: string;
+  orden: number;
+}
 
 export interface MenuItem {
   id: string;
