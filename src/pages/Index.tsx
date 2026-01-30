@@ -12,6 +12,7 @@ import { useCurrency } from '@/hooks/useCurrency';
 import { useProducts } from '@/hooks/useProducts';
 import { useSearch } from '@/hooks/useSearch';
 import { FloatingCartButton } from '@/components/cart/FloatingCartButton';
+import { RestaurantSchema } from '@/components/RestaurantSchema';
 
 const categoryConfig = [
   { slug: 'best-seller', title: '🔥 Best Seller', subtitle: 'Los favoritos de nuestros clientes' },
@@ -70,7 +71,8 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <MenuHeader 
+      <RestaurantSchema />
+      <MenuHeader
         currency={currency} 
         onCurrencyToggle={toggleCurrency}
         displayMode={displayMode}
