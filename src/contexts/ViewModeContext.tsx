@@ -22,7 +22,7 @@ export const ViewModeProvider = ({ children }: ViewModeProviderProps) => {
     const searchParams = new URLSearchParams(location.search);
     
     // Detect mode based on URL path or query param
-    const isLocalPath = location.pathname === '/menu';
+    const isLocalPath = location.pathname === '/local';
     const isLocalParam = searchParams.get('mode') === 'local';
     
     const mode: ViewMode = (isLocalPath || isLocalParam) ? 'local' : 'delivery';
