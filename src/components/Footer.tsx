@@ -90,6 +90,17 @@ export const Footer = () => {
           >
             Términos y condiciones
           </a>
+          <p className="text-xs text-muted-foreground mt-2">
+            Diseñado y desarrollado por{' '}
+            <a 
+              href="https://www.moralesadrian.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-primary transition-colors underline"
+            >
+              Adrian Morales
+            </a>
+          </p>
         </div>
       </div>
     </footer>
