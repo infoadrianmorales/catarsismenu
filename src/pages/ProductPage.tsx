@@ -11,6 +11,7 @@ import { useCart } from '@/contexts/CartContext';
 import { toast } from 'sonner';
 import { useMemo, useState, useEffect } from 'react';
 import { trackViewContent, trackAddToCart } from '@/lib/metaPixel';
+import { SEO } from '@/components/SEO';
 
 const ProductPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -120,6 +121,13 @@ const ProductPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO 
+        title={product.nombre}
+        description={product.descripcion_corta || `${product.nombre} en Catarsis Drinks & Food`}
+        image={product.imagen}
+        url={`/producto/${product.slug}`}
+        type="product"
+      />
       <MenuHeader 
         currency={currency} 
         onCurrencyToggle={toggleCurrency}

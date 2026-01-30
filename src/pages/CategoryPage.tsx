@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useCurrency } from '@/hooks/useCurrency';
 import { useProducts } from '@/hooks/useProducts';
 import { useState, useMemo } from 'react';
+import { SEO } from '@/components/SEO';
 
 const categoryTitles: Record<string, { title: string; subtitle: string }> = {
   entradas: {
@@ -80,6 +81,11 @@ const CategoryPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO 
+        title={categoryInfo.title}
+        description={categoryInfo.subtitle || `${categoryInfo.title} en Catarsis Drinks & Food`}
+        url={`/categoria/${slug}`}
+      />
       <MenuHeader 
         currency={currency} 
         onCurrencyToggle={toggleCurrency}
