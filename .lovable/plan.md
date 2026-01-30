@@ -1,83 +1,62 @@
 
+# Plan: Agregar Crédito del Desarrollador al Footer
 
-# Plan: Resetear Datos de Analíticas, Órdenes y Clientes
+## Cambio a Realizar
 
-## Datos a Eliminar
-
-| Tabla | Registros Actuales | Acción |
-|-------|-------------------|--------|
-| `order_items` | 74 | Eliminar todos |
-| `orders` | 34 | Eliminar todos |
-| `customers` | 16 | Eliminar todos |
-| `pending_checkouts` | 3 | Eliminar todos |
-| `rate_limits` | Variable | Limpiar |
-| `order_number_seq` | N/A | Reiniciar a 1 |
+Agregar una línea de crédito al final del footer con el texto "Diseñado y desarrollado por Adrian Morales" incluyendo un enlace a www.moralesadrian.com
 
 ---
 
-## Orden de Ejecución
+## Ubicación
 
-El orden es importante debido a las dependencias entre tablas:
+El crédito se agregará al final de la sección de Copyright existente en el footer, debajo del enlace de "Términos y condiciones".
+
+---
+
+## Implementación
+
+**Archivo a modificar:** `src/components/Footer.tsx`
+
+Se agregará un nuevo elemento después del enlace de términos y condiciones:
 
 ```text
-order_items  →  orders  →  customers  →  pending_checkouts  →  rate_limits
-     ↓            ↓            ↓               ↓                   ↓
-  Depende     Referencia   Independiente   Independiente      Limpieza
-  de orders   customer_id
+© 2026 Catarsis — Drinks & Food. Todos los derechos reservados.
+Términos y condiciones
+Diseñado y desarrollado por Adrian Morales  ← NUEVO
 ```
 
 ---
 
-## Operaciones SQL
+## Estilo
 
-Se ejecutará una migración con las siguientes operaciones:
+- Texto discreto con el mismo estilo que los demás elementos del footer (`text-xs text-muted-foreground`)
+- El nombre "Adrian Morales" será un enlace clickeable
+- El enlace abrirá en una nueva pestaña con atributos de seguridad (`target="_blank"`, `rel="noopener noreferrer"`)
+- Hover suave hacia el color primario para consistencia visual
 
-```sql
--- Paso 1: Eliminar items de órdenes (tienen FK a orders)
-TRUNCATE TABLE order_items CASCADE;
+---
 
--- Paso 2: Eliminar órdenes
-TRUNCATE TABLE orders CASCADE;
+## Código a Agregar
 
--- Paso 3: Eliminar clientes
-TRUNCATE TABLE customers CASCADE;
-
--- Paso 4: Eliminar checkouts pendientes
-TRUNCATE TABLE pending_checkouts;
-
--- Paso 5: Limpiar rate limits
-TRUNCATE TABLE rate_limits;
-
--- Paso 6: Reiniciar secuencia de números de orden
-ALTER SEQUENCE order_number_seq RESTART WITH 1;
+```tsx
+<p className="text-xs text-muted-foreground mt-2">
+  Diseñado y desarrollado por{' '}
+  <a 
+    href="https://www.moralesadrian.com"
+    target="_blank"
+    rel="noopener noreferrer"
+    className="hover:text-primary transition-colors underline"
+  >
+    Adrian Morales
+  </a>
+</p>
 ```
 
 ---
 
-## Resultado Después del Reseteo
+## Resultado Visual
 
-| Tabla | Registros |
-|-------|-----------|
-| `order_items` | 0 |
-| `orders` | 0 |
-| `customers` | 0 |
-| `pending_checkouts` | 0 |
-| `rate_limits` | 0 |
-
-La próxima orden creada tendrá el número: **CAT-0001**
-
----
-
-## Impacto
-
-- Las analíticas mostrarán $0 en ventas y 0 órdenes
-- El panel de clientes estará vacío
-- El historial de órdenes se eliminará completamente
-- Los datos de productos, categorías y configuración NO se afectarán
-
----
-
-## Nota Importante
-
-Esta acción es **irreversible**. Una vez ejecutada, no se podrá recuperar la información eliminada.
-
+El footer mostrará:
+1. Copyright de Catarsis
+2. Enlace a Términos y condiciones
+3. Crédito del desarrollador con enlace (nuevo)
