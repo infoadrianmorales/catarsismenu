@@ -1,68 +1,193 @@
 
 
-# Plan: Cambiar Ruta de `/menu` a `/local`
+# Plan: Agregar Búsqueda con Filtro por Categoría
 
 ## Objetivo
 
-Renombrar la ruta del menú para escaneo QR de `/menu` a `/local` para mayor claridad semántica.
+Permitir a los clientes filtrar productos por categoría (hamburguesas, pizzas, entradas, etc.) usando una barra de navegación horizontal con tabs, tanto en la página de delivery (/) como en la de local (/local).
 
 ---
 
-## Archivos a Modificar
+## Componentes Existentes (Reutilizables)
 
-| Archivo | Cambio |
+| Componente | Estado | Ubicación |
+|------------|--------|-----------|
+| `CategoryFilter` | Listo | `src/components/CategoryFilter.tsx` |
+| `useSearch` hook | Listo | `src/hooks/useSearch.ts` |
+| `SearchBar` | Listo | `src/components/SearchBar.tsx` |
+
+---
+
+## Arquitectura Propuesta
+
+```text
+┌─────────────────────────────────────────────────────────────┐
+│                        MenuHeader                            │
+├─────────────────────────────────────────────────────────────┤
+│                        HeroSection                           │
+├─────────────────────────────────────────────────────────────┤
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │         🔍 Buscar por nombre o ingrediente...        │    │  ← SearchBar
+│  └─────────────────────────────────────────────────────┘    │
+├─────────────────────────────────────────────────────────────┤
+│  [Todos] [Best Seller] [Entradas] [Hamburguesas] [Pizzas]...│  ← CategoryFilter (sticky)
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│    Productos filtrados según categoría seleccionada         │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Comportamiento
+
+| Selección | Resultado |
+|-----------|-----------|
+| "Todos" (default) | Muestra todas las secciones por categoría como actualmente |
+| "Hamburguesas" | Muestra solo productos de hamburguesas en un grid |
+| Búsqueda + Categoría | Combina ambos filtros |
+
+---
+
+## Cambios Requeridos
+
+### 1. Crear Componente Combinado: `SearchAndFilter.tsx`
+
+Nuevo componente que integra SearchBar + CategoryFilter:
+
+```tsx
+// src/components/SearchAndFilter.tsx
+interface SearchAndFilterProps {
+  searchQuery: string;
+  onSearchChange: (value: string) => void;
+  selectedCategory: MenuCategory;
+  onCategoryChange: (category: MenuCategory) => void;
+}
+```
+
+### 2. Modificar `Index.tsx`
+
+- Importar y usar `useSearch` hook
+- Agregar `SearchAndFilter` después de `FeaturedProducts`
+- Renderizado condicional:
+  - Si `selectedCategory === 'todos'` y no hay búsqueda: mostrar secciones agrupadas
+  - Si hay filtro activo: mostrar productos filtrados en grid único
+
+### 3. Modificar `MenuLocal.tsx`
+
+- Aplicar los mismos cambios que en Index
+- El componente `CategoryFilter` usará el mismo styling
+
+---
+
+## Archivos a Crear/Modificar
+
+| Archivo | Acción |
 |---------|--------|
-| `src/App.tsx` | Cambiar ruta y array de rutas ocultas |
-| `src/contexts/ViewModeContext.tsx` | Actualizar detección de path |
+| `src/components/SearchAndFilter.tsx` | Crear |
+| `src/pages/Index.tsx` | Modificar |
+| `src/pages/MenuLocal.tsx` | Modificar |
 
 ---
 
-## Cambios Detallados
+## Flujo de Usuario
 
-### 1. App.tsx
+1. El cliente ve el menú con todas las secciones organizadas por categoría
+2. Puede tocar un tab de categoría (ej: "Hamburguesas")
+3. El menú muestra solo los productos de esa categoría
+4. Puede combinar con búsqueda de texto
+5. Botón "Todos" regresa a la vista completa
 
-**Línea 53** - Actualizar array de rutas donde se oculta WhatsApp:
-```tsx
-// Antes
-const hideFloatingWhatsApp = ['/admin', '/auth', '/menu'].includes(location.pathname);
+---
 
-// Después
-const hideFloatingWhatsApp = ['/admin', '/auth', '/local'].includes(location.pathname);
+## Diseño Visual del Filtro
+
+```text
+┌────────────────────────────────────────────────────────────────────┐
+│ [📱 Todos] [🔥 Best Seller] [🍽️ Entradas] [🍔 Hamburguesas] [🥪]... │
+└────────────────────────────────────────────────────────────────────┘
+         ↑                          ↑
+    Activo (amarillo)         Inactivo (outline)
 ```
 
-**Línea 62** - Cambiar la ruta del componente:
-```tsx
-// Antes
-<Route path="/menu" element={<MenuLocal />} />
+- Scroll horizontal en móvil
+- Sticky debajo del header
+- Iconos + texto para cada categoría
 
-// Después
-<Route path="/local" element={<MenuLocal />} />
+---
+
+## Detalles Técnicos
+
+### SearchAndFilter.tsx
+
+```tsx
+import { SearchBar } from './SearchBar';
+import { CategoryFilter } from './CategoryFilter';
+import { MenuCategory } from '@/types/menu';
+
+interface Props {
+  searchQuery: string;
+  onSearchChange: (value: string) => void;
+  selectedCategory: MenuCategory;
+  onCategoryChange: (category: MenuCategory) => void;
+}
+
+export const SearchAndFilter = ({
+  searchQuery,
+  onSearchChange,
+  selectedCategory,
+  onCategoryChange
+}: Props) => {
+  return (
+    <>
+      <SearchBar value={searchQuery} onChange={onSearchChange} />
+      <CategoryFilter 
+        selectedCategory={selectedCategory} 
+        onCategoryChange={onCategoryChange} 
+      />
+    </>
+  );
+};
 ```
 
-### 2. ViewModeContext.tsx
+### Lógica de renderizado en Index/MenuLocal
 
-**Línea 25** - Actualizar detección del path local:
 ```tsx
-// Antes
-const isLocalPath = location.pathname === '/menu';
+const { 
+  searchQuery, 
+  setSearchQuery, 
+  selectedCategory, 
+  setSelectedCategory, 
+  filteredItems, 
+  hasFilters 
+} = useSearch(products);
 
-// Después
-const isLocalPath = location.pathname === '/local';
+// Si hay filtros activos, mostrar grid filtrado
+// Si no, mostrar secciones por categoría como antes
+{hasFilters ? (
+  <FilteredProductsGrid items={filteredItems} ... />
+) : (
+  <CategorySections ... />
+)}
 ```
 
 ---
 
-## Resultado
+## Resultado Esperado
 
 | Antes | Después |
 |-------|---------|
-| `https://catarsismenu.lovable.app/menu` | `https://catarsismenu.lovable.app/local` |
+| Solo scroll por secciones | Tabs para saltar a categoría |
+| Sin búsqueda en home | Búsqueda integrada con filtros |
+| Navegación lineal | Acceso rápido a cualquier categoría |
 
 ---
 
 ## Beneficios
 
-- **Claridad**: `/local` indica claramente que es para uso en el local/restaurante
-- **Consistencia**: El nombre coincide con el modo `local` del ViewModeContext
-- **SEO**: Evita confusión con `/menu` que podría esperarse como menú de navegación
+- **UX mejorada**: Clientes encuentran productos más rápido
+- **Consistencia**: Mismo comportamiento en `/` y `/local`
+- **Reutilización**: Usa componentes existentes
+- **Mobile-first**: Scroll horizontal optimizado para táctil
 
