@@ -37,7 +37,8 @@ export const useSearch = (items: MenuItem[], bestSellers: MenuItem[] = []) => {
         const query = searchQuery.toLowerCase().trim();
         filtered = filtered.filter(item =>
           item.nombre.toLowerCase().includes(query) ||
-          item.descripcion_corta.toLowerCase().includes(query)
+          item.descripcion_corta.toLowerCase().includes(query) ||
+          item.categoria.toLowerCase().includes(query)
         );
       }
       
@@ -51,12 +52,13 @@ export const useSearch = (items: MenuItem[], bestSellers: MenuItem[] = []) => {
       filtered = filtered.filter(item => item.categoria === selectedCategory);
     }
 
-    // Filter by search query (name or description/ingredients)
+    // Filter by search query (name or description/ingredients or category)
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
       filtered = filtered.filter(item =>
         item.nombre.toLowerCase().includes(query) ||
-        item.descripcion_corta.toLowerCase().includes(query)
+        item.descripcion_corta.toLowerCase().includes(query) ||
+        item.categoria.toLowerCase().includes(query)
       );
     }
 

@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShoppingCart, Trash2, ArrowLeft, ShoppingBag } from 'lucide-react';
+import { ShoppingCart, Trash2, ArrowLeft, ShoppingBag, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
 import { useCart } from '@/contexts/CartContext';
 import { useCurrency } from '@/hooks/useCurrency';
 import { AddToCartButton } from '@/components/cart/AddToCartButton';
@@ -10,8 +12,13 @@ import { Footer } from '@/components/Footer';
 
 const Cart = () => {
   const navigate = useNavigate();
-  const { items, removeFromCart, clearCart, subtotal, totalItems } = useCart();
+  const { items, removeFromCart, clearCart, subtotal, totalItems, updateItemNotes } = useCart();
   const { currency, toggleCurrency, displayMode, getPrices } = useCurrency();
+  const [expandedNotes, setExpandedNotes] = useState<Record<string, boolean>>({});
+
+  const toggleNotesExpanded = (itemId: string) => {
+    setExpandedNotes(prev => ({ ...prev, [itemId]: !prev[itemId] }));
+  };
 
   const prices = getPrices(subtotal);
 
@@ -73,6 +80,7 @@ const Cart = () => {
             {items.map((item) => {
               const itemPrices = getPrices(item.precio_usd);
               const linePrices = getPrices(item.precio_usd * item.quantity);
+              const isNotesExpanded = expandedNotes[item.id] || !!item.notes;
               
               return (
                 <Card key={item.id} className="overflow-hidden">
@@ -143,6 +151,42 @@ const Cart = () => {
                           </div>
                         </div>
                       </div>
+                    </div>
+                    
+                    {/* Notes Section */}
+                    <div className="mt-3 pt-3 border-t border-border">
+                      <button
+                        onClick={() => toggleNotesExpanded(item.id)}
+                        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-full"
+                      >
+                        <MessageSquare className="h-4 w-4" />
+                        <span>{item.notes ? 'Editar nota' : 'Agregar nota'}</span>
+                        {isNotesExpanded ? (
+                          <ChevronUp className="h-4 w-4 ml-auto" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4 ml-auto" />
+                        )}
+                        {item.notes && !isNotesExpanded && (
+                          <span className="text-xs text-secondary ml-2 truncate max-w-[150px]">
+                            📝 {item.notes}
+                          </span>
+                        )}
+                      </button>
+                      
+                      {isNotesExpanded && (
+                        <div className="mt-2 animate-in slide-in-from-top-2 duration-200">
+                          <Textarea
+                            value={item.notes || ''}
+                            onChange={(e) => updateItemNotes(item.id, e.target.value)}
+                            placeholder="Ej: sin vegetales, extra salsa, poco picante..."
+                            className="min-h-[60px] text-sm resize-none"
+                            maxLength={200}
+                          />
+                          <p className="text-xs text-muted-foreground mt-1 text-right">
+                            {(item.notes?.length || 0)}/200
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
