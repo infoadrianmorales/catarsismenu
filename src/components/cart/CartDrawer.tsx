@@ -164,6 +164,13 @@ export const CartDrawer = ({ variant = 'header' }: CartDrawerProps) => {
                         <p className="text-xs text-muted-foreground">
                           {formatPrice(item.precio_usd)} c/u
                         </p>
+
+                        {/* Show notes if present */}
+                        {item.notes && (
+                          <p className="text-xs text-secondary mt-1 line-clamp-2">
+                            📝 {item.notes}
+                          </p>
+                        )}
                         
                         <div className="flex items-center justify-between mt-2">
                           {/* Quantity controls */}

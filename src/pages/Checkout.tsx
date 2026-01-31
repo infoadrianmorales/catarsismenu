@@ -265,7 +265,11 @@ const Checkout = () => {
       const priceStr = paymentCurrency === 'USD' 
         ? linePrices.formattedUSD
         : linePrices.formattedVES;
-      return `- ${item.quantity}x ${item.nombre} — ${priceStr}`;
+      let line = `- ${item.quantity}x ${item.nombre} — ${priceStr}`;
+      if (item.notes?.trim()) {
+        line += `\n   📝 ${item.notes.trim()}`;
+      }
+      return line;
     }).join('\n');
 
     const totalStr = paymentCurrency === 'USD' ? prices.formattedUSD : prices.formattedVES;
@@ -362,6 +366,10 @@ Correo: ${formData.email.toLowerCase()}`;
       // Create order using SECURITY DEFINER function to bypass RLS
       const newOrderId = crypto.randomUUID();
       
+      // Generate WhatsApp message with placeholder for order number
+      const placeholderOrderNum = 'CAT-XXXX';
+      const whatsappMessageTemplate = generateWhatsAppMessage(placeholderOrderNum);
+      
       const { data: generatedOrderNumber, error: orderError } = await supabase
         .rpc('create_order_and_return_number', {
           p_id: newOrderId,
@@ -381,6 +389,7 @@ Correo: ${formData.email.toLowerCase()}`;
           p_subtotal: subtotal,
           p_total: subtotal,
           p_session_id: getSessionId(),
+          p_whatsapp_message: whatsappMessageTemplate.replace(placeholderOrderNum, '{{ORDER_NUMBER}}'),
         });
 
       if (orderError) {
@@ -395,10 +404,10 @@ Correo: ${formData.email.toLowerCase()}`;
 
       const orderNum = generatedOrderNumber || `#${newOrderId.slice(0, 8).toUpperCase()}`;
       
-      // Generate WhatsApp message with the real order number
+      // Generate final WhatsApp message with real order number
       const whatsappMessage = generateWhatsAppMessage(orderNum);
       
-      // Update the order with the actual WhatsApp message
+      // Update order with final whatsapp message (with real order number)
       await supabase
         .from('orders')
         .update({ whatsapp_message: whatsappMessage })

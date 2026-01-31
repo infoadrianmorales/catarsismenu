@@ -8,6 +8,7 @@ export interface CartItem {
   imagen: string;
   quantity: number;
   categoria: string;
+  notes?: string;
 }
 
 interface CartContextType {
@@ -15,6 +16,7 @@ interface CartContextType {
   addToCart: (product: MenuItem) => boolean;
   removeFromCart: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
+  updateItemNotes: (productId: string, notes: string) => void;
   clearCart: () => void;
   getItemQuantity: (productId: string) => number;
   totalItems: number;
@@ -107,6 +109,14 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
   }, [removeFromCart]);
 
+  const updateItemNotes = useCallback((productId: string, notes: string) => {
+    setItems(prev =>
+      prev.map(item =>
+        item.id === productId ? { ...item, notes: notes.slice(0, 200) } : item
+      )
+    );
+  }, []);
+
   const clearCart = useCallback(() => {
     setItems([]);
   }, []);
@@ -124,6 +134,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       addToCart,
       removeFromCart,
       updateQuantity,
+      updateItemNotes,
       clearCart,
       getItemQuantity,
       totalItems,
