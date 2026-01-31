@@ -1,4 +1,5 @@
-import { ShoppingCart, Trash2, ShoppingBag, X } from 'lucide-react';
+import { ShoppingCart, Trash2, ShoppingBag, X, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -21,7 +22,12 @@ interface CartDrawerProps {
 }
 
 export const CartDrawer = ({ variant = 'header' }: CartDrawerProps) => {
-  const { items, totalItems, subtotal, removeFromCart, updateQuantity } = useCart();
+  const { items, totalItems, subtotal, removeFromCart, updateQuantity, updateItemNotes } = useCart();
+  const [expandedNotes, setExpandedNotes] = useState<Record<string, boolean>>({});
+
+  const toggleNotesExpanded = (itemId: string) => {
+    setExpandedNotes(prev => ({ ...prev, [itemId]: !prev[itemId] }));
+  };
   const { currency, displayMode, getPrices } = useCurrency();
   const navigate = useNavigate();
   const [isAnimating, setIsAnimating] = useState(false);
@@ -165,13 +171,6 @@ export const CartDrawer = ({ variant = 'header' }: CartDrawerProps) => {
                           {formatPrice(item.precio_usd)} c/u
                         </p>
 
-                        {/* Show notes if present */}
-                        {item.notes && (
-                          <p className="text-xs text-secondary mt-1 line-clamp-2">
-                            📝 {item.notes}
-                          </p>
-                        )}
-                        
                         <div className="flex items-center justify-between mt-2">
                           {/* Quantity controls */}
                           <div className="flex items-center gap-2 bg-background rounded-full border border-border">
@@ -200,6 +199,37 @@ export const CartDrawer = ({ variant = 'header' }: CartDrawerProps) => {
                           <span className="text-sm font-bold text-secondary">
                             {formatPrice(itemTotal)}
                           </span>
+                        </div>
+
+                        {/* Notes Section */}
+                        <div className="mt-2 pt-2 border-t border-border/50">
+                          <button
+                            onClick={() => toggleNotesExpanded(item.id)}
+                            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors w-full"
+                          >
+                            <MessageSquare className="h-3 w-3" />
+                            <span>{item.notes ? 'Editar nota' : 'Agregar nota'}</span>
+                            {expandedNotes[item.id] ? (
+                              <ChevronUp className="h-3 w-3 ml-auto" />
+                            ) : (
+                              <ChevronDown className="h-3 w-3 ml-auto" />
+                            )}
+                          </button>
+                          
+                          {expandedNotes[item.id] && (
+                            <div className="mt-1.5 animate-in slide-in-from-top-2 duration-200">
+                              <Textarea
+                                value={item.notes || ''}
+                                onChange={(e) => updateItemNotes(item.id, e.target.value)}
+                                placeholder="Ej: sin vegetales, extra salsa..."
+                                className="min-h-[50px] text-xs resize-none"
+                                maxLength={200}
+                              />
+                              <p className="text-[10px] text-muted-foreground mt-0.5 text-right">
+                                {(item.notes?.length || 0)}/200
+                              </p>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
