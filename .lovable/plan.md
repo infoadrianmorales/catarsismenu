@@ -1,121 +1,58 @@
 
+## Eliminar Código Duplicado del Meta Pixel
 
-# Plan: Agregar Campo de Notas al CartDrawer
-
-## Diagnóstico del Problema
-
-El campo de notas para productos **solo está disponible en la página `/carrito`**, pero no en el `CartDrawer` (drawer lateral que aparece al hacer clic en el icono del carrito en escritorio).
-
-| Componente | Ubicación | ¿Tiene campo de notas? |
-|------------|-----------|----------------------|
-| `Cart.tsx` | Página `/carrito` | ✅ Sí (textarea completo) |
-| `CartDrawer.tsx` | Drawer lateral | ❌ Solo muestra notas existentes |
-
-Esto significa que los usuarios de escritorio que usan el drawer no pueden agregar notas a sus productos.
+### Resumen
+Eliminaré el código estático del Meta Pixel que se agregó manualmente en `index.html` para mantener únicamente la implementación dinámica que ya existe en el proyecto. Esta implementación dinámica ofrece mejor tracking con contexto del modo (delivery/local).
 
 ---
 
-## Solución
+### Problema Actual
+El archivo `index.html` contiene código del Meta Pixel que se duplica con la implementación dinámica en `MetaPixelProvider.tsx`:
 
-Agregar un campo de notas compacto al `CartDrawer` similar al de la página del carrito.
+- **Líneas 35-48** (en `<head>`): Script de inicialización del Pixel
+- **Líneas 52-55** (en `<body>`): Fallback `<noscript>` para usuarios sin JavaScript
 
-### Cambios en `CartDrawer.tsx`
+### Cambios a Realizar
 
-1. Importar componentes necesarios (`Textarea`, iconos)
-2. Agregar estado para controlar qué notas están expandidas
-3. Importar `updateItemNotes` del contexto
-4. Agregar UI colapsable para editar notas en cada producto
+#### Archivo: `index.html`
 
-### Diseño Propuesto
+**Eliminar líneas 35-48** (bloque del script en `<head>`):
+```html
+<!-- Meta Pixel Code -->
+<script>
+  !function(f,b,e,v,n,t,s)
+  ...
+  fbq('init', '1428549534945171');
+  fbq('track', 'PageView');
+</script>
+<!-- End Meta Pixel Code -->
+```
 
-```text
-┌──────────────────────────────────────┐
-│ [IMG]  Chicken Crunch          [X]   │
-│        $8.00 c/u                     │
-│        📝 sin vegetales (si existe)  │
-│  [−] 2 [+]               $16.00      │
-│  ─────────────────────────────────   │
-│  💬 Agregar nota                  ▼  │
-│  ┌────────────────────────────────┐  │
-│  │ Ej: sin vegetales...          │  │  ← Textarea colapsable
-│  └────────────────────────────────┘  │
-│                              45/200  │
-└──────────────────────────────────────┘
+**Eliminar líneas 52-55** (fallback `<noscript>` en `<body>`):
+```html
+<!-- Meta Pixel noscript fallback -->
+<noscript><img height="1" width="1" style="display:none"
+  src="https://www.facebook.com/tr?id=1428549534945171&ev=PageView&noscript=1"
+/></noscript>
 ```
 
 ---
 
-## Archivos a Modificar
+### Beneficios de la Implementación Dinámica
 
-| Archivo | Cambio |
-|---------|--------|
-| `src/components/cart/CartDrawer.tsx` | Agregar campo de notas editable con UI colapsable |
-
----
-
-## Implementación Detallada
-
-### 1. Importaciones adicionales
-```typescript
-import { MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
-import { Textarea } from '@/components/ui/textarea';
-import { useState } from 'react';
-```
-
-### 2. Estado y función del contexto
-```typescript
-const { items, totalItems, subtotal, removeFromCart, updateQuantity, updateItemNotes } = useCart();
-const [expandedNotes, setExpandedNotes] = useState<Record<string, boolean>>({});
-
-const toggleNotesExpanded = (itemId: string) => {
-  setExpandedNotes(prev => ({ ...prev, [itemId]: !prev[itemId] }));
-};
-```
-
-### 3. UI de notas dentro de cada item (después del precio total)
-```typescript
-{/* Notes Section */}
-<div className="mt-2 pt-2 border-t border-border/50">
-  <button
-    onClick={() => toggleNotesExpanded(item.id)}
-    className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors w-full"
-  >
-    <MessageSquare className="h-3 w-3" />
-    <span>{item.notes ? 'Editar nota' : 'Agregar nota'}</span>
-    {isNotesExpanded ? (
-      <ChevronUp className="h-3 w-3 ml-auto" />
-    ) : (
-      <ChevronDown className="h-3 w-3 ml-auto" />
-    )}
-  </button>
-  
-  {isNotesExpanded && (
-    <div className="mt-1.5 animate-in slide-in-from-top-2 duration-200">
-      <Textarea
-        value={item.notes || ''}
-        onChange={(e) => updateItemNotes(item.id, e.target.value)}
-        placeholder="Ej: sin vegetales, extra salsa..."
-        className="min-h-[50px] text-xs resize-none"
-        maxLength={200}
-      />
-      <p className="text-[10px] text-muted-foreground mt-0.5 text-right">
-        {(item.notes?.length || 0)}/200
-      </p>
-    </div>
-  )}
-</div>
-```
+| Característica | Código Estático | Implementación Dinámica |
+|----------------|-----------------|-------------------------|
+| Control desde Admin | ❌ No | ✅ Sí |
+| Tracking de modo (delivery/local) | ❌ No | ✅ Sí |
+| Navegación SPA | ❌ Solo carga inicial | ✅ Todas las rutas |
+| Eventos de conversión | ❌ Solo PageView | ✅ Todos (AddToCart, Purchase, etc.) |
+| Evita duplicados | ❌ Dispara 2 veces | ✅ Control único |
 
 ---
 
-## Resultado Esperado
-
-Después de esta modificación:
-
-| Dispositivo | Comportamiento |
-|-------------|----------------|
-| **Móvil** | FloatingCartButton → `/carrito` → Notas disponibles ✅ |
-| **Escritorio** | CartDrawer → Notas disponibles ✅ |
-
-Los usuarios podrán agregar notas como "sin vegetales" o "extra salsa" desde cualquier dispositivo.
-
+### Resultado Esperado
+Después del cambio, el Meta Pixel se cargará únicamente a través de `MetaPixelProvider.tsx`, que:
+1. Lee la configuración desde la base de datos (`meta_pixel_id` y `meta_pixel_enabled`)
+2. Inicializa el Pixel dinámicamente cuando está habilitado
+3. Incluye el parámetro `content_category: mode` en cada `PageView`
+4. Maneja correctamente la navegación SPA sin duplicar eventos
