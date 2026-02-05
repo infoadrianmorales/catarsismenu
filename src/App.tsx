@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { CartProvider } from "@/contexts/CartContext";
 import { ViewModeProvider } from "@/contexts/ViewModeContext";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -59,6 +59,7 @@ const AppContent = () => {
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/menu" element={<Navigate to="/" replace />} />
             <Route path="/local" element={<MenuLocal />} />
             <Route path="/categoria/:slug" element={<CategoryPage />} />
             <Route path="/producto/:slug" element={<ProductPage />} />
