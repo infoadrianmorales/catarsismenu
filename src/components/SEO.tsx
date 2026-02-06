@@ -10,7 +10,7 @@ interface SEOProps {
 
 const BASE_URL = 'https://www.catarsiszone.com';
 const SITE_NAME = 'Catarsis Drinks & Food';
-const DEFAULT_DESCRIPTION = 'Sabores que liberan, momentos que conectan. Comida deliciosa y tragos que son una obra maestra.';
+const DEFAULT_DESCRIPTION = 'Restaurante en Lechería, Anzoátegui. Hamburguesas gourmet, pizzas artesanales, parrilla y coctelería de autor. Menú digital con delivery.';
 const DEFAULT_IMAGE = `${BASE_URL}/og-image.jpg`;
 
 export const SEO = ({ 

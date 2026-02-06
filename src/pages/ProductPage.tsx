@@ -12,6 +12,8 @@ import { toast } from 'sonner';
 import { useMemo, useState, useEffect } from 'react';
 import { trackViewContent, trackAddToCart } from '@/lib/metaPixel';
 import { SEO } from '@/components/SEO';
+import { ProductSchema } from '@/components/ProductSchema';
+import { BreadcrumbSchema } from '@/components/BreadcrumbSchema';
 
 const ProductPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -119,6 +121,14 @@ const ProductPage = () => {
     );
   };
 
+  const categoryLabel = product.categoria.charAt(0).toUpperCase() + product.categoria.slice(1);
+  
+  const breadcrumbItems = [
+    { name: 'Inicio', url: 'https://www.catarsiszone.com/' },
+    { name: categoryLabel, url: `https://www.catarsiszone.com/categoria/${product.categoria}` },
+    { name: product.nombre, url: `https://www.catarsiszone.com/producto/${product.slug}` }
+  ];
+
   return (
     <div className="min-h-screen bg-background">
       <SEO 
@@ -128,6 +138,16 @@ const ProductPage = () => {
         url={`/producto/${product.slug}`}
         type="product"
       />
+      <ProductSchema
+        name={product.nombre}
+        description={product.descripcion_corta || undefined}
+        image={product.imagen}
+        priceUSD={product.precio_usd}
+        slug={product.slug}
+        category={categoryLabel}
+        isAvailable={isOrderable}
+      />
+      <BreadcrumbSchema items={breadcrumbItems} />
       <MenuHeader 
         currency={currency} 
         onCurrencyToggle={toggleCurrency}

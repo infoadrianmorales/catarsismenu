@@ -14,6 +14,7 @@ import { useSearch } from '@/hooks/useSearch';
 import { usePublicCategories } from '@/hooks/usePublicCategories';
 import { FloatingCartButton } from '@/components/cart/FloatingCartButton';
 import { RestaurantSchema } from '@/components/RestaurantSchema';
+import { SEO } from '@/components/SEO';
 
 const Index = () => {
   const { currency, toggleCurrency, displayMode } = useCurrency();
@@ -51,6 +52,11 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO 
+        title="Menú Digital | Hamburguesas, Pizzas y Cócteles en Lechería"
+        description="Restaurante en Lechería, Anzoátegui. Hamburguesas gourmet, pizzas artesanales, parrilla y coctelería de autor. Menú digital con delivery. ¡Ordena ahora!"
+        url="/"
+      />
       <RestaurantSchema />
       <MenuHeader
         currency={currency} 
