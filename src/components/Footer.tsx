@@ -21,7 +21,7 @@ export const Footer = () => {
               className="h-16 md:h-20 w-auto"
             />
             <p className="text-xs text-muted-foreground max-w-xs">
-              Hamburguesas gourmet, pizzas artesanales y coctelería de autor en Lechería, Anzoátegui.
+              Hamburguesas, pizzas, emparedados y coctelería en Lechería, Anzoátegui.
             </p>
           </div>
           
