@@ -127,27 +127,26 @@ const Index = () => {
       {/* SEO Content Section */}
       <section className="container px-4 py-12 max-w-4xl mx-auto">
         <h2 className="text-2xl font-bold text-foreground mb-4">
-          Las Mejores Hamburguesas de Lechería — Catarsis Drinks & Food
+          Hamburguesas, Pizzas y Coctelería en Lechería — Catarsis Drinks & Food
         </h2>
         <div className="space-y-3 text-sm text-muted-foreground leading-relaxed">
           <p>
-            <strong>Catarsis Drinks & Food</strong> es el restaurante de hamburguesas más reconocido de <strong>Lechería, Anzoátegui</strong>. 
-            Nuestras <Link to="/categoria/hamburguesas" className="text-primary hover:underline">hamburguesas gourmet</Link> — como la Clásica Americana, 
-            Honeyholic Burger, BBQ Champions y la Smash — son preparadas con ingredientes frescos y recetas únicas que las convierten en las favoritas de la ciudad.
+            <strong>Catarsis Drinks & Food</strong> es un restaurante en <strong>Lechería, Anzoátegui</strong>, 
+            reconocido por sus <Link to="/categoria/hamburguesas" className="text-primary hover:underline">hamburguesas</Link> — desde la Clásica Americana 
+            hasta la Honeyholic Burger, BBQ Champions y la Smash. Cada una preparada con ingredientes frescos y recetas propias.
           </p>
           <p>
-            Pero Catarsis es mucho más que hamburguesas. Disfruta de nuestras{' '}
-            <Link to="/categoria/pizzas" className="text-primary hover:underline">pizzas artesanales</Link>,{' '}
-            <Link to="/categoria/emparedados" className="text-primary hover:underline">emparedados premium</Link>,{' '}
-            <Link to="/categoria/parrilla" className="text-primary hover:underline">parrilla</Link> con opciones de mar y tierra, y{' '}
+            Además de hamburguesas, el menú incluye{' '}
+            <Link to="/categoria/pizzas" className="text-primary hover:underline">pizzas</Link>,{' '}
+            <Link to="/categoria/emparedados" className="text-primary hover:underline">emparedados</Link>,{' '}
+            opciones de <Link to="/categoria/parrilla" className="text-primary hover:underline">parrilla</Link> con cortes de mar y tierra, y{' '}
             <Link to="/categoria/ensaladas" className="text-primary hover:underline">ensaladas frescas</Link>.
-            Nuestro menú es ideal tanto para un almuerzo rápido como para una cena completa.
+            Ideal tanto para un almuerzo rápido como para una cena completa.
           </p>
           <p>
-            Como <strong>el mejor bar nocturno de Lechería</strong>, nuestra{' '}
-            <Link to="/categoria/cocteleria" className="text-primary hover:underline">coctelería de autor</Link> es otro sello distintivo: 
-            desde el Catarsis Punch hasta la Margarita On the Rocks, cada cóctel está diseñado para complementar la experiencia gastronómica. 
-            Abrimos de lunes a domingo, con horario extendido hasta la 1:00 AM los fines de semana.
+            Por las noches, Catarsis se transforma en un espacio con ambiente de bar donde puedes disfrutar de una variedad de{' '}
+            <Link to="/categoria/cocteleria" className="text-primary hover:underline">cócteles</Link> — desde 
+            el Catarsis Punch hasta clásicos como la Margarita. Abrimos de lunes a domingo, con horario extendido hasta la 1:00 AM los fines de semana.
           </p>
           <p>
             Aceptamos pagos en <strong>dólares, bolívares, Pago Móvil, Zelle y tarjetas</strong>. 
