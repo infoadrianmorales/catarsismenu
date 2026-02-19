@@ -87,6 +87,8 @@ export const StickyActionBar = ({ currency, onCurrencyToggle, displayMode = 'amb
               variant="ghost"
               onClick={handleShare}
               className="h-9 w-9 p-0"
+              data-meta-event="Share"
+              id="sticky-share-btn"
             >
               <Share2 className="h-5 w-5" />
             </Button>
@@ -95,6 +97,8 @@ export const StickyActionBar = ({ currency, onCurrencyToggle, displayMode = 'amb
               size="sm"
               onClick={handleWhatsAppClick}
               className="bg-accent hover:bg-accent/90 text-accent-foreground font-bold gap-2"
+              data-meta-event="Contact"
+              id="sticky-whatsapp-btn"
             >
               <MessageCircle className="h-4 w-4" />
               Pedir

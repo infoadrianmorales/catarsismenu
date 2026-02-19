@@ -34,6 +34,8 @@ export const CartButton = ({ variant = 'header' }: CartButtonProps) => {
           "transition-transform duration-200"
         )}
         size="sm"
+        data-meta-event="ViewCart"
+        id="cart-btn"
       >
         <ShoppingCart className="h-4 w-4" />
         <span>Carrito</span>
@@ -60,6 +62,8 @@ export const CartButton = ({ variant = 'header' }: CartButtonProps) => {
       )}
       onClick={() => navigate('/carrito')}
       aria-label={`Carrito con ${totalItems} items`}
+      data-meta-event="ViewCart"
+      id="cart-btn-header"
     >
       <ShoppingCart className={cn("h-5 w-5", totalItems > 0 && "text-secondary-foreground")} />
       {totalItems > 0 && (

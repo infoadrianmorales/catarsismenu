@@ -792,6 +792,8 @@ Correo: ${formData.email.toLowerCase()}`;
                 size="lg"
                 onClick={handleSubmit}
                 disabled={isSubmitting}
+                data-meta-event="Purchase"
+                id="checkout-submit-btn"
               >
                 {isSubmitting ? (
                   <Loader2 className="h-5 w-5 animate-spin" />
