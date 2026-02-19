@@ -1,87 +1,110 @@
 
 
-## Solución: Hacer Botones Detectables por Meta Pixel Event Setup Tool
+## Crear Feed de Catálogo para Meta (Facebook/Instagram)
 
-### Problema
-La herramienta de configuración de eventos manuales de Meta (Event Setup Tool) no puede seleccionar los botones importantes de la página porque:
-1. Los botones usan `e.stopPropagation()` que bloquea la detección de clics por parte de la herramienta de Meta
-2. Los botones no tienen atributos `id` ni `data-*` que Meta pueda usar para identificarlos
+### Que es un Feed de Productos
 
-### Solución
-Agregar atributos `data-meta-event` e `id` descriptivos a todos los botones clave para que la herramienta de Meta pueda identificarlos y seleccionarlos.
+Meta necesita una URL que devuelva tu catalogo de productos en un formato estandar. Meta lee esta URL periodicamente para mantener tu catalogo actualizado automaticamente.
+
+### Como Funciona
+
+```text
+┌──────────────────────────────────┐
+│  Tu Base de Datos (productos)    │
+│  nombre, precio, imagen, etc.    │
+└──────────────┬───────────────────┘
+               │
+               v
+┌──────────────────────────────────┐
+│  Endpoint /meta-catalog-feed     │
+│  Genera XML/CSV con productos    │
+└──────────────┬───────────────────┘
+               │
+               v
+┌──────────────────────────────────┐
+│  Meta Commerce Manager           │
+│  Lee la URL cada X horas         │
+│  Actualiza tu catalogo           │
+└──────────────────────────────────┘
+```
 
 ---
 
-### Botones Afectados y Cambios
+### Cambios a Realizar
 
-#### 1. Botón "Agregar al carrito" (`src/components/cart/AddToCartButton.tsx`)
-- Agregar `data-meta-event="AddToCart"` y `id="add-to-cart-btn"` a los botones de agregar
-- Estos son los botones mas importantes para rastrear conversiones
+#### 1. Crear Backend Function: `meta-catalog-feed`
 
-#### 2. Botón "Pedir" en barra inferior (`src/components/StickyActionBar.tsx`)
-- Agregar `data-meta-event="Contact"` e `id="sticky-whatsapp-btn"` al boton de WhatsApp
-- Agregar `data-meta-event="Share"` e `id="sticky-share-btn"` al boton de compartir
+Una funcion backend que consulta todos los productos activos y genera un feed XML (formato Atom/RSS que Meta acepta).
 
-#### 3. Botón flotante de WhatsApp (`src/components/FloatingWhatsApp.tsx`)
-- Agregar `data-meta-event="Contact"` e `id="floating-whatsapp-btn"`
+Cada producto incluira:
+- **id** - Identificador unico del producto
+- **title** - Nombre del producto
+- **description** - Descripcion corta
+- **availability** - in stock / out of stock
+- **price** - Precio en USD
+- **link** - URL del producto en tu web (catarsiszone.com/producto/slug)
+- **image_link** - URL de la imagen del producto
+- **brand** - "Catarsis Drinks & Food"
+- **condition** - "new"
+- **product_type** - Categoria del producto
 
-#### 4. Botón "Enviar Pedido" en checkout (`src/pages/Checkout.tsx`)
-- Agregar `data-meta-event="Purchase"` e `id="checkout-submit-btn"` al boton de enviar pedido
+#### 2. Formato del Feed
 
-#### 5. Botón del carrito (`src/components/cart/CartButton.tsx`)
-- Agregar `data-meta-event="ViewCart"` e `id="cart-btn"`
+Meta acepta feeds en formato XML (RSS/Atom), CSV o TSV. Usaremos **XML** porque es el mas robusto y soporta todos los campos.
 
-#### 6. Botón flotante del carrito (`src/components/cart/FloatingCartButton.tsx`)
-- Agregar `data-meta-event="ViewCart"` e `id="floating-cart-btn"`
+Ejemplo de como se vera cada producto en el feed:
+
+```text
+<entry>
+  <g:id>uuid-del-producto</g:id>
+  <g:title>Catarsis Burger</g:title>
+  <g:description>Hamburguesa gourmet con ingredientes premium</g:description>
+  <g:link>https://www.catarsiszone.com/producto/catarsis-burger</g:link>
+  <g:image_link>https://imagen-del-producto.jpg</g:image_link>
+  <g:price>8.99 USD</g:price>
+  <g:availability>in stock</g:availability>
+  <g:brand>Catarsis Drinks & Food</g:brand>
+  <g:condition>new</g:condition>
+  <g:product_type>Hamburguesas</g:product_type>
+</entry>
+```
 
 ---
 
 ### Detalles Tecnicos
 
-Los cambios son simples: agregar atributos HTML a los elementos `<Button>` y `<button>` existentes.
+#### Archivo: `supabase/functions/meta-catalog-feed/index.ts`
 
-**Ejemplo del cambio en AddToCartButton.tsx:**
+- Endpoint publico (sin autenticacion) para que Meta pueda leerlo
+- Consulta la tabla `products` donde `activo = true`
+- Genera XML con namespace Google Merchant (`g:`)
+- Responde con `Content-Type: application/xml`
+- Incluye todos los campos requeridos por Meta
 
-Antes:
-```typescript
-<Button
-  size="icon"
-  onClick={handleAdd}
-  className="h-8 w-8 bg-primary hover:bg-primary/90 shrink-0"
->
-```
+#### Configuracion en `supabase/config.toml`
 
-Despues:
-```typescript
-<Button
-  size="icon"
-  onClick={handleAdd}
-  className="h-8 w-8 bg-primary hover:bg-primary/90 shrink-0"
-  data-meta-event="AddToCart"
-  id={`add-to-cart-${product.id}`}
->
-```
-
-**Archivos a modificar:**
-
-| Archivo | Cambio |
-|---------|--------|
-| `src/components/cart/AddToCartButton.tsx` | Agregar `data-meta-event` e `id` a 2 botones de agregar |
-| `src/components/StickyActionBar.tsx` | Agregar atributos a botones Pedir y Compartir |
-| `src/components/FloatingWhatsApp.tsx` | Agregar atributos al boton flotante |
-| `src/pages/Checkout.tsx` | Agregar atributos al boton de enviar pedido |
-| `src/components/cart/CartButton.tsx` | Agregar atributos al boton del carrito |
-| `src/components/cart/FloatingCartButton.tsx` | Agregar atributos al boton flotante del carrito |
+- Desactivar verificacion JWT para este endpoint (debe ser publico)
 
 ---
 
-### Como Usarlo en Meta
+### Como Conectarlo en Meta
 
-Despues de aplicar estos cambios:
-1. Ir a Meta Events Manager
-2. Abrir la herramienta de configuracion de eventos (Event Setup Tool)
-3. Los botones ahora seran seleccionables gracias a los atributos `data-meta-event`
-4. Meta podra vincular cada boton con su evento correspondiente (AddToCart, Contact, Purchase, etc.)
+Una vez creado el endpoint, los pasos en Meta son:
 
-### Beneficio
-No se modifica ningun comportamiento funcional. Solo se agregan atributos HTML que permiten a Meta identificar los elementos interactivos.
+1. Ir a **Meta Commerce Manager** (business.facebook.com/commerce)
+2. Crear un nuevo catalogo de tipo "E-commerce"
+3. Seleccionar "Feed de datos" como fuente
+4. Pegar la URL del feed (sera algo como `https://qucqigemdbyclxqjzkbs.supabase.co/functions/v1/meta-catalog-feed`)
+5. Configurar la frecuencia de actualizacion (diaria recomendado)
+6. Meta validara el feed y comenzara a importar los productos
+
+### Beneficios
+
+| Funcionalidad | Descripcion |
+|---------------|-------------|
+| Facebook Shop | Tus productos aparecen en tu pagina de Facebook |
+| Instagram Shopping | Puedes etiquetar productos en publicaciones |
+| Anuncios dinamicos | Meta muestra productos relevantes automaticamente |
+| Actualizacion automatica | Precios y disponibilidad siempre al dia |
+| Retargeting | Muestra a usuarios los productos que vieron en tu web |
+
