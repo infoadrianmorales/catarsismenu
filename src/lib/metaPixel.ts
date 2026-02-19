@@ -1,21 +1,35 @@
 /**
  * Meta Pixel (Facebook Pixel) Service
- * The pixel is initialized in index.html with the standard Meta snippet.
- * This module only provides event tracking functions.
+ * The pixel script is loaded in index.html.
+ * Initialization (with the Pixel ID) is done dynamically from React via initMetaPixel().
  */
 
-// Extend Window interface for fbq
 declare global {
   interface Window {
     fbq: (...args: unknown[]) => void;
   }
 }
 
+let isInitialized = false;
+
+/**
+ * Initialize Meta Pixel with a given ID. Safe to call multiple times — only runs once.
+ */
+export const initMetaPixel = (pixelId: string): void => {
+  if (isInitialized) return;
+  if (typeof window === 'undefined' || typeof window.fbq !== 'function') return;
+  if (!pixelId || !pixelId.trim()) return;
+
+  window.fbq('init', pixelId);
+  window.fbq('track', 'PageView');
+  isInitialized = true;
+};
+
 /**
  * Check if Pixel is ready to track
  */
 const canTrack = (): boolean => {
-  return typeof window !== 'undefined' && typeof window.fbq === 'function';
+  return isInitialized && typeof window !== 'undefined' && typeof window.fbq === 'function';
 };
 
 /**
@@ -23,7 +37,6 @@ const canTrack = (): boolean => {
  */
 export const trackPageView = (mode?: 'delivery' | 'local'): void => {
   if (!canTrack()) return;
-  
   if (mode) {
     window.fbq('track', 'PageView', { content_category: mode });
   } else {
@@ -41,7 +54,6 @@ export const trackViewContent = (product: {
   precio_usd: number;
 }): void => {
   if (!canTrack()) return;
-  
   window.fbq('track', 'ViewContent', {
     content_ids: [product.id],
     content_name: product.nombre,
@@ -61,7 +73,6 @@ export const trackAddToCart = (product: {
   precio_usd: number;
 }, quantity: number = 1): void => {
   if (!canTrack()) return;
-  
   window.fbq('track', 'AddToCart', {
     content_ids: [product.id],
     content_name: product.nombre,
@@ -80,9 +91,7 @@ export const trackInitiateCheckout = (items: {
   quantity: number;
 }[], subtotal: number): void => {
   if (!canTrack()) return;
-  
   const numItems = items.reduce((sum, item) => sum + item.quantity, 0);
-  
   window.fbq('track', 'InitiateCheckout', {
     content_ids: items.map(item => item.id),
     num_items: numItems,
@@ -100,9 +109,7 @@ export const trackPurchase = (
   items: { id: string; quantity: number }[]
 ): void => {
   if (!canTrack()) return;
-  
   const numItems = items.reduce((sum, item) => sum + item.quantity, 0);
-  
   window.fbq('track', 'Purchase', {
     value,
     currency: 'USD',
@@ -117,7 +124,6 @@ export const trackPurchase = (
  */
 export const trackContact = (source: string): void => {
   if (!canTrack()) return;
-  
   window.fbq('track', 'Contact', {
     content_category: source,
   });
@@ -128,7 +134,6 @@ export const trackContact = (source: string): void => {
  */
 export const trackSearch = (query: string): void => {
   if (!canTrack() || !query.trim()) return;
-  
   window.fbq('track', 'Search', {
     search_string: query,
   });
@@ -139,6 +144,5 @@ export const trackSearch = (query: string): void => {
  */
 export const trackCustomEvent = (eventName: string, params?: Record<string, unknown>): void => {
   if (!canTrack()) return;
-  
   window.fbq('trackCustom', eventName, params);
 };
