@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { MenuHeader } from '@/components/MenuHeader';
 import { HeroSection } from '@/components/HeroSection';
 import { FeaturedProducts } from '@/components/FeaturedProducts';
@@ -14,6 +15,8 @@ import { useSearch } from '@/hooks/useSearch';
 import { usePublicCategories } from '@/hooks/usePublicCategories';
 import { FloatingCartButton } from '@/components/cart/FloatingCartButton';
 import { RestaurantSchema } from '@/components/RestaurantSchema';
+import { FAQSchema } from '@/components/FAQSchema';
+import { LocalBusinessSchema } from '@/components/LocalBusinessSchema';
 import { SEO } from '@/components/SEO';
 
 const Index = () => {
@@ -53,11 +56,13 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <SEO 
-        title="Menú Digital | Hamburguesas, Pizzas y Cócteles en Lechería"
-        description="Restaurante en Lechería, Anzoátegui. Hamburguesas gourmet, pizzas artesanales, parrilla y coctelería de autor. Menú digital con delivery. ¡Ordena ahora!"
+        title="Las Mejores Hamburguesas de Lechería – Pizzas, Emparedados y Coctelería"
+        description="Catarsis es el restaurante de hamburguesas más popular de Lechería. Hamburguesas gourmet, pizzas artesanales, emparedados, parrilla y la mejor coctelería de autor. Ideal para almorzar o disfrutar la noche. ¡Pide delivery!"
         url="/"
       />
       <RestaurantSchema />
+      <FAQSchema />
+      <LocalBusinessSchema />
       <MenuHeader
         currency={currency} 
         onCurrencyToggle={toggleCurrency}
@@ -118,6 +123,39 @@ const Index = () => {
           ))}
         </div>
       )}
+      
+      {/* SEO Content Section */}
+      <section className="container px-4 py-12 max-w-4xl mx-auto">
+        <h2 className="text-2xl font-bold text-foreground mb-4">
+          Las Mejores Hamburguesas de Lechería — Catarsis Drinks & Food
+        </h2>
+        <div className="space-y-3 text-sm text-muted-foreground leading-relaxed">
+          <p>
+            <strong>Catarsis Drinks & Food</strong> es el restaurante de hamburguesas más reconocido de <strong>Lechería, Anzoátegui</strong>. 
+            Nuestras <Link to="/categoria/hamburguesas" className="text-primary hover:underline">hamburguesas gourmet</Link> — como la Clásica Americana, 
+            Honeyholic Burger, BBQ Champions y la Smash — son preparadas con ingredientes frescos y recetas únicas que las convierten en las favoritas de la ciudad.
+          </p>
+          <p>
+            Pero Catarsis es mucho más que hamburguesas. Disfruta de nuestras{' '}
+            <Link to="/categoria/pizzas" className="text-primary hover:underline">pizzas artesanales</Link>,{' '}
+            <Link to="/categoria/emparedados" className="text-primary hover:underline">emparedados premium</Link>,{' '}
+            <Link to="/categoria/parrilla" className="text-primary hover:underline">parrilla</Link> con opciones de mar y tierra, y{' '}
+            <Link to="/categoria/ensaladas" className="text-primary hover:underline">ensaladas frescas</Link>.
+            Nuestro menú es ideal tanto para un almuerzo rápido como para una cena completa.
+          </p>
+          <p>
+            Como <strong>el mejor bar nocturno de Lechería</strong>, nuestra{' '}
+            <Link to="/categoria/cocteleria" className="text-primary hover:underline">coctelería de autor</Link> es otro sello distintivo: 
+            desde el Catarsis Punch hasta la Margarita On the Rocks, cada cóctel está diseñado para complementar la experiencia gastronómica. 
+            Abrimos de lunes a domingo, con horario extendido hasta la 1:00 AM los fines de semana.
+          </p>
+          <p>
+            Aceptamos pagos en <strong>dólares, bolívares, Pago Móvil, Zelle y tarjetas</strong>. 
+            Visítanos en el CC Costa Mar, Local 7, Lechería — o haz tu pedido por{' '}
+            <strong>delivery</strong> desde nuestro menú digital.
+          </p>
+        </div>
+      </section>
       
       <Footer />
       

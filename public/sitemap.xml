@@ -2,67 +2,199 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://www.catarsiszone.com/</loc>
-    <lastmod>2025-02-06</lastmod>
+    <lastmod>2026-02-19</lastmod>
     <priority>1.0</priority>
     <changefreq>weekly</changefreq>
   </url>
   <url>
     <loc>https://www.catarsiszone.com/categoria/best-seller</loc>
-    <lastmod>2025-02-06</lastmod>
+    <lastmod>2026-02-19</lastmod>
     <priority>0.9</priority>
     <changefreq>weekly</changefreq>
   </url>
   <url>
     <loc>https://www.catarsiszone.com/categoria/entradas</loc>
-    <lastmod>2025-02-06</lastmod>
+    <lastmod>2026-02-19</lastmod>
     <priority>0.8</priority>
     <changefreq>weekly</changefreq>
   </url>
   <url>
     <loc>https://www.catarsiszone.com/categoria/hamburguesas</loc>
-    <lastmod>2025-02-06</lastmod>
-    <priority>0.8</priority>
+    <lastmod>2026-02-19</lastmod>
+    <priority>0.9</priority>
     <changefreq>weekly</changefreq>
   </url>
   <url>
     <loc>https://www.catarsiszone.com/categoria/emparedados</loc>
-    <lastmod>2025-02-06</lastmod>
+    <lastmod>2026-02-19</lastmod>
     <priority>0.8</priority>
     <changefreq>weekly</changefreq>
   </url>
   <url>
     <loc>https://www.catarsiszone.com/categoria/pizzas</loc>
-    <lastmod>2025-02-06</lastmod>
+    <lastmod>2026-02-19</lastmod>
     <priority>0.8</priority>
     <changefreq>weekly</changefreq>
   </url>
   <url>
     <loc>https://www.catarsiszone.com/categoria/parrilla</loc>
-    <lastmod>2025-02-06</lastmod>
+    <lastmod>2026-02-19</lastmod>
     <priority>0.8</priority>
     <changefreq>weekly</changefreq>
   </url>
   <url>
     <loc>https://www.catarsiszone.com/categoria/ensaladas</loc>
-    <lastmod>2025-02-06</lastmod>
+    <lastmod>2026-02-19</lastmod>
     <priority>0.8</priority>
     <changefreq>weekly</changefreq>
   </url>
   <url>
     <loc>https://www.catarsiszone.com/categoria/cocteleria</loc>
-    <lastmod>2025-02-06</lastmod>
+    <lastmod>2026-02-19</lastmod>
     <priority>0.8</priority>
     <changefreq>weekly</changefreq>
   </url>
   <url>
     <loc>https://www.catarsiszone.com/categoria/postres</loc>
-    <lastmod>2025-02-06</lastmod>
-    <priority>0.8</priority>
+    <lastmod>2026-02-19</lastmod>
+    <priority>0.7</priority>
     <changefreq>weekly</changefreq>
+  </url>
+  <!-- Hamburguesas (producto estrella) -->
+  <url>
+    <loc>https://www.catarsiszone.com/producto/clasica-americana</loc>
+    <lastmod>2026-02-19</lastmod>
+    <priority>0.8</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://www.catarsiszone.com/producto/honeyholic-burger</loc>
+    <lastmod>2026-02-19</lastmod>
+    <priority>0.8</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://www.catarsiszone.com/producto/bbq-champions</loc>
+    <lastmod>2026-02-19</lastmod>
+    <priority>0.8</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://www.catarsiszone.com/producto/smash-catarsis</loc>
+    <lastmod>2026-02-19</lastmod>
+    <priority>0.8</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://www.catarsiszone.com/producto/double-cheesy</loc>
+    <lastmod>2026-02-19</lastmod>
+    <priority>0.7</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://www.catarsiszone.com/producto/texmex</loc>
+    <lastmod>2026-02-19</lastmod>
+    <priority>0.7</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://www.catarsiszone.com/producto/chicken-crunch</loc>
+    <lastmod>2026-02-19</lastmod>
+    <priority>0.7</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://www.catarsiszone.com/producto/onion-queen</loc>
+    <lastmod>2026-02-19</lastmod>
+    <priority>0.7</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://www.catarsiszone.com/producto/chicken-spicy</loc>
+    <lastmod>2026-02-19</lastmod>
+    <priority>0.7</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://www.catarsiszone.com/producto/shrimp-crunch</loc>
+    <lastmod>2026-02-19</lastmod>
+    <priority>0.7</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+  <!-- Pizzas -->
+  <url>
+    <loc>https://www.catarsiszone.com/producto/pepperoni</loc>
+    <lastmod>2026-02-19</lastmod>
+    <priority>0.7</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://www.catarsiszone.com/producto/margarita-catarsis</loc>
+    <lastmod>2026-02-19</lastmod>
+    <priority>0.7</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://www.catarsiszone.com/producto/paradise</loc>
+    <lastmod>2026-02-19</lastmod>
+    <priority>0.7</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+  <!-- Emparedados -->
+  <url>
+    <loc>https://www.catarsiszone.com/producto/chicken-crunch-americano</loc>
+    <lastmod>2026-02-19</lastmod>
+    <priority>0.7</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://www.catarsiszone.com/producto/perla-negra</loc>
+    <lastmod>2026-02-19</lastmod>
+    <priority>0.7</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+  <!-- Parrilla -->
+  <url>
+    <loc>https://www.catarsiszone.com/producto/parrilla-mixta</loc>
+    <lastmod>2026-02-19</lastmod>
+    <priority>0.7</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://www.catarsiszone.com/producto/parrilla-mar-y-tierra</loc>
+    <lastmod>2026-02-19</lastmod>
+    <priority>0.7</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+  <!-- Coctelería -->
+  <url>
+    <loc>https://www.catarsiszone.com/producto/catarsis-punch</loc>
+    <lastmod>2026-02-19</lastmod>
+    <priority>0.7</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://www.catarsiszone.com/producto/margarita-on-the-rocks</loc>
+    <lastmod>2026-02-19</lastmod>
+    <priority>0.7</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+  <!-- Entradas populares -->
+  <url>
+    <loc>https://www.catarsiszone.com/producto/alitas-de-pollo-catarsis</loc>
+    <lastmod>2026-02-19</lastmod>
+    <priority>0.6</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://www.catarsiszone.com/producto/tequenos-clasicos</loc>
+    <lastmod>2026-02-19</lastmod>
+    <priority>0.6</priority>
+    <changefreq>monthly</changefreq>
   </url>
   <url>
     <loc>https://www.catarsiszone.com/legal</loc>
-    <lastmod>2025-02-06</lastmod>
+    <lastmod>2026-02-19</lastmod>
     <priority>0.3</priority>
     <changefreq>yearly</changefreq>
   </url>
