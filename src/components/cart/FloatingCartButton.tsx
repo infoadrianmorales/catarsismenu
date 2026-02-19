@@ -34,6 +34,8 @@ export const FloatingCartButton = () => {
           "shadow-lg rounded-xl",
           "animate-fade-in"
         )}
+        data-meta-event="ViewCart"
+        id="floating-cart-btn"
       >
         <div className="flex items-center gap-3">
           <div className="relative">

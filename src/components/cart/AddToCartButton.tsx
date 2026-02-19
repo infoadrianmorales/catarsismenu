@@ -56,6 +56,8 @@ export const AddToCartButton = ({ product, variant = 'default' }: AddToCartButto
           size="icon"
           onClick={handleAdd}
           className="h-8 w-8 bg-primary hover:bg-primary/90 shrink-0"
+          data-meta-event="AddToCart"
+          id={`add-to-cart-${product.id}`}
         >
           <Plus className="h-4 w-4" />
         </Button>
@@ -67,6 +69,8 @@ export const AddToCartButton = ({ product, variant = 'default' }: AddToCartButto
         size={variant === 'compact' ? 'sm' : 'default'}
         onClick={handleAdd}
         className="gap-2 bg-primary hover:bg-primary/90"
+        data-meta-event="AddToCart"
+        id={`add-to-cart-${product.id}`}
       >
         <ShoppingCart className="h-4 w-4" />
         {variant !== 'compact' && <span>Agregar</span>}
