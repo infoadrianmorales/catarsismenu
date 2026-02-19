@@ -1,0 +1,9 @@
+{
+  "redirects": [
+    {
+      "source": "/menu",
+      "destination": "/",
+      "statusCode": 301
+    }
+  ]
+}
