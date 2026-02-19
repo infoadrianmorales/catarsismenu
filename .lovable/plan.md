@@ -1,74 +1,139 @@
 
 
-## Corregir Errores de Indexacion en Google Search Console
+## Optimizacion SEO Profunda - Catarsis como Referencia en Buscadores e IA
 
-### Problemas Identificados
+### Objetivo
 
-Google reporta dos tipos de errores:
-
-#### 1. "Pagina con redireccion"
-La ruta `/menu` tiene un `<Navigate to="/" replace />` en el codigo. Si Google tenia indexada esa URL, ahora detecta una redireccion del lado del cliente (JavaScript). Google prefiere redirecciones del servidor (301), no redirecciones SPA.
-
-#### 2. "Soft 404"
-Cuando un producto o categoria no existe, la app muestra un mensaje como "Producto no encontrado" pero responde con HTTP 200 (exito). Google detecta que el contenido parece una pagina de error pero el codigo de estado dice que todo esta bien. Esto aplica a:
-- `/producto/slug-que-no-existe` - muestra "Producto no encontrado" con status 200
-- `/categoria/slug-invalido` - muestra "No hay productos en esta categoria" con status 200
-- Cualquier ruta inexistente llega a `NotFound` pero tambien con status 200
-
-Ademas, ninguna de estas paginas tiene la meta etiqueta `noindex`, por lo que Google intenta indexarlas.
+Posicionar a Catarsis Drinks & Food como **referencia en hamburguesas en Lecheria**, destacando tambien pizzas, emparedados, almuerzos y vida nocturna (cocteleria). La optimizacion abarca buscadores tradicionales (Google, Bing) y motores de IA (ChatGPT, Gemini, Perplexity).
 
 ---
 
-### Solucion
+### 1. Reescribir Contenido SEO Principal
 
-#### 1. Agregar `noindex` a paginas de error
+**Archivo: `index.html`** - Metadatos estaticos que Google lee antes de ejecutar JavaScript
 
-Modificar las siguientes paginas para incluir `<meta name="robots" content="noindex">` cuando no se encuentra el contenido:
+| Campo | Actual | Nuevo |
+|-------|--------|-------|
+| title | "Catarsis Drinks & Food - Menu Digital \| Restaurante en Lecheria" | "Catarsis Drinks & Food \| Las Mejores Hamburguesas de Lecheria - Pizzas, Emparedados y Cocteleria" |
+| description | Descripcion generica | Descripcion centrada en hamburguesas como protagonista, mencionando pizzas, emparedados, almuerzos y ambiente nocturno |
+| keywords | Lista basica | Keywords long-tail orientados a busquedas reales: "mejores hamburguesas lecheria", "donde comer en lecheria", "restaurante nocturno lecheria", etc. |
 
-**`src/pages/NotFound.tsx`**
-- Agregar react-helmet-async con meta robots noindex
-- Esto le dice a Google: "no indexes esta pagina"
+Nuevos metadatos a agregar:
+- `og:locale` ya existe, agregar `og:site_name`
+- `twitter:card` = `summary_large_image` (ya existe)
+- `twitter:site` con handle de Instagram como referencia
+- Metatag `theme-color` para branding en moviles
 
-**`src/pages/ProductPage.tsx`**
-- Cuando el producto no se encuentra (estado `!product` despues de cargar), agregar meta noindex
-- Esto cubre URLs de productos eliminados o con slugs incorrectos
+**Archivo: `src/components/SEO.tsx`** - Metadatos dinamicos por pagina
 
-**`src/pages/CategoryPage.tsx`**
-- Detectar cuando una categoria no existe en la base de datos (slug invalido)
-- Mostrar pagina de error con meta noindex en lugar de "No hay productos"
+- Actualizar `DEFAULT_DESCRIPTION` con enfoque en hamburguesas
+- Agregar soporte para `og:locale`, `og:site_name`, `twitter:card`
+- Agregar meta `robots` con `index, follow` por defecto
 
-#### 2. Manejar la redireccion `/menu` para Vercel
+**Archivo: `src/pages/Index.tsx`** - SEO de la pagina principal
 
-Como el sitio esta desplegado en Vercel, agregar un archivo `vercel.json` con una redireccion 301 del servidor para `/menu` a `/`. Esto reemplaza la redireccion JavaScript con una redireccion HTTP real que Google entiende correctamente.
-
-**Crear `public/_redirects`** o **`vercel.json`** (segun plataforma):
-
-```text
-/menu  →  /  (301 permanente)
-```
-
-#### 3. Mantener la redireccion SPA como respaldo
-
-Conservar el `<Navigate to="/" replace />` en App.tsx como respaldo para usuarios que lleguen directamente, pero la redireccion del servidor sera la que Google vea primero.
+- Actualizar titulo y descripcion del componente `<SEO>` con keywords estrategicos
 
 ---
 
-### Detalles Tecnicos
+### 2. Enriquecer Schema.org (JSON-LD) para Buscadores e IA
 
-**Archivos a modificar:**
+**Archivo: `src/components/RestaurantSchema.tsx`** - Schema del restaurante
+
+Mejoras:
+- Agregar `"@type": ["Restaurant", "BarOrPub"]` para cubrir la dimension nocturna
+- Agregar `aggregateRating` (si hay resenas en Google)
+- Agregar `sameAs` con links a Instagram, Facebook, TikTok, YouTube (estas URLs ya estan en el Footer)
+- Agregar `"keywords"` no-estandar pero util para IA
+- Enriquecer `servesCuisine` con terminos mas especificos
+- Agregar `"founder"` o `"description"` mas narrativa para motores de IA
+- Incluir **todas** las secciones del menu (faltan Entradas, Emparedados, Ensaladas, Postres)
+
+**Nuevo componente: `src/components/FAQSchema.tsx`**
+
+Crear schema FAQ con preguntas frecuentes reales que los motores de IA utilizan para generar respuestas:
+- "Cual es el mejor restaurante de hamburguesas en Lecheria?"
+- "Donde comer en Lecheria de noche?"
+- "Catarsis tiene delivery?"
+- "Cuales son los precios de Catarsis?"
+- "Que tipo de comida sirven en Catarsis Lecheria?"
+- "Catarsis acepta pago movil?"
+
+Esto posiciona a Catarsis directamente en respuestas de ChatGPT, Gemini, etc.
+
+**Nuevo componente: `src/components/LocalBusinessSchema.tsx`**
+
+Schema adicional con `@type: LocalBusiness` y `FoodEstablishment` para reforzar la presencia local y dar mas senales a Google Maps y buscadores locales.
+
+---
+
+### 3. Agregar Contenido Semantico Visible (SEO On-Page)
+
+**Archivo: `src/pages/Index.tsx`** - Agregar seccion de texto SEO
+
+Agregar un bloque de texto semantico visible antes del Footer con:
+- Encabezado h2 con keywords principales
+- Parrafo descriptivo sobre Catarsis (hamburguesas como protagonista, ambiente nocturno, variedad)
+- Links internos a categorias principales
+- Esto da "contenido real" a Google, no solo imagenes y listas de productos
+
+**Archivo: `src/components/Footer.tsx`** - Enriquecer footer
+
+- Agregar texto descriptivo breve con keywords
+- Agregar `address` semantico con microdata
+- Agregar link a sitemap
+
+---
+
+### 4. Optimizar robots.txt y sitemap.xml
+
+**Archivo: `public/robots.txt`**
+
+Agregar bots de IA para asegurar que indexen el contenido:
+- GPTBot (OpenAI)
+- Google-Extended (Gemini)
+- ClaudeBot (Anthropic)
+- PerplexityBot
+
+**Archivo: `public/sitemap.xml`**
+
+- Actualizar `lastmod` a fecha actual (2026-02-19)
+- Agregar URLs de productos individuales (las paginas `/producto/[slug]` no estan en el sitemap)
+- Esto requiere un sitemap dinamico o al menos incluir los productos mas importantes
+
+---
+
+### 5. Vercel Headers para SEO Tecnico
+
+**Archivo: `vercel.json`**
+
+Agregar headers de seguridad y rendimiento que mejoran el ranking:
+- `X-Content-Type-Options: nosniff`
+- `X-Frame-Options: DENY`
+- `Referrer-Policy: strict-origin-when-cross-origin`
+- Cache headers para assets estaticos
+
+---
+
+### Resumen de Archivos
 
 | Archivo | Cambio |
 |---------|--------|
-| `src/pages/NotFound.tsx` | Agregar Helmet con meta robots noindex |
-| `src/pages/ProductPage.tsx` | Agregar noindex cuando producto no existe |
-| `src/pages/CategoryPage.tsx` | Detectar categoria invalida, mostrar error con noindex |
-| `vercel.json` | Crear con redireccion 301 de /menu a / |
+| `index.html` | Reescribir title, description, keywords; agregar theme-color |
+| `src/components/SEO.tsx` | Mejorar defaults, agregar metas faltantes |
+| `src/pages/Index.tsx` | Actualizar SEO props, agregar seccion de texto semantico |
+| `src/components/RestaurantSchema.tsx` | Enriquecer con sameAs, tipos multiples, menu completo |
+| `src/components/FAQSchema.tsx` | NUEVO - Schema FAQ para IA y Google |
+| `src/components/LocalBusinessSchema.tsx` | NUEVO - Schema LocalBusiness complementario |
+| `src/components/Footer.tsx` | Agregar texto SEO y links |
+| `public/robots.txt` | Agregar bots de IA |
+| `public/sitemap.xml` | Actualizar fechas, agregar productos |
+| `vercel.json` | Agregar headers de seguridad/cache |
 
-**Dependencias:** react-helmet-async ya esta instalada en el proyecto.
+### Resultado Esperado
 
-### Despues de Publicar
+- Google mostrara a Catarsis para busquedas como "mejores hamburguesas Lecheria", "donde comer en Lecheria", "restaurante nocturno Lecheria"
+- ChatGPT, Gemini y Perplexity podran responder preguntas sobre restaurantes en Lecheria mencionando a Catarsis
+- El FAQ Schema puede generar rich snippets (preguntas expandibles) en Google
+- El contenido semantico visible refuerza la relevancia tematica
 
-1. Hacer deploy en Vercel para que `vercel.json` tome efecto
-2. En Google Search Console, ir a las URLs con error
-3. Solicitar re-inspeccion de cada URL afectada
-4. Google deberia dejar de reportar estos errores en los siguientes dias
