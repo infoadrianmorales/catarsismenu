@@ -1,57 +1,68 @@
 
 
-## Integrar el texto SEO dentro del Footer
+## Corregir Meta Pixel — Usar Implementación Estándar de Meta
 
-### El problema
+### Problema
 
-La seccion de texto SEO se ve como un bloque de contenido "suelto" antes del footer que no encaja visualmente con el diseno del menu.
+El Pixel está configurado correctamente en la base de datos (ID: `1428549534945171`, enabled: `true`), pero los eventos no se registran en Meta porque:
 
-### Por que NO moverlo a otra pagina
+1. **Inyección dinámica del script**: El script de Facebook se inyecta desde React después de que la app carga, lo que causa condiciones de carrera donde `fbq` no está listo cuando se llaman los eventos
+2. **Falta el tag `noscript`**: Meta requiere un fallback `<noscript><img>` que actualmente no existe
+3. **Ad blockers**: Los scripts inyectados dinámicamente son más fáciles de bloquear que los incluidos en el HTML estático
 
-Mover el contenido SEO a una pagina separada (ej: `/sobre-nosotros`) **reduce drasticamente su valor SEO**. Google da mucho mas peso al contenido que esta en la pagina principal (`/`). Si se mueve a otra pagina, pierde la asociacion directa con el dominio principal y las busquedas como "restaurante en Lecheria" dejarian de beneficiarse de ese contenido.
+### Solucion
 
-### Solucion: Absorberlo dentro del Footer
-
-La mejor estrategia es **mover el texto SEO dentro del componente Footer**, integrandolo como parte natural del diseno. De esta forma:
-
-- Sigue estando en la pagina principal (Google lo indexa igual)
-- Se percibe como informacion del restaurante, no como un bloque de texto extrano
-- Visualmente queda integrado con el estilo del footer (letra pequena, color gris, fondo oscuro)
+Usar la implementación estándar recomendada por Meta: colocar el snippet base directamente en `index.html` y simplificar el código de React para solo disparar eventos.
 
 ### Cambios
 
-**Archivo: `src/pages/Index.tsx`**
-- Eliminar toda la seccion `{/* SEO Content Section */}` (lineas 127-157)
-- El componente `<Footer />` ya se encargara de mostrar ese contenido
+**Archivo: `index.html`**
+- Agregar el snippet oficial de Meta Pixel en el `<head>`, antes del cierre `</head>`
+- Incluir `fbq('init', '1428549534945171')` y `fbq('track', 'PageView')` 
+- Agregar el tag `<noscript><img>` en el `<body>`
 
-**Archivo: `src/components/Footer.tsx`**
-- Agregar el texto SEO como una seccion dentro del footer, entre el tape divider y la seccion de Brand/Info/Social
-- Usar texto pequeno (`text-xs`) y color sutil (`text-muted-foreground`) para que se integre naturalmente
-- Mantener los links internos a categorias (son valiosos para SEO)
-- Organizarlo en un bloque compacto tipo "Sobre Catarsis" que se sienta como contenido informativo del footer, no como marketing
+**Archivo: `src/lib/metaPixel.ts`**
+- Eliminar toda la lógica de `initMetaPixel` (ya no se necesita crear el stub ni cargar el script)
+- Simplificar `canTrack()` para solo verificar si `window.fbq` existe
+- Eliminar la variable `isInitialized` y `pixelId` (el pixel se inicializa en HTML)
+- Mantener todas las funciones de tracking (`trackAddToCart`, `trackPurchase`, etc.) sin cambios
 
-### Resultado visual esperado
+**Archivo: `src/components/MetaPixelProvider.tsx`**
+- Eliminar la lógica de inicialización (ya no se llama a `initMetaPixel`)
+- Mantener solo el tracking de PageView en cambios de ruta
+- Simplificar el componente significativamente
+
+### Snippet de Meta Pixel (se agrega en index.html)
 
 ```text
-+--------------------------------------------------+
-|  CATARSIS * TU SPOT PARA DESCONECTAR * ...        |  <- tape divider
-+--------------------------------------------------+
-|                                                    |
-|  Catarsis Drinks & Food es un restaurante en       |
-|  Lecheria... hamburguesas, pizzas, emparedados...  |  <- texto SEO integrado
-|  cocteles... CC Costa Mar, Local 7...              |     (letra xs, color gris)
-|                                                    |
-+--------------------------------------------------+
-|  [Logo]     Horario / Direccion    [Redes]         |  <- footer actual
-+--------------------------------------------------+
-|  (c) 2026 Catarsis | Terminos | Sitemap            |
-+--------------------------------------------------+
+<!-- Meta Pixel Code -->
+<script>
+  !function(f,b,e,v,n,t,s)
+  {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+  n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+  if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+  n.queue=[];t=b.createElement(e);t.async=!0;
+  t.src=v;s=b.getElementsByTagName(e)[0];
+  s.parentNode.insertBefore(t,s)}(window, document,'script',
+  'https://connect.facebook.net/en_US/fbevents.js');
+  fbq('init', '1428549534945171');
+  fbq('track', 'PageView');
+</script>
+<noscript><img height="1" width="1" style="display:none"
+  src="https://www.facebook.com/tr?id=1428549534945171&ev=PageView&noscript=1"
+/></noscript>
+<!-- End Meta Pixel Code -->
 ```
 
-### Detalle tecnico
+### Nota sobre configuración dinámica
+
+Al hardcodear el Pixel ID en el HTML, se pierde la capacidad de cambiarlo desde el panel admin. Sin embargo, el ID del Pixel rara vez cambia, y la confiabilidad del tracking es mucho más importante. Si en el futuro se necesita cambiar el ID, solo requiere actualizar una línea en `index.html`.
+
+### Archivos a modificar
 
 | Archivo | Cambio |
 |---------|--------|
-| `src/pages/Index.tsx` | Eliminar seccion SEO (lineas 127-157) |
-| `src/components/Footer.tsx` | Agregar texto SEO integrado con links internos |
+| `index.html` | Agregar snippet oficial de Meta Pixel |
+| `src/lib/metaPixel.ts` | Eliminar inicialización, simplificar canTrack |
+| `src/components/MetaPixelProvider.tsx` | Eliminar init, mantener solo tracking de rutas |
 
