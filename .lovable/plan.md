@@ -1,68 +1,54 @@
 
 
-## Corregir Meta Pixel — Usar Implementación Estándar de Meta
+## Hacer el Meta Pixel configurable desde el panel admin
 
-### Problema
+### Situacion actual
 
-El Pixel está configurado correctamente en la base de datos (ID: `1428549534945171`, enabled: `true`), pero los eventos no se registran en Meta porque:
+El Pixel ID (`1428549534945171`) esta hardcodeado en `index.html`. El panel admin tiene la UI para cambiar el ID y habilitar/deshabilitar, pero esos valores no se usan en ningun lado.
 
-1. **Inyección dinámica del script**: El script de Facebook se inyecta desde React después de que la app carga, lo que causa condiciones de carrera donde `fbq` no está listo cuando se llaman los eventos
-2. **Falta el tag `noscript`**: Meta requiere un fallback `<noscript><img>` que actualmente no existe
-3. **Ad blockers**: Los scripts inyectados dinámicamente son más fáciles de bloquear que los incluidos en el HTML estático
+### Estrategia hibrida
 
-### Solucion
+Mantener la carga del script de Facebook en `index.html` (para que cargue rapido), pero **sin** hacer `fbq('init')` ni `fbq('track', 'PageView')` ahi. La inicializacion se hara desde React una vez que se lea el Pixel ID de la base de datos.
 
-Usar la implementación estándar recomendada por Meta: colocar el snippet base directamente en `index.html` y simplificar el código de React para solo disparar eventos.
+Esto combina lo mejor de ambos enfoques:
+- El script `fbevents.js` se carga temprano desde el HTML estatico (confiable, dificil de bloquear)
+- El Pixel ID se lee de la config, permitiendo cambiarlo desde el admin
+- El toggle de habilitar/deshabilitar funciona correctamente
 
 ### Cambios
 
 **Archivo: `index.html`**
-- Agregar el snippet oficial de Meta Pixel en el `<head>`, antes del cierre `</head>`
-- Incluir `fbq('init', '1428549534945171')` y `fbq('track', 'PageView')` 
-- Agregar el tag `<noscript><img>` en el `<body>`
+- Mantener solo la carga del script `fbevents.js` y la creacion del stub `fbq`
+- Eliminar las lineas `fbq('init', '...')` y `fbq('track', 'PageView')`
+- Actualizar el `noscript` para que no tenga el ID hardcodeado (o eliminarlo, ya que sin init no tiene sentido)
 
 **Archivo: `src/lib/metaPixel.ts`**
-- Eliminar toda la lógica de `initMetaPixel` (ya no se necesita crear el stub ni cargar el script)
-- Simplificar `canTrack()` para solo verificar si `window.fbq` existe
-- Eliminar la variable `isInitialized` y `pixelId` (el pixel se inicializa en HTML)
-- Mantener todas las funciones de tracking (`trackAddToCart`, `trackPurchase`, etc.) sin cambios
+- Agregar una funcion `initMetaPixel(pixelId: string)` que llame a `fbq('init', pixelId)` y `fbq('track', 'PageView')`
+- Agregar una variable interna `isInitialized` para evitar doble inicializacion
+- `canTrack()` ahora verifica `isInitialized` ademas de que `fbq` exista
 
 **Archivo: `src/components/MetaPixelProvider.tsx`**
-- Eliminar la lógica de inicialización (ya no se llama a `initMetaPixel`)
-- Mantener solo el tracking de PageView en cambios de ruta
-- Simplificar el componente significativamente
+- Leer `meta_pixel_id` y `meta_pixel_enabled` desde `useConfig()`
+- Cuando ambos estan disponibles y habilitados, llamar a `initMetaPixel(pixelId)`
+- Si esta deshabilitado, no inicializar (ningun evento se dispara)
+- Mantener el tracking de PageView en cambios de ruta
 
-### Snippet de Meta Pixel (se agrega en index.html)
-
-```text
-<!-- Meta Pixel Code -->
-<script>
-  !function(f,b,e,v,n,t,s)
-  {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-  n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-  if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-  n.queue=[];t=b.createElement(e);t.async=!0;
-  t.src=v;s=b.getElementsByTagName(e)[0];
-  s.parentNode.insertBefore(t,s)}(window, document,'script',
-  'https://connect.facebook.net/en_US/fbevents.js');
-  fbq('init', '1428549534945171');
-  fbq('track', 'PageView');
-</script>
-<noscript><img height="1" width="1" style="display:none"
-  src="https://www.facebook.com/tr?id=1428549534945171&ev=PageView&noscript=1"
-/></noscript>
-<!-- End Meta Pixel Code -->
-```
-
-### Nota sobre configuración dinámica
-
-Al hardcodear el Pixel ID en el HTML, se pierde la capacidad de cambiarlo desde el panel admin. Sin embargo, el ID del Pixel rara vez cambia, y la confiabilidad del tracking es mucho más importante. Si en el futuro se necesita cambiar el ID, solo requiere actualizar una línea en `index.html`.
-
-### Archivos a modificar
+### Detalle tecnico
 
 | Archivo | Cambio |
 |---------|--------|
-| `index.html` | Agregar snippet oficial de Meta Pixel |
-| `src/lib/metaPixel.ts` | Eliminar inicialización, simplificar canTrack |
-| `src/components/MetaPixelProvider.tsx` | Eliminar init, mantener solo tracking de rutas |
+| `index.html` | Mantener carga de fbevents.js, eliminar init y PageView hardcodeados |
+| `src/lib/metaPixel.ts` | Agregar `initMetaPixel(pixelId)` con control de inicializacion |
+| `src/components/MetaPixelProvider.tsx` | Leer config de DB e inicializar pixel dinamicamente |
+
+### Flujo
+
+```text
+1. HTML carga fbevents.js (crea window.fbq como stub)
+2. React monta MetaPixelProvider
+3. MetaPixelProvider lee config de la DB (meta_pixel_id, meta_pixel_enabled)
+4. Si enabled y hay ID valido -> fbq('init', id) + fbq('track', 'PageView')
+5. En cada cambio de ruta -> fbq('track', 'PageView')
+6. Todos los demas eventos (AddToCart, etc.) funcionan normalmente
+```
 
