@@ -10,7 +10,7 @@ interface SearchBarProps {
 
 export const SearchBar = ({ value, onChange, placeholder = '🔍 Buscar por nombre o ingrediente…' }: SearchBarProps) => {
   return (
-    <div className="container px-4 py-8">
+    <div className="container px-4 py-8" role="search">
       <div className="relative max-w-2xl mx-auto">
         {/* Glow effect background */}
         <div className="absolute inset-0 bg-secondary/40 rounded-full blur-xl" />
@@ -18,6 +18,8 @@ export const SearchBar = ({ value, onChange, placeholder = '🔍 Buscar por nomb
         <div className="relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-6 w-6 text-primary" />
           <Input
+            id="search-bar"
+            data-meta-event="Search"
             type="text"
             placeholder={placeholder}
             value={value}
