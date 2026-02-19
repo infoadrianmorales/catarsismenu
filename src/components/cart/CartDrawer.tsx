@@ -59,6 +59,8 @@ export const CartDrawer = ({ variant = 'header' }: CartDrawerProps) => {
 
   const TriggerButton = variant === 'sticky' ? (
     <Button
+      id="cart-drawer-sticky"
+      data-meta-event="ViewCart"
       className={cn(
         "relative gap-2 bg-secondary hover:bg-secondary/90 text-secondary-foreground font-bold",
         isAnimating && "scale-110",
@@ -78,6 +80,8 @@ export const CartDrawer = ({ variant = 'header' }: CartDrawerProps) => {
     </Button>
   ) : (
     <Button
+      id="cart-drawer-header"
+      data-meta-event="ViewCart"
       variant={totalItems > 0 ? "default" : "ghost"}
       size="icon"
       className={cn(
@@ -262,6 +266,8 @@ export const CartDrawer = ({ variant = 'header' }: CartDrawerProps) => {
               {/* Actions */}
               <div className="grid gap-2">
                 <Button 
+                  id="checkout-btn"
+                  data-meta-event="InitiateCheckout"
                   className="w-full gap-2" 
                   size="lg"
                   onClick={handleCheckout}
