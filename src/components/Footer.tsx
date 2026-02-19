@@ -1,4 +1,5 @@
 import { Instagram, MapPin, Facebook, Youtube } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import logoCatarsis from '@/assets/logo-catarsis.png';
 
 export const Footer = () => {
@@ -8,6 +9,30 @@ export const Footer = () => {
       <div className="tape-divider overflow-hidden mb-8">
         <div className="tape-text whitespace-nowrap">
           CATARSIS • TU SPOT PARA DESCONECTAR • CATARSIS • TU SPOT PARA DESCONECTAR • CATARSIS • TU SPOT PARA DESCONECTAR •
+        </div>
+      </div>
+      
+      {/* SEO Content - Integrated */}
+      <div className="container px-4 mb-8">
+        <div className="max-w-3xl mx-auto text-xs text-muted-foreground/70 space-y-2 leading-relaxed">
+          <p>
+            <strong className="text-muted-foreground">Catarsis Drinks & Food</strong> es un restaurante en <strong>Lechería, Anzoátegui</strong>, 
+            reconocido por sus <Link to="/categoria/hamburguesas" className="text-primary/70 hover:text-primary hover:underline">hamburguesas</Link> — desde la Clásica Americana 
+            hasta la Honeyholic Burger, BBQ Champions y la Smash. Cada una preparada con ingredientes frescos y recetas propias.
+          </p>
+          <p>
+            Además de hamburguesas, el menú incluye{' '}
+            <Link to="/categoria/pizzas" className="text-primary/70 hover:text-primary hover:underline">pizzas</Link>,{' '}
+            <Link to="/categoria/emparedados" className="text-primary/70 hover:text-primary hover:underline">emparedados</Link>,{' '}
+            opciones de <Link to="/categoria/parrilla" className="text-primary/70 hover:text-primary hover:underline">parrilla</Link> y{' '}
+            <Link to="/categoria/ensaladas" className="text-primary/70 hover:text-primary hover:underline">ensaladas frescas</Link>.
+          </p>
+          <p>
+            Por las noches, disfruta de una variedad de{' '}
+            <Link to="/categoria/cocteleria" className="text-primary/70 hover:text-primary hover:underline">cócteles</Link> — desde 
+            el Catarsis Punch hasta clásicos como la Margarita. Abrimos de lunes a domingo, con horario extendido hasta la 1:00 AM los fines de semana.
+            Aceptamos pagos en dólares, bolívares, Pago Móvil, Zelle y tarjetas. CC Costa Mar, Local 7, Lechería.
+          </p>
         </div>
       </div>
       

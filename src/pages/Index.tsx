@@ -124,37 +124,6 @@ const Index = () => {
         </div>
       )}
       
-      {/* SEO Content Section */}
-      <section className="container px-4 py-12 max-w-4xl mx-auto">
-        <h2 className="text-2xl font-bold text-foreground mb-4">
-          Hamburguesas, Pizzas y Coctelería en Lechería — Catarsis Drinks & Food
-        </h2>
-        <div className="space-y-3 text-sm text-muted-foreground leading-relaxed">
-          <p>
-            <strong>Catarsis Drinks & Food</strong> es un restaurante en <strong>Lechería, Anzoátegui</strong>, 
-            reconocido por sus <Link to="/categoria/hamburguesas" className="text-primary hover:underline">hamburguesas</Link> — desde la Clásica Americana 
-            hasta la Honeyholic Burger, BBQ Champions y la Smash. Cada una preparada con ingredientes frescos y recetas propias.
-          </p>
-          <p>
-            Además de hamburguesas, el menú incluye{' '}
-            <Link to="/categoria/pizzas" className="text-primary hover:underline">pizzas</Link>,{' '}
-            <Link to="/categoria/emparedados" className="text-primary hover:underline">emparedados</Link>,{' '}
-            opciones de <Link to="/categoria/parrilla" className="text-primary hover:underline">parrilla</Link> con cortes de mar y tierra, y{' '}
-            <Link to="/categoria/ensaladas" className="text-primary hover:underline">ensaladas frescas</Link>.
-            Ideal tanto para un almuerzo rápido como para una cena completa.
-          </p>
-          <p>
-            Por las noches, Catarsis se transforma en un espacio con ambiente de bar donde puedes disfrutar de una variedad de{' '}
-            <Link to="/categoria/cocteleria" className="text-primary hover:underline">cócteles</Link> — desde 
-            el Catarsis Punch hasta clásicos como la Margarita. Abrimos de lunes a domingo, con horario extendido hasta la 1:00 AM los fines de semana.
-          </p>
-          <p>
-            Aceptamos pagos en <strong>dólares, bolívares, Pago Móvil, Zelle y tarjetas</strong>. 
-            Visítanos en el CC Costa Mar, Local 7, Lechería — o haz tu pedido por{' '}
-            <strong>delivery</strong> desde nuestro menú digital.
-          </p>
-        </div>
-      </section>
       
       <Footer />
       
