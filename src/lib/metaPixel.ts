@@ -1,64 +1,21 @@
 /**
  * Meta Pixel (Facebook Pixel) Service
- * Centralized service for tracking Meta Pixel events
+ * The pixel is initialized in index.html with the standard Meta snippet.
+ * This module only provides event tracking functions.
  */
 
 // Extend Window interface for fbq
 declare global {
   interface Window {
     fbq: (...args: unknown[]) => void;
-    _fbq: unknown;
   }
 }
-
-let isInitialized = false;
-let pixelId: string | null = null;
-
-/**
- * Initialize Meta Pixel with the given ID
- */
-export const initMetaPixel = (id: string): void => {
-  if (!id || isInitialized) return;
-  
-  pixelId = id;
-  
-  // Create fbq function if it doesn't exist
-  if (!window.fbq) {
-    const n = (window.fbq = function (...args: unknown[]) {
-      if ((n as unknown as { callMethod?: (...args: unknown[]) => void }).callMethod) {
-        (n as unknown as { callMethod: (...args: unknown[]) => void }).callMethod(...args);
-      } else {
-        (n as unknown as { queue: unknown[] }).queue.push(args);
-      }
-    });
-    
-    if (!window._fbq) window._fbq = n;
-    (n as unknown as { push: typeof n }).push = n;
-    (n as unknown as { loaded: boolean }).loaded = true;
-    (n as unknown as { version: string }).version = '2.0';
-    (n as unknown as { queue: unknown[] }).queue = [];
-  }
-  
-  // Load the Facebook Pixel script
-  const script = document.createElement('script');
-  script.async = true;
-  script.src = 'https://connect.facebook.net/en_US/fbevents.js';
-  
-  const firstScript = document.getElementsByTagName('script')[0];
-  firstScript?.parentNode?.insertBefore(script, firstScript);
-  
-  // Initialize the pixel
-  window.fbq('init', id);
-  
-  isInitialized = true;
-  console.log('[Meta Pixel] Initialized with ID:', id);
-};
 
 /**
  * Check if Pixel is ready to track
  */
 const canTrack = (): boolean => {
-  return isInitialized && !!window.fbq && !!pixelId;
+  return typeof window !== 'undefined' && typeof window.fbq === 'function';
 };
 
 /**
@@ -185,8 +142,3 @@ export const trackCustomEvent = (eventName: string, params?: Record<string, unkn
   
   window.fbq('trackCustom', eventName, params);
 };
-
-/**
- * Check if pixel is initialized
- */
-export const isPixelInitialized = (): boolean => isInitialized;
