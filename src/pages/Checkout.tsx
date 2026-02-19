@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, MessageCircle, Loader2, MapPin, Store, CreditCard, Banknote, Wallet, Building2 } from 'lucide-react';
+import { ArrowLeft, MessageCircle, Loader2, MapPin, Store, CreditCard, Banknote, Wallet, Building2, UserX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -81,16 +81,50 @@ const Checkout = () => {
   
   const [step, setStep] = useState<CheckoutStep>('form');
   const [deliveryType, setDeliveryType] = useState<DeliveryType>('pickup');
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    phone: '',
-    email: '',
-    deliveryAddress: '',
-    deliveryMapsUrl: '',
-    notes: '',
-    paymentMethod: '',
+  const [hasSavedData, setHasSavedData] = useState(false);
+  const [formData, setFormData] = useState(() => {
+    const defaults = {
+      firstName: '',
+      lastName: '',
+      phone: '',
+      email: '',
+      deliveryAddress: '',
+      deliveryMapsUrl: '',
+      notes: '',
+      paymentMethod: '',
+    };
+    try {
+      const saved = localStorage.getItem('checkout_customer_data');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return { ...defaults, ...parsed, notes: '', paymentMethod: '' };
+      }
+    } catch {}
+    return defaults;
   });
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('checkout_customer_data');
+      if (saved) setHasSavedData(true);
+    } catch {}
+  }, []);
+
+  const clearSavedData = () => {
+    localStorage.removeItem('checkout_customer_data');
+    setHasSavedData(false);
+    setFormData({
+      firstName: '',
+      lastName: '',
+      phone: '',
+      email: '',
+      deliveryAddress: '',
+      deliveryMapsUrl: '',
+      notes: '',
+      paymentMethod: '',
+    });
+    toast.success('Datos guardados eliminados');
+  };
   const [paymentCurrency, setPaymentCurrency] = useState<'USD' | 'VES'>(
     displayMode === 'solo_ves' ? 'VES' : 'USD'
   );
@@ -429,6 +463,18 @@ Correo: ${formData.email.toLowerCase()}`;
 
       if (itemsError) throw itemsError;
 
+      // Save customer data for future checkouts
+      try {
+        localStorage.setItem('checkout_customer_data', JSON.stringify({
+          firstName: formData.firstName.trim(),
+          lastName: formData.lastName.trim(),
+          phone: normalizePhone(formData.phone),
+          email: formData.email.toLowerCase().trim(),
+          deliveryAddress: formData.deliveryAddress.trim(),
+          deliveryMapsUrl: formData.deliveryMapsUrl.trim(),
+        }));
+      } catch {}
+
       // Clear cart and delete pending checkout
       clearCart();
       await deletePendingCheckout();
@@ -479,8 +525,18 @@ Correo: ${formData.email.toLowerCase()}`;
         <div className="lg:col-span-2 space-y-6">
           {/* Contact Info */}
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Datos de Contacto</CardTitle>
+              {hasSavedData && (
+                <button
+                  type="button"
+                  onClick={clearSavedData}
+                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <UserX className="h-3 w-3" />
+                  No soy yo
+                </button>
+              )}
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid sm:grid-cols-2 gap-4">
