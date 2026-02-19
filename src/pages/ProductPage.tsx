@@ -10,6 +10,7 @@ import { useProducts } from '@/hooks/useProducts';
 import { useCart } from '@/contexts/CartContext';
 import { toast } from 'sonner';
 import { useMemo, useState, useEffect } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { trackViewContent, trackAddToCart } from '@/lib/metaPixel';
 import { SEO } from '@/components/SEO';
 import { ProductSchema } from '@/components/ProductSchema';
@@ -83,6 +84,10 @@ const ProductPage = () => {
   if (!product) {
     return (
       <div className="min-h-screen bg-background">
+        <Helmet>
+          <meta name="robots" content="noindex, nofollow" />
+          <title>Producto no encontrado | Catarsis Drinks & Food</title>
+        </Helmet>
         <MenuHeader 
           currency={currency} 
           onCurrencyToggle={toggleCurrency}

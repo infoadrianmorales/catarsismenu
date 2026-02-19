@@ -11,6 +11,7 @@ import { useCurrency } from '@/hooks/useCurrency';
 import { useProducts } from '@/hooks/useProducts';
 import { usePublicCategories } from '@/hooks/usePublicCategories';
 import { useState, useMemo } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { SEO } from '@/components/SEO';
 
 const CategoryPage = () => {
@@ -24,6 +25,8 @@ const CategoryPage = () => {
 
   // Get category info from DB
   const categoryInfo = getCategoryBySlug(slug || '');
+  const isBestSeller = slug === 'best-seller';
+  const isValidCategory = isBestSeller || !!categoryInfo;
   
   // Fallback for unknown categories
   const displayTitle = categoryInfo?.nombre || (slug?.charAt(0).toUpperCase() + (slug?.slice(1) || ''));
@@ -45,6 +48,30 @@ const CategoryPage = () => {
 
     return items;
   }, [slug, products, bestSellers, searchQuery]);
+
+  if (!loading && !isValidCategory) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Helmet>
+          <meta name="robots" content="noindex, nofollow" />
+          <title>Categoría no encontrada | Catarsis Drinks & Food</title>
+        </Helmet>
+        <MenuHeader 
+          currency={currency} 
+          onCurrencyToggle={toggleCurrency}
+          displayMode={displayMode}
+        />
+        <div className="container px-4 py-16 text-center">
+          <h1 className="text-2xl font-display font-bold mb-4">Categoría no encontrada</h1>
+          <p className="text-muted-foreground mb-6">La categoría que buscas no existe.</p>
+          <Button variant="outline" asChild>
+            <Link to="/">Volver al menú</Link>
+          </Button>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
