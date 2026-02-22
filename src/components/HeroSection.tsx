@@ -230,53 +230,6 @@ export const HeroSection = ({ mode = 'delivery' }: HeroSectionProps) => {
           </div>
         )}
 
-        {/* Mobile CTA Buttons - Compact icon row */}
-        <div className="flex flex-row items-center justify-center gap-6">
-          {!isLocalMode && (
-            <div className="flex flex-col items-center gap-1">
-              <Button 
-                size="icon" 
-                onClick={handleWhatsAppClick}
-                className="h-12 w-12 rounded-full bg-accent hover:bg-accent/90 text-accent-foreground"
-              >
-                <MessageCircle className="h-5 w-5" />
-              </Button>
-              <span className="text-xs text-muted-foreground">WhatsApp</span>
-            </div>
-          )}
-          <div className="flex flex-col items-center gap-1">
-            <Button 
-              size="icon"
-              variant={isLocalMode ? "default" : "outline"}
-              asChild
-              className={isLocalMode 
-                ? "h-12 w-12 rounded-full bg-secondary hover:bg-secondary/90 text-secondary-foreground"
-                : "h-12 w-12 rounded-full border-border/50 hover:bg-primary hover:text-primary-foreground hover:border-primary"
-              }
-            >
-              <a href={appConfig.instagram_url} target="_blank" rel="noopener noreferrer">
-                <Instagram className="h-5 w-5" />
-              </a>
-            </Button>
-            <span className="text-xs text-muted-foreground">Instagram</span>
-          </div>
-          {!isLocalMode && (
-            <div className="flex flex-col items-center gap-1">
-              <Button 
-                size="icon"
-                variant="ghost" 
-                asChild
-                className="h-12 w-12 rounded-full text-muted-foreground hover:text-foreground"
-              >
-                <a href={appConfig.maps_url} target="_blank" rel="noopener noreferrer">
-                  <MapPin className="h-5 w-5" />
-                </a>
-              </Button>
-              <span className="text-xs text-muted-foreground">Ubicación</span>
-            </div>
-          )}
-        </div>
-
         {/* Mobile Tape Divider */}
         <div className="w-screen -mx-4 mt-1">
           <div className="tape-divider overflow-hidden">
