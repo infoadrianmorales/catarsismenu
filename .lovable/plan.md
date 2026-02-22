@@ -1,77 +1,77 @@
 
 
-## Rediseno de la pagina del Carrito
+## Reemplazar boton flotante de WhatsApp por carrito orientado a compra
 
-### Situacion actual
+### Problema actual
 
-La pagina `/carrito` funciona correctamente pero tiene un diseno basico: cards simples con bordes, un layout de 2 columnas en desktop, y una seccion de resumen estandar. No tiene animaciones ni efectos visuales que refuercen la identidad de marca Catarsis (tema oscuro con colores vibrantes: rojo raspberry, amarillo xanthous, verde teal).
+El boton flotante de WhatsApp en desktop (`FloatingWhatsApp`) y el boton "Pedir" en la barra movil (`StickyActionBar`) desvian al usuario del flujo de compra. El objetivo principal es que los usuarios completen el proceso de compra a traves del carrito, no que escriban por WhatsApp.
 
-### Mejoras propuestas
+### Cambios propuestos
 
-**1. Estado vacio mas atractivo**
-- Ilustracion animada del carrito vacio (icono mas grande con animacion sutil de rebote)
-- Texto motivacional mas llamativo con la tipografia de marca (Phudu)
-- Boton prominente con gradiente de marca para ir al menu
+**1. Desktop: Reemplazar FloatingWhatsApp por FloatingCart**
 
-**2. Tarjetas de producto rediseñadas**
-- Imagen mas grande (de 96px a 80px en movil, 96px en desktop) con bordes redondeados y sombra
-- Efecto hover sutil con elevacion
-- Controles de cantidad mas visibles con estilo pill/rounded (similar al CartDrawer que ya usa bordes redondeados)
-- Precio unitario tachado cuando hay descuento futuro
-- Deslizar para eliminar en movil (swipe gesture) - se reemplaza el boton de basura por gesto tactil
-- Seccion de notas con icono animado y transicion mas suave
+Eliminar el componente `FloatingWhatsApp` y crear un nuevo boton flotante de carrito para desktop que:
+- Se muestre solo cuando hay productos en el carrito (igual que el movil actual)
+- Tenga animacion de "bounce" al agregar un producto nuevo
+- Muestre el numero de items y el subtotal
+- Al hacer clic, abra el CartDrawer (drawer lateral)
+- Posicion: esquina inferior derecha, mismo lugar donde estaba el WhatsApp
+- Estilo: color `secondary` (amarillo de marca) con sombra y efecto hover
 
-**3. Resumen de compra mejorado**
-- Fondo con gradiente sutil usando los colores de marca
-- Indicador de progreso para envio gratis (si aplica en el futuro)
-- Boton de checkout mas grande y prominente con efecto pulsante
-- Badge de "pedido seguro" o icono de confianza
-- En movil: resumen fijo en la parte inferior (sticky bottom bar) para acceso rapido al checkout
+**2. Movil: StickyActionBar orientada a compra**
 
-**4. Barra inferior fija en movil**
-- Mostrar total + boton "Finalizar Compra" siempre visible en la parte inferior en pantallas moviles
-- Evita que el usuario tenga que hacer scroll hasta abajo para ver el resumen
+Modificar la barra inferior movil para priorizar la compra:
+- Mantener el toggle de moneda (USD/VES) a la izquierda
+- Mantener el boton de compartir
+- Reemplazar el boton "Pedir" (WhatsApp) por un boton de "Carrito" que muestre el conteo de items
+- Cuando hay items en el carrito, el boton cambia a mostrar el total y lleva a `/carrito`
+- WhatsApp se mueve a un icono secundario mas pequeno (ghost) para no perder el canal de contacto completamente
 
-**5. Animaciones y transiciones**
-- Animacion de entrada para cada tarjeta de producto (stagger effect)
-- Transicion suave al eliminar un producto (fade out + colapso)
-- Feedback visual al cambiar cantidades (numero que pulsa brevemente)
+**3. FloatingCartButton (movil)**
+
+Mantener el `FloatingCartButton` existente que aparece sobre la `StickyActionBar` cuando hay productos. Ya funciona correctamente.
+
+**4. App.tsx: Limpiar referencia a FloatingWhatsApp**
+
+- Eliminar la importacion y el renderizado de `FloatingWhatsApp` del componente `AppContent`
+- Eliminar la logica de `hideFloatingWhatsApp`
 
 ### Archivos a modificar
 
-**`src/pages/Cart.tsx`** (cambio principal)
-- Redisenar estado vacio con animacion e ilustracion mejorada
-- Redisenar tarjetas de producto con mejor jerarquia visual
-- Agregar barra inferior fija en movil con total + boton checkout
-- Controles de cantidad rediseñados (estilo pill como en CartDrawer)
-- Animaciones de entrada escalonadas para las tarjetas
-- Resumen lateral con gradiente y mejor tipografia
-
-**`src/index.css`** (agregar animaciones)
-- Keyframes para animacion de entrada escalonada (stagger)
-- Keyframe para efecto de pulso en numeros de cantidad
-- Keyframe para animacion del carrito vacio
+| Archivo | Cambio |
+|---------|--------|
+| `src/components/FloatingWhatsApp.tsx` | Reescribir como `FloatingCart` para desktop: boton flotante de carrito con badge, animacion bounce al agregar items, abre CartDrawer |
+| `src/components/StickyActionBar.tsx` | Reemplazar boton WhatsApp "Pedir" por boton de carrito con badge de items. Mover WhatsApp a icono ghost secundario |
+| `src/App.tsx` | Reemplazar `FloatingWhatsApp` por el nuevo `FloatingCart`, sin logica de ocultar en admin/auth |
+| `src/pages/Index.tsx` | Sin cambios necesarios (FloatingCartButton movil ya esta incluido) |
 
 ### Detalle tecnico
 
-**Barra inferior fija en movil:**
-- `fixed bottom-0 left-0 right-0` con padding seguro para dispositivos con notch
-- Muestra subtotal y boton de checkout
-- Solo visible en pantallas `md:hidden`
-- Se agrega `pb-24` al contenido principal en movil para evitar que la barra tape los productos
+**FloatingCart (desktop) - reemplaza FloatingWhatsApp:**
+- Solo visible en `hidden md:flex` (desktop)
+- Solo se renderiza si `totalItems > 0`
+- Animacion de entrada `animate-in fade-in scale-in` cuando aparece
+- Animacion de "bounce" (`animate-bounce`) brevemente al cambiar `totalItems`
+- Usa `CartDrawer` internamente como Sheet trigger
+- Muestra badge con numero de items y subtotal formateado
 
-**Animaciones escalonadas:**
-- Cada tarjeta de producto tiene un delay incremental (0ms, 50ms, 100ms...)
-- Usa `animate-in fade-in slide-in-from-bottom-4` de tailwindcss-animate
-- Se aplica con `style={{ animationDelay }}` en cada item
+**StickyActionBar (movil) - cambios:**
+- Boton principal cambia de WhatsApp a carrito
+- Cuando `totalItems > 0`: muestra "Carrito (N)" con badge y navega a `/carrito`
+- Cuando `totalItems === 0`: muestra "Ver menu" o el boton de compartir toma mas espacio
+- WhatsApp se convierte en un icono ghost pequeno al lado del share, para mantener el canal de contacto sin protagonismo
 
-**Controles de cantidad:**
-- Se reemplazan los controles actuales (AddToCartButton compact) por controles inline tipo pill
-- Estilo consistente con el CartDrawer: `rounded-full border border-border bg-background`
-- Botones de +/- de 32x32px con area tactil adecuada
-
-**Resumen mejorado:**
-- Background con gradiente sutil: `bg-gradient-to-br from-card to-muted/30`
-- Borde con glow sutil usando `shadow-[0_0_20px_hsl(var(--primary)/0.1)]`
-- Boton checkout con `bg-secondary` y efecto hover con scale
-
+**Flujo resultante:**
+```text
+Usuario en el menu
+    |
+    v
+Agrega producto al carrito
+    |
+    +--> Desktop: aparece boton flotante de carrito (esquina inferior derecha)
+    |      Click -> abre CartDrawer -> Finalizar Compra -> /checkout
+    |
+    +--> Movil: aparece FloatingCartButton + StickyActionBar muestra "Carrito"
+           Click FloatingCartButton -> /carrito -> Finalizar Compra -> /checkout
+           Click "Carrito" en StickyActionBar -> /carrito
+```
