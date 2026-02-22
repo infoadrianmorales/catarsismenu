@@ -1,77 +1,47 @@
 
 
-## Reemplazar boton flotante de WhatsApp por carrito orientado a compra
+## Mejorar el boton del carrito en el header
 
-### Problema actual
+### Situacion actual
 
-El boton flotante de WhatsApp en desktop (`FloatingWhatsApp`) y el boton "Pedir" en la barra movil (`StickyActionBar`) desvian al usuario del flujo de compra. El objetivo principal es que los usuarios completen el proceso de compra a traves del carrito, no que escriban por WhatsApp.
+El boton del carrito en el header (`MenuHeader.tsx`) usa el componente `CartDrawer` con variante `header`, que se renderiza como un boton cuadrado tipo icono (`size="icon"`) con solo el icono del carrito y un badge con el numero de items. No muestra el costo total ni tiene un tamano adecuado para un evento de pixel efectivo.
 
 ### Cambios propuestos
 
-**1. Desktop: Reemplazar FloatingWhatsApp por FloatingCart**
+**Modificar la variante `header` del `CartDrawer`** para que cuando haya items en el carrito:
 
-Eliminar el componente `FloatingWhatsApp` y crear un nuevo boton flotante de carrito para desktop que:
-- Se muestre solo cuando hay productos en el carrito (igual que el movil actual)
-- Tenga animacion de "bounce" al agregar un producto nuevo
-- Muestre el numero de items y el subtotal
-- Al hacer clic, abra el CartDrawer (drawer lateral)
-- Posicion: esquina inferior derecha, mismo lugar donde estaba el WhatsApp
-- Estilo: color `secondary` (amarillo de marca) con sombra y efecto hover
+1. **Tamano mas grande**: Cambiar de `size="icon"` a un boton rectangular con padding que muestre icono + cantidad + precio
+2. **Mostrar el subtotal**: Incluir el precio formateado junto al badge de cantidad (ej: "3 | $15.50")
+3. **Animacion al agregar productos**: Mantener el efecto de escala actual pero agregar una transicion suave cuando el boton crece de icono a boton con texto
+4. **Navegacion directa**: Al hacer clic, navegar a `/carrito` en lugar de abrir el drawer (el drawer se mantiene para la variante `floating` en desktop)
+5. **Atributos de pixel**: Mantener `data-meta-event="ViewCart"` e `id="cart-btn-header"` para el rastreo de Meta Pixel
 
-**2. Movil: StickyActionBar orientada a compra**
+### Comportamiento esperado
 
-Modificar la barra inferior movil para priorizar la compra:
-- Mantener el toggle de moneda (USD/VES) a la izquierda
-- Mantener el boton de compartir
-- Reemplazar el boton "Pedir" (WhatsApp) por un boton de "Carrito" que muestre el conteo de items
-- Cuando hay items en el carrito, el boton cambia a mostrar el total y lleva a `/carrito`
-- WhatsApp se mueve a un icono secundario mas pequeno (ghost) para no perder el canal de contacto completamente
-
-**3. FloatingCartButton (movil)**
-
-Mantener el `FloatingCartButton` existente que aparece sobre la `StickyActionBar` cuando hay productos. Ya funciona correctamente.
-
-**4. App.tsx: Limpiar referencia a FloatingWhatsApp**
-
-- Eliminar la importacion y el renderizado de `FloatingWhatsApp` del componente `AppContent`
-- Eliminar la logica de `hideFloatingWhatsApp`
+- **Sin items**: Boton tipo icono ghost (igual que ahora)
+- **Con items**: Boton rectangular con fondo `secondary`, que muestra: icono carrito + badge de cantidad + subtotal formateado. Al hacer clic navega a `/carrito`
 
 ### Archivos a modificar
 
 | Archivo | Cambio |
 |---------|--------|
-| `src/components/FloatingWhatsApp.tsx` | Reescribir como `FloatingCart` para desktop: boton flotante de carrito con badge, animacion bounce al agregar items, abre CartDrawer |
-| `src/components/StickyActionBar.tsx` | Reemplazar boton WhatsApp "Pedir" por boton de carrito con badge de items. Mover WhatsApp a icono ghost secundario |
-| `src/App.tsx` | Reemplazar `FloatingWhatsApp` por el nuevo `FloatingCart`, sin logica de ocultar en admin/auth |
-| `src/pages/Index.tsx` | Sin cambios necesarios (FloatingCartButton movil ya esta incluido) |
+| `src/components/cart/CartDrawer.tsx` | Modificar el `TriggerButton` de la variante `header`: cuando `totalItems > 0`, renderizar un boton mas grande con subtotal visible, y cambiar la accion de abrir drawer a navegar a `/carrito` |
+| `src/components/MenuHeader.tsx` | Ajuste menor si es necesario para acomodar el boton mas ancho |
 
 ### Detalle tecnico
 
-**FloatingCart (desktop) - reemplaza FloatingWhatsApp:**
-- Solo visible en `hidden md:flex` (desktop)
-- Solo se renderiza si `totalItems > 0`
-- Animacion de entrada `animate-in fade-in scale-in` cuando aparece
-- Animacion de "bounce" (`animate-bounce`) brevemente al cambiar `totalItems`
-- Usa `CartDrawer` internamente como Sheet trigger
-- Muestra badge con numero de items y subtotal formateado
+**CartDrawer - variante header con items:**
+- Cambiar de `size="icon"` a un boton con `gap-2 px-3 h-10 rounded-full`
+- Mostrar: `ShoppingCart` icon + Badge con cantidad + subtotal formateado (usando `formatPrice`)
+- Mantener `bg-secondary hover:bg-secondary/90 text-secondary-foreground`
+- Animacion: `transition-all duration-300` para la transicion suave de tamano
+- Cuando `totalItems > 0`, el boton del Sheet no abre el drawer sino que navega a `/carrito` usando `onClick` con `e.preventDefault()` en el `SheetTrigger` y redirigiendo con `navigate`
 
-**StickyActionBar (movil) - cambios:**
-- Boton principal cambia de WhatsApp a carrito
-- Cuando `totalItems > 0`: muestra "Carrito (N)" con badge y navega a `/carrito`
-- Cuando `totalItems === 0`: muestra "Ver menu" o el boton de compartir toma mas espacio
-- WhatsApp se convierte en un icono ghost pequeno al lado del share, para mantener el canal de contacto sin protagonismo
+**CartDrawer - variante header sin items:**
+- Se mantiene igual: boton ghost con icono solamente
 
 **Flujo resultante:**
-```text
-Usuario en el menu
-    |
-    v
-Agrega producto al carrito
-    |
-    +--> Desktop: aparece boton flotante de carrito (esquina inferior derecha)
-    |      Click -> abre CartDrawer -> Finalizar Compra -> /checkout
-    |
-    +--> Movil: aparece FloatingCartButton + StickyActionBar muestra "Carrito"
-           Click FloatingCartButton -> /carrito -> Finalizar Compra -> /checkout
-           Click "Carrito" en StickyActionBar -> /carrito
-```
+- Usuario agrega producto -> boton header crece suavemente mostrando cantidad y total
+- Usuario hace clic en el boton -> navega a `/carrito`
+- En `/carrito` puede finalizar la compra
+
