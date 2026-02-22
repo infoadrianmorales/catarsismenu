@@ -1,35 +1,46 @@
 
 
-## Compactar botones CTA en una sola linea (movil)
+## Mover botones CTA al header en movil
 
 ### Cambio propuesto
 
-Reemplazar los 3 botones apilados verticalmente (WhatsApp, Instagram, Ubicacion) por una fila horizontal de 3 botones tipo icono circular, mas compactos y visualmente limpios.
+Mover los 3 iconos circulares (WhatsApp, Instagram, Ubicacion) del HeroSection al MenuHeader, colocandolos como iconos pequenos al lado del boton del carrito. Esto libera espacio en el hero y mantiene los accesos directos siempre visibles en la barra superior.
 
-### Resultado visual en movil
+### Resultado visual del header en movil
 
 ```text
-+---------------------------+
-|    IMAGEN DEL BANNER      |
-+===========================+
-|      < * * * * >          |
-|                           |
-|   (wa)    (ig)    (map)   |  <- 3 iconos circulares en fila
-+---------------------------+
-| TAPE DIVIDER              |
-+---------------------------+
+[Logo]                    [wa] [ig] [map] [carrito]
 ```
 
-Cada boton sera un circulo con el icono correspondiente (sin texto), con un tooltip o label debajo opcional. Los colores se mantienen: verde WhatsApp, estilo outline para Instagram, y ghost para ubicacion.
+- Los iconos seran botones `ghost` de tamano `icon` (h-8 w-8) sin etiquetas de texto
+- Solo visibles en movil (`md:hidden`), ya que en desktop los CTA se mantienen en el hero
+- El boton de WhatsApp conserva el color accent
+- Instagram y Ubicacion usan variante ghost
+
+### Archivos a modificar
+
+**1. `src/components/MenuHeader.tsx`**
+- Importar `MessageCircle`, `Instagram`, `MapPin` de lucide-react
+- Importar `appConfig` de `@/data/config`
+- Importar `trackContact` de `@/lib/metaPixel`
+- Agregar 3 botones icono pequenos (`h-8 w-8`) antes del CartDrawer, envueltos en un `div` con `flex md:hidden items-center gap-1`
+- Cada boton abre su respectivo enlace (WhatsApp, Instagram, Maps)
+
+**2. `src/components/HeroSection.tsx`**
+- Eliminar el bloque completo de "Mobile CTA Buttons" (lineas 233-278) del Mobile Controls Zone
+- La zona movil solo conservara la navegacion del slider (flechas + dots) y el tape divider
 
 ### Detalle tecnico
 
-**Archivo:** `src/components/HeroSection.tsx`
+En `MenuHeader.tsx`, los botones se insertaran entre el currency toggle y el CartDrawer:
 
-- Lineas 233-272: Reemplazar el bloque de "Mobile CTA Buttons" (`flex flex-col w-full gap-2`) por un `flex flex-row items-center justify-center gap-4`
-- Cada boton cambia de `size="lg"` con texto completo a `size="icon"` (circulares, 44x44px aprox.) con `rounded-full`
-- Se elimina el texto de los botones en movil, dejando solo los iconos (`MessageCircle`, `Instagram`, `MapPin`)
-- Debajo de cada icono se agrega un `<span>` pequeno con el nombre (ej: "WhatsApp", "Instagram", "Ubicacion") en `text-xs text-muted-foreground`
-- Los botones de desktop (lineas 140-184) no se modifican
-- El contenedor pasa de `flex-col` a `flex-row` con `gap-6` para separar bien los iconos
+```text
+<div className="flex items-center gap-1 md:hidden">
+  <Button size="icon" variant="ghost" className="h-8 w-8" ...> <MessageCircle /> </Button>
+  <Button size="icon" variant="ghost" className="h-8 w-8" ...> <Instagram /> </Button>
+  <Button size="icon" variant="ghost" className="h-8 w-8" ...> <MapPin /> </Button>
+</div>
+```
+
+Los botones solo se muestran cuando NO estamos en modo local (`!isLocalMode`), excepto Instagram que siempre se muestra. Se conservan los eventos de analytics y Meta Pixel existentes.
 
