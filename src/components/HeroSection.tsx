@@ -208,9 +208,9 @@ export const HeroSection = ({ mode = 'delivery' }: HeroSectionProps) => {
           </div>
         </div>
 
-        {/* Mobile Navigation Arrows + CTA Icons - overlaid on bottom of image */}
-        <div className="flex md:hidden absolute bottom-4 left-4 right-4 z-20 justify-between items-center">
-          {showCarousel ? (
+      {/* Mobile Navigation Arrows + Dots - overlaid on bottom of image */}
+        {showCarousel && (
+          <div className="flex md:hidden absolute bottom-4 left-4 right-4 z-20 justify-between items-center">
             <button
               onClick={() => { goToPrev(); setIsAutoPlaying(false); }}
               className="p-2 rounded-full bg-black/30 hover:bg-black/50 text-white transition-colors"
@@ -218,42 +218,23 @@ export const HeroSection = ({ mode = 'delivery' }: HeroSectionProps) => {
             >
               <ChevronLeft className="h-5 w-5" />
             </button>
-          ) : <div className="w-9" />}
 
-          {/* CTA Icons */}
-          <div className="flex items-center gap-3">
-            {!isLocalMode && (
-              <button
-                onClick={handleWhatsAppClick}
-                className="p-2 rounded-full bg-black/30 hover:bg-black/50 text-green-400 transition-colors"
-                aria-label="WhatsApp"
-              >
-                <MessageCircle className="h-5 w-5" />
-              </button>
-            )}
-            <a
-              href={appConfig.instagram_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-2 rounded-full bg-black/30 hover:bg-black/50 text-white transition-colors"
-              aria-label="Instagram"
-            >
-              <Instagram className="h-5 w-5" />
-            </a>
-            {!isLocalMode && (
-              <a
-                href={appConfig.maps_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-2 rounded-full bg-black/30 hover:bg-black/50 text-white transition-colors"
-                aria-label="Ubicación"
-              >
-                <MapPin className="h-5 w-5" />
-              </a>
-            )}
-          </div>
+            {/* Dot indicators */}
+            <div className="flex items-center gap-2">
+              {slides.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => goToSlide(index)}
+                  className={`h-2 rounded-full transition-all duration-300 ${
+                    index === currentIndex
+                      ? 'bg-white w-5'
+                      : 'bg-white/40 hover:bg-white/60 w-2'
+                  }`}
+                  aria-label={`Ir al slide ${index + 1}`}
+                />
+              ))}
+            </div>
 
-          {showCarousel ? (
             <button
               onClick={() => { goToNext(); setIsAutoPlaying(false); }}
               className="p-2 rounded-full bg-black/30 hover:bg-black/50 text-white transition-colors"
@@ -261,8 +242,8 @@ export const HeroSection = ({ mode = 'delivery' }: HeroSectionProps) => {
             >
               <ChevronRight className="h-5 w-5" />
             </button>
-          ) : <div className="w-9" />}
-        </div>
+          </div>
+        )}
 
         {/* Desktop Tape Divider */}
         <div className="hidden md:block absolute bottom-0 left-0 right-0">
@@ -275,27 +256,9 @@ export const HeroSection = ({ mode = 'delivery' }: HeroSectionProps) => {
       </div>
 
       {/* Mobile Controls Zone - solid background, below image */}
-      <div className="md:hidden bg-background px-4 py-4 flex flex-col items-center gap-3">
-        {/* Mobile Dot indicators */}
-        {showCarousel && (
-          <div className="flex justify-center gap-2">
-            {slides.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => goToSlide(index)}
-                className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                  index === currentIndex 
-                    ? 'bg-primary w-5' 
-                    : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
-                }`}
-                aria-label={`Ir al slide ${index + 1}`}
-              />
-            ))}
-          </div>
-        )}
-
+      <div className="md:hidden bg-background">
         {/* Mobile Tape Divider */}
-        <div className="w-screen -mx-4 mt-1">
+        <div className="w-full">
           <div className="tape-divider overflow-hidden">
             <div className="tape-text whitespace-nowrap">
               CATARSIS • SABORES QUE LIBERAN, MOMENTOS QUE CONECTAN • CATARSIS • SABORES QUE LIBERAN, MOMENTOS QUE CONECTAN • CATARSIS • SABORES QUE LIBERAN, MOMENTOS QUE CONECTAN •
