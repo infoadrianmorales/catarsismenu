@@ -76,6 +76,9 @@ const TAB_CONFIG: Record<OrderTab, { label: string; icon: React.ReactNode }> = {
   all: { label: 'Todas', icon: <ShoppingBag className="h-4 w-4" /> },
 };
 
+const formatBs = (n: number): string =>
+  new Intl.NumberFormat('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+
 const classifyOrder = (order: Order): OrderTab => {
   if (order.status === 'CANCELED') return 'canceled';
   if (order.status === 'PAID' || order.status === 'DELIVERED') return 'paid';
@@ -271,7 +274,7 @@ export const OrdersPanel = () => {
   const formatTotal = (order: Order) => {
     const usd = `$${Number(order.total).toFixed(2)}`;
     if (order.payment_currency === 'VES' && order.exchange_rate) {
-      const bs = (Number(order.total) * Number(order.exchange_rate)).toFixed(2);
+      const bs = formatBs(Number(order.total) * Number(order.exchange_rate));
       return (
         <div className="text-right">
           <p className="font-semibold">{usd}</p>
@@ -388,7 +391,7 @@ export const OrdersPanel = () => {
               <DollarSign className="h-5 w-5 text-yellow-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold">Bs {kpis.revenueBs.toFixed(0)}</p>
+              <p className="text-2xl font-bold">Bs {formatBs(kpis.revenueBs)}</p>
               <p className="text-xs text-muted-foreground">Ingresos Bs</p>
             </div>
           </CardContent>
