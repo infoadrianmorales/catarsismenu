@@ -554,9 +554,11 @@ Correo: ${formData.email.toLowerCase()}`;
                     onChange={(e) => handleInputChange('firstName', e.target.value)}
                     placeholder="Tu nombre"
                     className={errors.firstName ? 'border-destructive' : ''}
+                    aria-invalid={!!errors.firstName}
+                    aria-describedby={errors.firstName ? 'firstName-error' : undefined}
                   />
                   {errors.firstName && (
-                    <p className="text-xs text-destructive">{errors.firstName}</p>
+                    <p id="firstName-error" role="alert" className="text-xs text-destructive">{errors.firstName}</p>
                   )}
                 </div>
                 <div className="space-y-2">
@@ -567,9 +569,11 @@ Correo: ${formData.email.toLowerCase()}`;
                     onChange={(e) => handleInputChange('lastName', e.target.value)}
                     placeholder="Tu apellido"
                     className={errors.lastName ? 'border-destructive' : ''}
+                    aria-invalid={!!errors.lastName}
+                    aria-describedby={errors.lastName ? 'lastName-error' : undefined}
                   />
                   {errors.lastName && (
-                    <p className="text-xs text-destructive">{errors.lastName}</p>
+                    <p id="lastName-error" role="alert" className="text-xs text-destructive">{errors.lastName}</p>
                   )}
                 </div>
               </div>
@@ -583,9 +587,11 @@ Correo: ${formData.email.toLowerCase()}`;
                   onChange={(e) => handleInputChange('phone', e.target.value)}
                   placeholder="+58 424 123 4567"
                   className={errors.phone ? 'border-destructive' : ''}
+                  aria-invalid={!!errors.phone}
+                  aria-describedby={errors.phone ? 'phone-error' : undefined}
                 />
                 {errors.phone && (
-                  <p className="text-xs text-destructive">{errors.phone}</p>
+                  <p id="phone-error" role="alert" className="text-xs text-destructive">{errors.phone}</p>
                 )}
               </div>
               
@@ -598,9 +604,11 @@ Correo: ${formData.email.toLowerCase()}`;
                   onChange={(e) => handleInputChange('email', e.target.value)}
                   placeholder="tu@correo.com"
                   className={errors.email ? 'border-destructive' : ''}
+                  aria-invalid={!!errors.email}
+                  aria-describedby={errors.email ? 'email-error' : undefined}
                 />
                 {errors.email && (
-                  <p className="text-xs text-destructive">{errors.email}</p>
+                  <p id="email-error" role="alert" className="text-xs text-destructive">{errors.email}</p>
                 )}
               </div>
 
@@ -664,9 +672,11 @@ Correo: ${formData.email.toLowerCase()}`;
                         onChange={(e) => handleInputChange('deliveryAddress', e.target.value)}
                         placeholder="Av. Principal, Edificio XYZ, Piso 3, Apto 5"
                         className={errors.deliveryAddress ? 'border-destructive' : ''}
+                        aria-invalid={!!errors.deliveryAddress}
+                        aria-describedby={errors.deliveryAddress ? 'deliveryAddress-error' : undefined}
                       />
                       {errors.deliveryAddress && (
-                        <p className="text-xs text-destructive">{errors.deliveryAddress}</p>
+                        <p id="deliveryAddress-error" role="alert" className="text-xs text-destructive">{errors.deliveryAddress}</p>
                       )}
                     </div>
                     
@@ -681,12 +691,14 @@ Correo: ${formData.email.toLowerCase()}`;
                         onChange={(e) => handleInputChange('deliveryMapsUrl', e.target.value)}
                         placeholder="Pega aquí el enlace de Google Maps…"
                         className={errors.deliveryMapsUrl ? 'border-destructive' : ''}
+                        aria-invalid={!!errors.deliveryMapsUrl}
+                        aria-describedby={errors.deliveryMapsUrl ? 'deliveryMapsUrl-error' : undefined}
                       />
                       <p className="text-xs text-muted-foreground">
                         Recomendado para mayor precisión en la ubicación.
                       </p>
                       {errors.deliveryMapsUrl && (
-                        <p className="text-xs text-destructive">{errors.deliveryMapsUrl}</p>
+                        <p id="deliveryMapsUrl-error" role="alert" className="text-xs text-destructive">{errors.deliveryMapsUrl}</p>
                       )}
                     </div>
                   </div>
@@ -788,7 +800,7 @@ Correo: ${formData.email.toLowerCase()}`;
                   })}
                 </RadioGroup>
                 {errors.paymentMethod && (
-                  <p className="text-xs text-destructive">{errors.paymentMethod}</p>
+                  <p id="paymentMethod-error" role="alert" className="text-xs text-destructive">{errors.paymentMethod}</p>
                 )}
               </div>
 

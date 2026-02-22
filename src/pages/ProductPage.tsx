@@ -1,5 +1,6 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Minus, Plus, ShoppingCart, AlertCircle } from 'lucide-react';
+import { OptimizedImage } from '@/components/OptimizedImage';
 import { MenuHeader } from '@/components/MenuHeader';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -9,7 +10,7 @@ import { useCurrency } from '@/hooks/useCurrency';
 import { useProducts } from '@/hooks/useProducts';
 import { useCart } from '@/contexts/CartContext';
 import { toast } from 'sonner';
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { trackViewContent, trackAddToCart } from '@/lib/metaPixel';
 import { SEO } from '@/components/SEO';
@@ -22,7 +23,6 @@ const ProductPage = () => {
   const { currency, toggleCurrency, displayMode, getPrices } = useCurrency();
   const { products, loading } = useProducts();
   const { addToCart, getItemQuantity, updateQuantity, isProductOrderable } = useCart();
-  const [imageLoaded, setImageLoaded] = useState(false);
 
   const product = useMemo(() => {
     return products.find(p => p.slug === slug);
@@ -175,15 +175,13 @@ const ProductPage = () => {
           {/* Image */}
           <div className="relative">
             <div className="relative aspect-square overflow-hidden rounded-xl bg-white border border-foreground/10 shadow-lg">
-              {!imageLoaded && (
-                <Skeleton className="absolute inset-0" />
-              )}
-              <img 
+              <OptimizedImage 
                 src={product.imagen} 
                 alt={`Foto de ${product.nombre}`}
-                loading="lazy"
-                onLoad={() => setImageLoaded(true)}
-                className={`h-full w-full object-cover p-4 transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+                className="h-full w-full object-cover p-4"
+                containerClassName="h-full w-full"
+                variant="full"
+                loading="eager"
               />
             </div>
             

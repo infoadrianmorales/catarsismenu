@@ -64,6 +64,20 @@ export const HeroSection = ({ mode = 'delivery' }: HeroSectionProps) => {
     }));
   };
 
+  if (loading) {
+    return (
+      <section className="relative min-h-[60vh] md:min-h-[70vh] flex items-end justify-center overflow-hidden bg-background">
+        <div className="absolute inset-0 animate-pulse bg-muted/30" />
+        <div className="relative z-10 container px-4 pb-16 pt-8 text-center">
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <div className="h-11 w-48 rounded-md bg-muted/40 animate-pulse" />
+            <div className="h-11 w-40 rounded-md bg-muted/40 animate-pulse" />
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="relative min-h-[60vh] md:min-h-[70vh] flex items-end justify-center overflow-hidden">
       {/* Background Images Carousel */}
