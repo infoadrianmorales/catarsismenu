@@ -7,9 +7,7 @@ import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Save, DollarSign, MessageCircle, Instagram, MapPin, RefreshCw, CheckCircle2, Eye, Facebook, ExternalLink } from 'lucide-react';
-import { Switch } from '@/components/ui/switch';
-import { Badge } from '@/components/ui/badge';
+import { Loader2, Save, DollarSign, MessageCircle, Instagram, MapPin, RefreshCw, CheckCircle2, Eye } from 'lucide-react';
 
 type PriceDisplayMode = 'solo_usd' | 'solo_ves' | 'ambas';
 type RateSource = 'bcv' | 'manual';
@@ -29,9 +27,7 @@ export const ConfigPanel = () => {
     instagram_url: '',
     tiktok_url: '',
     maps_url: '',
-    meta_pixel_id: '',
   });
-  const [metaPixelEnabled, setMetaPixelEnabled] = useState(false);
 
   // Sync form values with config on load
   useEffect(() => {
@@ -43,9 +39,7 @@ export const ConfigPanel = () => {
         instagram_url: config.instagram_url,
         tiktok_url: config.tiktok_url,
         maps_url: config.maps_url,
-        meta_pixel_id: config.meta_pixel_id || '',
       });
-      setMetaPixelEnabled(config.meta_pixel_enabled || false);
     }
   }, [loading, config]);
 
@@ -249,7 +243,7 @@ export const ConfigPanel = () => {
               </Button>
             </div>
             <p className="text-xs text-muted-foreground mt-2">
-              Se actualiza automáticamente a las 8:00 AM y 5:00 PM
+              Se actualiza automáticamente a las 5:00 AM y 5:00 PM (hora Venezuela)
             </p>
           </div>
 
@@ -507,107 +501,6 @@ export const ConfigPanel = () => {
         </CardContent>
       </Card>
 
-      {/* Meta Pixel */}
-      <Card className="bg-card border-border">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Facebook className="h-5 w-5 text-blue-500" />
-            Meta Pixel (Facebook)
-          </CardTitle>
-          <CardDescription>
-            Configura el seguimiento de conversiones para Meta Ads
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Enable/Disable Toggle */}
-          <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/30">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="font-medium">Tracking Activo</span>
-                {metaPixelEnabled && formValues.meta_pixel_id && (
-                  <Badge variant="default" className="bg-green-500/20 text-green-500 hover:bg-green-500/30">
-                    Activo
-                  </Badge>
-                )}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Habilita o deshabilita el seguimiento de eventos
-              </p>
-            </div>
-            <Switch
-              checked={metaPixelEnabled}
-              onCheckedChange={async (checked) => {
-                setMetaPixelEnabled(checked);
-                await handleSave('meta_pixel_enabled', checked ? 'true' : 'false');
-              }}
-              disabled={!formValues.meta_pixel_id}
-            />
-          </div>
-
-          {/* Pixel ID Input */}
-          <div className="space-y-2">
-            <Label htmlFor="meta_pixel_id">Pixel ID</Label>
-            <div className="flex gap-2">
-              <Input
-                id="meta_pixel_id"
-                type="text"
-                value={formValues.meta_pixel_id}
-                onChange={(e) => {
-                  // Only allow numbers
-                  const value = e.target.value.replace(/\D/g, '');
-                  setFormValues(prev => ({ ...prev, meta_pixel_id: value }));
-                }}
-                className="bg-input border-border font-mono"
-                placeholder="123456789012345"
-                maxLength={16}
-              />
-              <Button
-                onClick={() => handleSave('meta_pixel_id', formValues.meta_pixel_id)}
-                disabled={saving === 'meta_pixel_id'}
-                size="icon"
-                variant="outline"
-              >
-                {saving === 'meta_pixel_id' ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Save className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              ID de 15-16 dígitos. Encuéntralo en Meta Events Manager.
-            </p>
-            {formValues.meta_pixel_id && formValues.meta_pixel_id.length < 15 && (
-              <p className="text-xs text-destructive">
-                El Pixel ID debe tener al menos 15 dígitos
-              </p>
-            )}
-          </div>
-
-          {/* Help Link */}
-          <a
-            href="https://www.facebook.com/business/help/952192354843755"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 text-sm text-primary hover:underline"
-          >
-            <ExternalLink className="h-4 w-4" />
-            ¿Cómo encuentro mi Pixel ID?
-          </a>
-
-          {/* Events Info */}
-          <div className="p-3 rounded-lg bg-muted/50 border border-border">
-            <p className="text-sm font-medium mb-2">Eventos que se rastrean:</p>
-            <div className="flex flex-wrap gap-2">
-              {['PageView', 'ViewContent', 'AddToCart', 'InitiateCheckout', 'Purchase', 'Contact', 'Search'].map((event) => (
-                <Badge key={event} variant="secondary" className="text-xs">
-                  {event}
-                </Badge>
-              ))}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 };

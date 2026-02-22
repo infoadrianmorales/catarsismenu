@@ -8,10 +8,34 @@ import { useHeroSlides } from '@/hooks/useHeroSlides';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-const MAX_FILE_SIZE = 3 * 1024 * 1024; // 3MB
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const RECOMMENDED_WIDTH = 1920;
 const RECOMMENDED_HEIGHT = 1080;
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
+const convertToWebP = (file: File): Promise<Blob> => {
+  return new Promise((resolve, reject) => {
+    const img = new window.Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) { reject(new Error('Canvas not supported')); return; }
+      ctx.drawImage(img, 0, 0);
+      canvas.toBlob(
+        (blob) => {
+          if (blob) resolve(blob);
+          else reject(new Error('WebP conversion failed'));
+        },
+        'image/webp',
+        0.85
+      );
+    };
+    img.onerror = () => reject(new Error('Failed to load image'));
+    img.src = URL.createObjectURL(file);
+  });
+};
 
 export const HeroSlidesPanel = () => {
   const { slides, loading, addSlide, deleteSlide, canAddMore, canDelete } = useHeroSlides();
@@ -52,11 +76,13 @@ export const HeroSlidesPanel = () => {
     setUploading(true);
 
     try {
-      const fileName = `slide-${Date.now()}.${file.type.split('/')[1]}`;
+      // Convert to WebP for optimization
+      const webpBlob = await convertToWebP(file);
+      const fileName = `slide-${Date.now()}.webp`;
       
       const { data, error: uploadError } = await supabase.storage
         .from('hero-slides')
-        .upload(fileName, file, { upsert: true });
+        .upload(fileName, webpBlob, { contentType: 'image/webp', upsert: true });
 
       if (uploadError) throw uploadError;
 

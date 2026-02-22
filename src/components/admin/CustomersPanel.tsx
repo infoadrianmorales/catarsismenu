@@ -8,12 +8,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { Loader2, Eye, RefreshCw, Search, Users, DollarSign, ShoppingBag, Calendar, Download, Facebook, Filter } from 'lucide-react';
+import { Loader2, Eye, RefreshCw, Search, Users, DollarSign, ShoppingBag, Calendar, Download, Facebook, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { format } from 'date-fns';
+import { format, subDays, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { exportCustomersForMeta, type ExportFilter, type CustomerForExport, type OrderStatus } from '@/lib/metaExport';
+
+type DateFilterPreset = 'all' | 'today' | '7days' | '30days';
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100] as const;
+type PageSize = typeof PAGE_SIZE_OPTIONS[number];
 
 type StatusFilter = 'all' | 'paid' | 'pending' | 'canceled' | 'new';
 
@@ -90,6 +94,13 @@ export const CustomersPanel = () => {
   const [customerStatusesMap, setCustomerStatusesMap] = useState<Map<string, string[]>>(new Map());
   const [customerProductsMap, setCustomerProductsMap] = useState<Map<string, string[]>>(new Map());
   const [allProducts, setAllProducts] = useState<string[]>([]);
+
+  // Date filter
+  const [dateFilter, setDateFilter] = useState<DateFilterPreset>('all');
+
+  // Pagination
+  const [pageSize, setPageSize] = useState<PageSize>(20);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const fetchCustomers = async () => {
     setLoading(true);
@@ -314,6 +325,16 @@ export const CustomersPanel = () => {
     return customers.filter(c => matchesStatusFilter(c.id, filter)).length;
   };
 
+  // Date filter logic
+  const getDateThreshold = (): Date | null => {
+    switch (dateFilter) {
+      case 'today': return startOfDay(new Date());
+      case '7days': return startOfDay(subDays(new Date(), 7));
+      case '30days': return startOfDay(subDays(new Date(), 30));
+      default: return null;
+    }
+  };
+
   // Filter and sort customers
   const filteredCustomers = customers
     .filter(customer => {
@@ -326,6 +347,15 @@ export const CustomersPanel = () => {
           customer.phone.includes(query) ||
           customer.email.toLowerCase().includes(query);
         if (!matchesSearch) return false;
+      }
+
+      // Date filter
+      const threshold = getDateThreshold();
+      if (threshold) {
+        const customerDate = customer.last_order_at 
+          ? new Date(customer.last_order_at) 
+          : new Date(customer.created_at);
+        if (customerDate < threshold) return false;
       }
       
       // Status filter
@@ -351,8 +381,18 @@ export const CustomersPanel = () => {
       }
     });
 
+  // Pagination
+  const totalPages = Math.ceil(filteredCustomers.length / pageSize);
+  const safePage = Math.min(currentPage, totalPages || 1);
+  const paginatedCustomers = filteredCustomers.slice((safePage - 1) * pageSize, safePage * pageSize);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, filterStatus, filterProduct, sortBy, dateFilter, pageSize]);
+
   // Check if filters are active
-  const hasActiveFilters = filterStatus !== 'all' || filterProduct !== 'all';
+  const hasActiveFilters = filterStatus !== 'all' || filterProduct !== 'all' || dateFilter !== 'all';
 
   const formatPrice = (amount: number) => `$${amount.toFixed(2)}`;
 
@@ -409,6 +449,26 @@ export const CustomersPanel = () => {
           <Filter className="h-4 w-4" />
           <span>Filtrar por:</span>
         </div>
+
+        {/* Date filter buttons */}
+        <div className="flex items-center gap-1">
+          {([
+            { value: 'all' as DateFilterPreset, label: 'Todo' },
+            { value: 'today' as DateFilterPreset, label: 'Hoy' },
+            { value: '7days' as DateFilterPreset, label: '7 días' },
+            { value: '30days' as DateFilterPreset, label: '30 días' },
+          ]).map(opt => (
+            <Button
+              key={opt.value}
+              variant={dateFilter === opt.value ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setDateFilter(opt.value)}
+              className="h-8 text-xs"
+            >
+              {opt.label}
+            </Button>
+          ))}
+        </div>
         
         <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as StatusFilter)}>
           <SelectTrigger className="w-40 bg-background">
@@ -451,7 +511,7 @@ export const CustomersPanel = () => {
           <Button 
             variant="ghost" 
             size="sm" 
-            onClick={() => { setFilterStatus('all'); setFilterProduct('all'); }}
+            onClick={() => { setFilterStatus('all'); setFilterProduct('all'); setDateFilter('all'); }}
             className="text-muted-foreground hover:text-foreground"
           >
             Limpiar filtros
@@ -522,7 +582,7 @@ export const CustomersPanel = () => {
       {filteredCustomers.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
-            {searchQuery ? 'No se encontraron compradores' : 'No hay compradores registrados'}
+            {searchQuery || hasActiveFilters ? 'No se encontraron compradores' : 'No hay compradores registrados'}
           </CardContent>
         </Card>
       ) : (
@@ -540,7 +600,7 @@ export const CustomersPanel = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredCustomers.map((customer) => (
+                {paginatedCustomers.map((customer) => (
                   <TableRow key={customer.id}>
                     <TableCell>
                       <p className="font-medium">{customer.first_name} {customer.last_name}</p>
@@ -573,6 +633,49 @@ export const CustomersPanel = () => {
                 ))}
               </TableBody>
             </Table>
+
+            {/* Pagination Controls */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 border-t">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span>Mostrar</span>
+                <Select value={pageSize.toString()} onValueChange={(v) => setPageSize(Number(v) as PageSize)}>
+                  <SelectTrigger className="w-20 h-8">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PAGE_SIZE_OPTIONS.map(size => (
+                      <SelectItem key={size} value={size.toString()}>{size}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <span>por página</span>
+                <span className="ml-2">
+                  {(safePage - 1) * pageSize + 1}–{Math.min(safePage * pageSize, filteredCustomers.length)} de {filteredCustomers.length}
+                </span>
+              </div>
+              {totalPages > 1 && (
+                <div className="flex items-center gap-1">
+                  <Button variant="outline" size="icon" className="h-8 w-8" disabled={safePage <= 1} onClick={() => setCurrentPage(safePage - 1)}>
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                    let page: number;
+                    if (totalPages <= 5) { page = i + 1; }
+                    else if (safePage <= 3) { page = i + 1; }
+                    else if (safePage >= totalPages - 2) { page = totalPages - 4 + i; }
+                    else { page = safePage - 2 + i; }
+                    return (
+                      <Button key={page} variant={page === safePage ? 'default' : 'outline'} size="icon" className="h-8 w-8" onClick={() => setCurrentPage(page)}>
+                        {page}
+                      </Button>
+                    );
+                  })}
+                  <Button variant="outline" size="icon" className="h-8 w-8" disabled={safePage >= totalPages} onClick={() => setCurrentPage(safePage + 1)}>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
       )}
