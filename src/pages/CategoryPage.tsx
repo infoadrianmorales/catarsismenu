@@ -1,4 +1,4 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useLocation, Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { MenuHeader } from '@/components/MenuHeader';
 import { Footer } from '@/components/Footer';
@@ -16,7 +16,10 @@ import { SEO } from '@/components/SEO';
 import { trackCustomEvent } from '@/lib/metaPixel';
 
 const CategoryPage = () => {
-  const { slug } = useParams<{ slug: string }>();
+  const { slug: paramSlug } = useParams<{ slug: string }>();
+  const location = useLocation();
+  // Support both /categoria/:slug and short URLs like /hamburguesas
+  const slug = paramSlug || location.pathname.replace('/', '');
   const { currency, toggleCurrency, displayMode } = useCurrency();
   const { products, bestSellers, loading: productsLoading } = useProducts();
   const { getCategoryBySlug, loading: categoriesLoading } = usePublicCategories();
@@ -88,6 +91,9 @@ const CategoryPage = () => {
         description={displaySubtitle || `${displayTitle} en Catarsis Drinks & Food`}
         url={`/categoria/${slug}`}
       />
+      <Helmet>
+        <link rel="canonical" href={`https://www.catarsiszone.com/categoria/${slug}`} />
+      </Helmet>
       <MenuHeader 
         currency={currency} 
         onCurrencyToggle={toggleCurrency}

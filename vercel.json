@@ -6,6 +6,16 @@
       "statusCode": 301
     }
   ],
+  "rewrites": [
+    { "source": "/best-seller", "destination": "/categoria/best-seller" },
+    { "source": "/hamburguesas", "destination": "/categoria/hamburguesas" },
+    { "source": "/pizzas", "destination": "/categoria/pizzas" },
+    { "source": "/emparedados", "destination": "/categoria/emparedados" },
+    { "source": "/parrilla", "destination": "/categoria/parrilla" },
+    { "source": "/entradas", "destination": "/categoria/entradas" },
+    { "source": "/ensaladas", "destination": "/categoria/ensaladas" },
+    { "source": "/cocteleria", "destination": "/categoria/cocteleria" }
+  ],
   "headers": [
     {
       "source": "/(.*)",

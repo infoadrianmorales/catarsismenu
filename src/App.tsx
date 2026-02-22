@@ -61,7 +61,16 @@ const AppContent = () => {
             <Route path="/" element={<Index />} />
             <Route path="/menu" element={<Navigate to="/" replace />} />
             <Route path="/local" element={<MenuLocal />} />
-            <Route path="/categoria/:slug" element={<CategoryPage />} />
+          <Route path="/categoria/:slug" element={<CategoryPage />} />
+          {/* Short category URLs for Meta Ads */}
+          <Route path="/best-seller" element={<CategoryPage />} />
+          <Route path="/hamburguesas" element={<CategoryPage />} />
+          <Route path="/pizzas" element={<CategoryPage />} />
+          <Route path="/emparedados" element={<CategoryPage />} />
+          <Route path="/parrilla" element={<CategoryPage />} />
+          <Route path="/entradas" element={<CategoryPage />} />
+          <Route path="/ensaladas" element={<CategoryPage />} />
+          <Route path="/cocteleria" element={<CategoryPage />} />
             <Route path="/producto/:slug" element={<ProductPage />} />
             <Route path="/terminos-y-condiciones" element={<Legal />} />
             <Route path="/auth" element={<Auth />} />
