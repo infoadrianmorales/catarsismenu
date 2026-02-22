@@ -1,143 +1,115 @@
 
 
-## Rediseno del Dashboard de Analiticas
+## Rediseno del Modulo de Ordenes
 
-### Problemas detectados
+### Cambios a implementar
 
-1. **Ingresos y productos muestran $0**: El hook `useSalesAnalytics` filtra ingresos y top productos solo para ordenes con status `PAID` o `DELIVERED`. De 49 ordenes, 29 tienen status `NEW` y solo 12 son `PAID`. Las ordenes `NEW` no se cuentan para ingresos ni productos vendidos, lo cual distorsiona los datos.
+#### 1. Simplificar tabs a 4: Nuevas, Pagadas, Canceladas, Todas
 
-2. **No existe tracking de visitas**: No hay tabla ni sistema para registrar visitas a la pagina. El Meta Pixel trackea PageView pero esos datos solo estan en Meta, no en el dashboard.
+Eliminar la tab "Pendientes". La clasificacion queda:
+- **Nuevas**: status NEW, IN_PROGRESS, PENDING, PAYMENT_SUBMITTED
+- **Pagadas**: PAID, DELIVERED
+- **Canceladas**: CANCELED
+- **Todas**: sin filtro
 
-3. **Best sellers desconectados**: La vista `best_sellers_food` muestra `total_sold: 0` para todos los productos porque depende de ordenes `PAID/DELIVERED`, y la mayoria estan en `NEW`.
+#### 2. Agregar filtro por fecha
 
-4. **Dashboard limitado**: Solo muestra pedidos e ingresos en el grafico, sin poder alternar entre metricas clave.
+Selector de rango con botones rapidos (Hoy, 7 dias, 30 dias, Todo) y dos datepickers opcionales para rango personalizado. Se filtra client-side ya que el volumen es manejable. Los KPIs se recalculan al cambiar el rango.
 
----
+#### 3. Mejorar KPIs
 
-### Plan de implementacion
+4 tarjetas que muestran datos del rango seleccionado:
+- **Total Ordenes**: cantidad total
+- **Ingresos USD**: suma de totales en dolares (el campo `total` siempre esta en USD)
+- **Ingresos Bs**: suma de `total * exchange_rate` para mostrar el equivalente en bolivares
+- **Ticket Promedio**: ingresos USD / cantidad (excl. canceladas)
 
-#### 1. Crear tabla `page_views` para tracking de visitas
+#### 4. Mostrar total en la moneda correcta
 
-Nueva tabla en la base de datos para registrar cada visita a la pagina:
+La columna "Total" en la tabla mostrara ambos montos: el precio en USD y, si la orden fue en VES, tambien el equivalente en bolivares usando el `exchange_rate` de esa orden. Formato: `$11.99 / Bs 4,404.29`.
 
-| Columna | Tipo | Descripcion |
-|---------|------|-------------|
-| id | uuid | PK |
-| session_id | text | ID de sesion del visitante |
-| path | text | Ruta visitada (/, /carrito, /producto/x) |
-| referrer | text | De donde viene el visitante |
-| user_agent | text | Navegador/dispositivo |
-| created_at | timestamptz | Momento de la visita |
+#### 5. Seleccion por lote (batch actions)
 
-- RLS: insercion publica (cualquier visitante), lectura solo admins
-- Se insertara desde el frontend en cada cambio de ruta (similar al PageView de Meta Pixel)
+- Agregar checkbox en cada fila de la tabla
+- Checkbox "seleccionar todos" en el header
+- Cuando hay ordenes seleccionadas, mostrar una barra de acciones con:
+  - Contador: "X ordenes seleccionadas"
+  - Boton "Marcar como Pagadas" (verde)
+  - Boton "Marcar como Canceladas" (rojo)
+  - Boton "Deseleccionar"
+- Las acciones por lote hacen un UPDATE masivo en la base de datos
 
-#### 2. Crear hook `usePageViews` para consultar visitas
+#### 6. Auto-cancelacion de ordenes antiguas
 
-Hook que consulta la tabla `page_views` agrupando por periodo:
-- Visitas totales, visitantes unicos (por session_id), paginas mas visitadas
-- Soporte para granularidad horaria/diaria igual que el hook de ventas
+Crear funcion SQL `auto_cancel_stale_orders()` que marca como CANCELED las ordenes NEW con mas de 48h. Se ejecuta automaticamente al abrir el panel, y tambien con un boton manual "Limpiar antiguas".
 
-#### 3. Crear componente `useVisitorTracker` para registrar visitas
-
-Componente ligero que se monta en `App.tsx` y registra cada navegacion:
-- Inserta en `page_views` el path, referrer y user_agent
-- Usa debounce para no duplicar inserciones rapidas
-- No registra visitas en rutas de admin/auth
-
-#### 4. Corregir filtro de ordenes en `useSalesAnalytics`
-
-Cambiar la logica para que **todas las ordenes** (excepto CANCELED) cuenten para:
-- Ingresos totales (usar todas, no solo PAID/DELIVERED)
-- Top productos (consultar order_items de todas las ordenes, no solo PAID)
-- Metodos de pago (contar todas las ordenes, no solo PAID)
-- Mantener el KPI de "Ticket Promedio" basado en todas las ordenes
-
-Esto arregla el problema de que el dashboard muestra $0 en ingresos y productos.
-
-#### 5. Redisenar el AnalyticsPanel con metricas interactivas
-
-**KPIs superiores (4 tarjetas clickeables):**
-- Pedidos | Ingresos | Ticket Promedio | Visitas
-- Cada tarjeta es clickeable y cambia el grafico principal a esa metrica
-- Incluir comparacion porcentual vs periodo anterior (ej: "+12% vs semana pasada")
-
-**Grafico principal:**
-- Cambia segun el KPI seleccionado (pedidos, ingresos, ticket promedio, visitas)
-- Mantiene los selectores de periodo actuales (Hoy, 7 dias, 30 dias, etc.)
-
-**Widgets inferiores (3 columnas en desktop):**
-- **Top Productos**: Los 5 mas vendidos con cantidad y revenue (corregido para usar todas las ordenes)
-- **Metodos de Pago**: Distribucion con barras de progreso (corregido)
-- **Paginas Populares**: Top 5 rutas mas visitadas con conteo
-
----
-
-### Archivos a crear/modificar
+### Archivos a modificar/crear
 
 | Archivo | Accion | Descripcion |
 |---------|--------|-------------|
-| Migracion SQL | Crear | Tabla `page_views` con RLS |
-| `src/hooks/usePageViews.ts` | Crear | Hook para consultar visitas agrupadas |
-| `src/hooks/useVisitorTracker.ts` | Crear | Hook para registrar visitas en cada navegacion |
-| `src/hooks/useSalesAnalytics.ts` | Modificar | Corregir filtros: usar TODAS las ordenes (no solo PAID/DELIVERED) para ingresos, productos y metodos de pago |
-| `src/components/admin/AnalyticsPanel.tsx` | Modificar | Redisenar con KPIs clickeables, grafico multi-metrica, widget de paginas populares, comparacion vs periodo anterior |
-| `src/App.tsx` | Modificar | Montar `useVisitorTracker` para registrar visitas |
-
----
+| Migracion SQL | Crear | Funcion `auto_cancel_stale_orders()` |
+| `src/components/admin/OrdersPanel.tsx` | Modificar | Simplificar tabs a 4, agregar filtro de fechas, redisenar KPIs con totales USD/Bs, mostrar total en moneda correcta, agregar seleccion por lote con acciones masivas, boton de auto-cancelacion |
 
 ### Detalle tecnico
 
-**Tabla `page_views` - Migracion:**
+**Tabs simplificadas:**
 ```text
-CREATE TABLE page_views (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  session_id text NOT NULL,
-  path text NOT NULL,
-  referrer text,
-  user_agent text,
-  created_at timestamptz NOT NULL DEFAULT now()
-);
+type OrderTab = 'new' | 'paid' | 'canceled' | 'all';
 
-CREATE INDEX idx_page_views_created ON page_views(created_at DESC);
-CREATE INDEX idx_page_views_session ON page_views(session_id);
-
-ALTER TABLE page_views ENABLE ROW LEVEL SECURITY;
--- Insercion publica, lectura solo admins
+Nuevas:     status IN ('NEW', 'IN_PROGRESS', 'PENDING', 'PAYMENT_SUBMITTED')
+Pagadas:    status IN ('PAID', 'DELIVERED')
+Canceladas: status = 'CANCELED'
+Todas:      sin filtro
 ```
 
-**useVisitorTracker:**
-- Se ejecuta en cada cambio de `location.pathname`
-- Genera un `session_id` persistente en `sessionStorage`
-- No registra rutas `/admin` ni `/auth`
-- Debounce de 1 segundo para evitar duplicados
+**Total en moneda correcta:**
+- El campo `total` siempre esta en USD
+- Para ordenes en VES: mostrar `$total` + `Bs (total * exchange_rate)`
+- Para ordenes en USD: mostrar solo `$total`
+- Los KPIs muestran ambos totales agregados
 
-**useSalesAnalytics - Correccion de filtros:**
-- Revenue: sumar `total` de TODAS las ordenes (excepto CANCELED), no solo PAID/DELIVERED
-- Top productos: consultar `order_items` de TODAS las ordenes validas
-- Metodos de pago: contar TODAS las ordenes validas
-- Esto refleja mejor la realidad del negocio donde las ordenes `NEW` ya representan pedidos reales
-
-**AnalyticsPanel - KPIs interactivos:**
-- Las 4 tarjetas KPI se vuelven clickeables con un estado `selectedKPI`
-- Al hacer clic en una tarjeta, el grafico cambia para mostrar esa metrica
-- Cada tarjeta muestra un delta porcentual comparando el periodo actual vs el periodo anterior de igual duracion
-- Nuevo widget "Paginas Populares" muestra las rutas mas visitadas
-
-**Flujo de datos resultante:**
+**KPIs rediseñados:**
 ```text
-Visitante navega la pagina
-    |
-    v
-useVisitorTracker -> INSERT page_views
-    |
-    v
-Admin abre Analiticas
-    |
-    +--> useSalesAnalytics (ordenes, productos, pagos)
-    +--> usePageViews (visitas, unicos, paginas populares)
-    |
-    v
-Dashboard interactivo con 4 KPIs + grafico + 3 widgets
+[Total Ordenes]  [Ingresos $]  [Ingresos Bs]  [Ticket Promedio]
+     41           $772.77       Bs 283,764      $18.85
 ```
+
+**Seleccion por lote:**
+```text
+Estado: selectedIds: Set<string>
+
+Header checkbox -> seleccionar/deseleccionar todos los visibles
+Row checkbox -> toggle individual
+Barra de acciones (aparece cuando selectedIds.size > 0):
+  [3 ordenes seleccionadas]  [Pagadas ✓]  [Canceladas ✕]  [Deseleccionar]
+
+handleBatchStatusChange(newStatus):
+  await supabase.from('orders')
+    .update({ status: newStatus })
+    .in('id', Array.from(selectedIds))
+  actualizar estado local
+  limpiar seleccion
+```
+
+**Auto-cancelacion SQL:**
+```text
+CREATE FUNCTION auto_cancel_stale_orders()
+RETURNS integer AS
+  WITH updated AS (
+    UPDATE orders 
+    SET status = 'CANCELED'
+    WHERE status = 'NEW' 
+    AND created_at < now() - interval '48 hours'
+    RETURNING id
+  )
+  SELECT count(*)::integer FROM updated;
+
+-- Se llama via RPC al abrir el panel
+```
+
+**Filtro de fechas:**
+- Botones rapidos: Hoy, 7 dias, 30 dias, Todo
+- Dos Popovers con Calendar de shadcn para rango personalizado
+- Filtrado client-side sobre el array de ordenes ya cargadas
+- Los KPIs y la tabla se recalculan al cambiar el rango
 
