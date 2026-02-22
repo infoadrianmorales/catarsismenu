@@ -10,9 +10,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useCurrency } from '@/hooks/useCurrency';
 import { useProducts } from '@/hooks/useProducts';
 import { usePublicCategories } from '@/hooks/usePublicCategories';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { SEO } from '@/components/SEO';
+import { trackCustomEvent } from '@/lib/metaPixel';
 
 const CategoryPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -31,6 +32,13 @@ const CategoryPage = () => {
   // Fallback for unknown categories
   const displayTitle = categoryInfo?.nombre || (slug?.charAt(0).toUpperCase() + (slug?.slice(1) || ''));
   const displaySubtitle = categoryInfo?.descripcion || '';
+
+  // Track ViewCategory event for Meta Pixel
+  useEffect(() => {
+    if (slug && isValidCategory) {
+      trackCustomEvent('ViewCategory', { category: slug });
+    }
+  }, [slug, isValidCategory]);
 
   const categoryProducts = useMemo(() => {
     let items = slug === 'best-seller' 

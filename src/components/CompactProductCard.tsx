@@ -41,7 +41,7 @@ export const CompactProductCard = memo(({ item, currency, displayMode = 'ambas',
   };
 
   return (
-    <Card className="group overflow-hidden border-border/40 bg-card hover:border-primary/50 transition-all duration-200 hover:shadow-glow h-full flex flex-col">
+    <Card className="group overflow-hidden border-border/40 bg-card hover:border-primary/50 transition-all duration-200 hover:shadow-glow h-full flex flex-col" data-meta-event="ViewContent" id={`product-card-${item.id}`}>
       <CardContent className="p-0 flex flex-col h-full">
         {/* Image - Clickable to product detail */}
         <Link to={`/producto/${item.slug}`} className="block shrink-0">

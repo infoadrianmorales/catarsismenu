@@ -140,6 +140,36 @@ export const trackSearch = (query: string): void => {
 };
 
 /**
+ * Track AddPaymentInfo event
+ */
+export const trackAddPaymentInfo = (method: string, value: number, currency: string = 'USD'): void => {
+  if (!canTrack()) return;
+  window.fbq('track', 'AddPaymentInfo', {
+    content_category: method,
+    value,
+    currency,
+  });
+};
+
+/**
+ * Track RemoveFromCart custom event
+ */
+export const trackRemoveFromCart = (product: {
+  id: string;
+  nombre: string;
+  precio_usd: number;
+}): void => {
+  if (!canTrack()) return;
+  window.fbq('trackCustom', 'RemoveFromCart', {
+    content_ids: [product.id],
+    content_name: product.nombre,
+    content_type: 'product',
+    value: product.precio_usd,
+    currency: 'USD',
+  });
+};
+
+/**
  * Track custom event
  */
 export const trackCustomEvent = (eventName: string, params?: Record<string, unknown>): void => {

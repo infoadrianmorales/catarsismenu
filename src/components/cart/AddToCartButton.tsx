@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { useCart } from '@/contexts/CartContext';
 import { MenuItem } from '@/types/menu';
 import { toast } from 'sonner';
-import { trackAddToCart } from '@/lib/metaPixel';
+import { trackAddToCart, trackRemoveFromCart } from '@/lib/metaPixel';
 
 interface AddToCartButtonProps {
   product: MenuItem;
@@ -44,6 +44,7 @@ export const AddToCartButton = ({ product, variant = 'default' }: AddToCartButto
     if (quantity <= 1) {
       removeFromCart(product.id);
       toast.info(`${product.nombre} eliminado del carrito`);
+      trackRemoveFromCart({ id: product.id, nombre: product.nombre, precio_usd: product.precio_usd });
     } else {
       updateQuantity(product.id, quantity - 1);
     }
