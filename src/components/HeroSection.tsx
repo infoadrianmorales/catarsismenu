@@ -79,122 +79,176 @@ export const HeroSection = ({ mode = 'delivery' }: HeroSectionProps) => {
   }
 
   return (
-    <section className="relative min-h-[60vh] md:min-h-[70vh] flex items-end justify-center overflow-hidden">
-      {/* Background Images Carousel */}
-      <div className="absolute inset-0">
-        {slides.map((slide, index) => (
-          <div
-            key={index}
-            className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
-              index === currentIndex ? 'opacity-100' : 'opacity-0'
-            }`}
-          >
-            <img 
-              src={slide} 
-              alt={`Catarsis Banner ${index + 1}`}
-              className="w-full h-full object-cover"
-              loading={index === 0 ? 'eager' : 'lazy'}
-            />
-          </div>
-        ))}
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
-      </div>
-
-      {/* Desktop Navigation Arrows (only if carousel mode) */}
-      {showCarousel && (
-        <>
-          <button
-            onClick={() => { goToPrev(); setIsAutoPlaying(false); }}
-            className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-black/30 hover:bg-black/50 text-white transition-colors"
-            aria-label="Slide anterior"
-          >
-            <ChevronLeft className="h-6 w-6" />
-          </button>
-          <button
-            onClick={() => { goToNext(); setIsAutoPlaying(false); }}
-            className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-black/30 hover:bg-black/50 text-white transition-colors"
-            aria-label="Siguiente slide"
-          >
-            <ChevronRight className="h-6 w-6" />
-          </button>
-        </>
-      )}
-
-      {/* Desktop Dot indicators (only if carousel mode) */}
-      {showCarousel && (
-        <div className="hidden md:flex absolute bottom-32 left-1/2 -translate-x-1/2 z-20 gap-2">
-          {slides.map((_, index) => (
-            <button
+    <section className="relative flex flex-col md:block md:min-h-[70vh] overflow-hidden">
+      {/* Image Zone */}
+      <div className="relative min-h-[45vh] md:min-h-[70vh] flex items-end justify-center">
+        {/* Background Images Carousel */}
+        <div className="absolute inset-0">
+          {slides.map((slide, index) => (
+            <div
               key={index}
-              onClick={() => goToSlide(index)}
-              className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
-                index === currentIndex 
-                  ? 'bg-primary w-6' 
-                  : 'bg-white/50 hover:bg-white/70'
+              className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
+                index === currentIndex ? 'opacity-100' : 'opacity-0'
               }`}
-              aria-label={`Ir al slide ${index + 1}`}
-            />
+            >
+              <img 
+                src={slide} 
+                alt={`Catarsis Banner ${index + 1}`}
+                className="w-full h-full object-cover"
+                loading={index === 0 ? 'eager' : 'lazy'}
+              />
+            </div>
           ))}
+          {/* Mobile: short gradient fade. Desktop: full gradient */}
+          <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent md:from-background md:via-background/20 md:to-transparent" />
         </div>
-      )}
 
-      {/* Mobile Navigation: arrows + dots unified (only if carousel mode) */}
-      {showCarousel && (
-        <div className="flex md:hidden absolute bottom-36 left-1/2 -translate-x-1/2 z-20 items-center justify-center gap-3">
-          <button
-            onClick={() => { goToPrev(); setIsAutoPlaying(false); }}
-            className="p-1.5 rounded-full bg-black/30 hover:bg-black/50 text-white transition-colors"
-            aria-label="Slide anterior"
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </button>
-          <div className="flex gap-2">
+        {/* Desktop Navigation Arrows (only if carousel mode) */}
+        {showCarousel && (
+          <>
+            <button
+              onClick={() => { goToPrev(); setIsAutoPlaying(false); }}
+              className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-black/30 hover:bg-black/50 text-white transition-colors"
+              aria-label="Slide anterior"
+            >
+              <ChevronLeft className="h-6 w-6" />
+            </button>
+            <button
+              onClick={() => { goToNext(); setIsAutoPlaying(false); }}
+              className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-black/30 hover:bg-black/50 text-white transition-colors"
+              aria-label="Siguiente slide"
+            >
+              <ChevronRight className="h-6 w-6" />
+            </button>
+          </>
+        )}
+
+        {/* Desktop Dot indicators (only if carousel mode) */}
+        {showCarousel && (
+          <div className="hidden md:flex absolute bottom-32 left-1/2 -translate-x-1/2 z-20 gap-2">
             {slides.map((_, index) => (
               <button
                 key={index}
                 onClick={() => goToSlide(index)}
-                className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
                   index === currentIndex 
-                    ? 'bg-primary w-5' 
+                    ? 'bg-primary w-6' 
                     : 'bg-white/50 hover:bg-white/70'
                 }`}
                 aria-label={`Ir al slide ${index + 1}`}
               />
             ))}
           </div>
-          <button
-            onClick={() => { goToNext(); setIsAutoPlaying(false); }}
-            className="p-1.5 rounded-full bg-black/30 hover:bg-black/50 text-white transition-colors"
-            aria-label="Siguiente slide"
-          >
-            <ChevronRight className="h-5 w-5" />
-          </button>
+        )}
+
+        {/* Desktop CTA Buttons */}
+        <div className="hidden md:block relative z-10 container px-4 pb-16 pt-8 text-center">
+          <div className="flex flex-row flex-wrap items-center justify-center gap-3">
+            {!isLocalMode && (
+              <Button 
+                size="lg" 
+                onClick={handleWhatsAppClick}
+                className="bg-accent hover:bg-accent/90 text-accent-foreground font-bold gap-2"
+              >
+                <MessageCircle className="h-5 w-5" />
+                Pedir por WhatsApp
+              </Button>
+            )}
+            <Button 
+              variant={isLocalMode ? "default" : "outline"}
+              size="lg"
+              asChild
+              className={isLocalMode 
+                ? "bg-secondary hover:bg-secondary/90 text-secondary-foreground font-bold gap-2"
+                : "border-border/50 hover:bg-primary hover:text-primary-foreground hover:border-primary gap-2"
+              }
+            >
+              <a href={appConfig.instagram_url} target="_blank" rel="noopener noreferrer">
+                <Instagram className="h-5 w-5" />
+                {isLocalMode ? 'Síguenos en Instagram' : 'Ver en Instagram'}
+              </a>
+            </Button>
+            {!isLocalMode && (
+              <Button 
+                variant="ghost" 
+                size="lg"
+                asChild
+                className="text-muted-foreground hover:text-foreground gap-2"
+              >
+                <a href={appConfig.maps_url} target="_blank" rel="noopener noreferrer">
+                  <MapPin className="h-5 w-5" />
+                  Cómo llegar
+                </a>
+              </Button>
+            )}
+          </div>
         </div>
-      )}
-      
-      {/* Content - CTA Buttons */}
-      <div className="relative z-10 container px-4 pb-16 pt-8 text-center">
-        <div className="flex flex-col md:flex-row md:flex-wrap items-center justify-center gap-3">
-          {/* WhatsApp Button - Only in Delivery mode */}
+
+        {/* Desktop Tape Divider */}
+        <div className="hidden md:block absolute bottom-0 left-0 right-0">
+          <div className="tape-divider overflow-hidden">
+            <div className="tape-text whitespace-nowrap">
+              CATARSIS • SABORES QUE LIBERAN, MOMENTOS QUE CONECTAN • CATARSIS • SABORES QUE LIBERAN, MOMENTOS QUE CONECTAN • CATARSIS • SABORES QUE LIBERAN, MOMENTOS QUE CONECTAN •
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile Controls Zone - solid background, below image */}
+      <div className="md:hidden bg-background px-4 py-4 flex flex-col items-center gap-3">
+        {/* Mobile Navigation: arrows + dots */}
+        {showCarousel && (
+          <div className="flex items-center justify-center gap-3">
+            <button
+              onClick={() => { goToPrev(); setIsAutoPlaying(false); }}
+              className="p-1.5 rounded-full bg-muted hover:bg-muted/80 text-foreground transition-colors"
+              aria-label="Slide anterior"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <div className="flex gap-2">
+              {slides.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => goToSlide(index)}
+                  className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                    index === currentIndex 
+                      ? 'bg-primary w-5' 
+                      : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
+                  }`}
+                  aria-label={`Ir al slide ${index + 1}`}
+                />
+              ))}
+            </div>
+            <button
+              onClick={() => { goToNext(); setIsAutoPlaying(false); }}
+              className="p-1.5 rounded-full bg-muted hover:bg-muted/80 text-foreground transition-colors"
+              aria-label="Siguiente slide"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          </div>
+        )}
+
+        {/* Mobile CTA Buttons */}
+        <div className="flex flex-col w-full gap-2">
           {!isLocalMode && (
             <Button 
               size="lg" 
               onClick={handleWhatsAppClick}
-              className="w-full md:w-auto bg-accent hover:bg-accent/90 text-accent-foreground font-bold gap-2"
+              className="w-full bg-accent hover:bg-accent/90 text-accent-foreground font-bold gap-2"
             >
               <MessageCircle className="h-5 w-5" />
               Pedir por WhatsApp
             </Button>
           )}
-          
-          {/* Instagram Button - Always visible */}
           <Button 
             variant={isLocalMode ? "default" : "outline"}
             size="lg"
             asChild
             className={isLocalMode 
-              ? "w-full md:w-auto bg-secondary hover:bg-secondary/90 text-secondary-foreground font-bold gap-2"
-              : "w-full md:w-auto border-border/50 hover:bg-primary hover:text-primary-foreground hover:border-primary gap-2"
+              ? "w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground font-bold gap-2"
+              : "w-full border-border/50 hover:bg-primary hover:text-primary-foreground hover:border-primary gap-2"
             }
           >
             <a href={appConfig.instagram_url} target="_blank" rel="noopener noreferrer">
@@ -202,14 +256,12 @@ export const HeroSection = ({ mode = 'delivery' }: HeroSectionProps) => {
               {isLocalMode ? 'Síguenos en Instagram' : 'Ver en Instagram'}
             </a>
           </Button>
-          
-          {/* Location Button - Only in Delivery mode */}
           {!isLocalMode && (
             <Button 
               variant="ghost" 
               size="lg"
               asChild
-              className="w-full md:w-auto text-muted-foreground hover:text-foreground gap-2"
+              className="w-full text-muted-foreground hover:text-foreground gap-2"
             >
               <a href={appConfig.maps_url} target="_blank" rel="noopener noreferrer">
                 <MapPin className="h-5 w-5" />
@@ -218,13 +270,13 @@ export const HeroSection = ({ mode = 'delivery' }: HeroSectionProps) => {
             </Button>
           )}
         </div>
-      </div>
-      
-      {/* Tape Divider */}
-      <div className="absolute bottom-0 left-0 right-0">
-        <div className="tape-divider overflow-hidden">
-          <div className="tape-text whitespace-nowrap">
-            CATARSIS • SABORES QUE LIBERAN, MOMENTOS QUE CONECTAN • CATARSIS • SABORES QUE LIBERAN, MOMENTOS QUE CONECTAN • CATARSIS • SABORES QUE LIBERAN, MOMENTOS QUE CONECTAN •
+
+        {/* Mobile Tape Divider */}
+        <div className="w-screen -mx-4 mt-1">
+          <div className="tape-divider overflow-hidden">
+            <div className="tape-text whitespace-nowrap">
+              CATARSIS • SABORES QUE LIBERAN, MOMENTOS QUE CONECTAN • CATARSIS • SABORES QUE LIBERAN, MOMENTOS QUE CONECTAN • CATARSIS • SABORES QUE LIBERAN, MOMENTOS QUE CONECTAN •
+            </div>
           </div>
         </div>
       </div>
