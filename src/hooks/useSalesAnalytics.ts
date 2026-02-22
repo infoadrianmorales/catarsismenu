@@ -68,16 +68,14 @@ export const useSalesAnalytics = (
         if (ordersError) throw ordersError;
         setOrders(ordersData || []);
 
-        // Get order IDs for items query (only PAID/DELIVERED)
-        const paidOrderIds = (ordersData || [])
-          .filter(o => ['PAID', 'DELIVERED'].includes(o.status))
-          .map(o => o.id);
+        // Get order IDs for items query (ALL orders except CANCELED)
+        const validOrderIds = (ordersData || []).map(o => o.id);
 
-        if (paidOrderIds.length > 0) {
+        if (validOrderIds.length > 0) {
           const { data: itemsData, error: itemsError } = await supabase
             .from('order_items')
             .select('product_name_snapshot, quantity, line_total')
-            .in('order_id', paidOrderIds);
+            .in('order_id', validOrderIds);
 
           if (itemsError) throw itemsError;
           setOrderItems(itemsData || []);
@@ -106,9 +104,7 @@ export const useSalesAnalytics = (
         return {
           date: hour.toISOString(),
           orders: hourOrders.length,
-          revenue: hourOrders
-            .filter(o => ['PAID', 'DELIVERED'].includes(o.status))
-            .reduce((sum, o) => sum + Number(o.total), 0)
+          revenue: hourOrders.reduce((sum, o) => sum + Number(o.total), 0)
         };
       });
     } else {
@@ -121,9 +117,7 @@ export const useSalesAnalytics = (
         return {
           date: day.toISOString(),
           orders: dayOrders.length,
-          revenue: dayOrders
-            .filter(o => ['PAID', 'DELIVERED'].includes(o.status))
-            .reduce((sum, o) => sum + Number(o.total), 0)
+          revenue: dayOrders.reduce((sum, o) => sum + Number(o.total), 0)
         };
       });
     }
@@ -131,12 +125,11 @@ export const useSalesAnalytics = (
 
   // Calculate summary
   const summary = useMemo((): SalesSummary => {
-    const paidOrders = orders.filter(o => ['PAID', 'DELIVERED'].includes(o.status));
-    const totalRevenue = paidOrders.reduce((sum, o) => sum + Number(o.total), 0);
+    const totalRevenue = orders.reduce((sum, o) => sum + Number(o.total), 0);
     return {
       totalOrders: orders.length,
       totalRevenue,
-      avgOrderValue: paidOrders.length > 0 ? totalRevenue / paidOrders.length : 0
+      avgOrderValue: orders.length > 0 ? totalRevenue / orders.length : 0
     };
   }, [orders]);
 
@@ -160,15 +153,14 @@ export const useSalesAnalytics = (
 
   // Calculate payment method distribution
   const paymentMethods = useMemo((): PaymentMethodStats[] => {
-    const paidOrders = orders.filter(o => ['PAID', 'DELIVERED'].includes(o.status));
     const methodMap = new Map<string, number>();
     
-    paidOrders.forEach(order => {
+    orders.forEach(order => {
       const count = methodMap.get(order.payment_method) || 0;
       methodMap.set(order.payment_method, count + 1);
     });
 
-    const total = paidOrders.length || 1;
+    const total = orders.length || 1;
     
     const methodLabels: Record<string, string> = {
       'zelle': 'Zelle',

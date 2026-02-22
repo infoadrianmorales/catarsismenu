@@ -12,6 +12,7 @@ import NotFound from "./pages/NotFound";
 import { FloatingCart } from "./components/FloatingCart";
 import { MetaPixelProvider } from "./components/MetaPixelProvider";
 import { ScrollToTop } from "./components/ScrollToTop";
+import { useVisitorTracker } from "./hooks/useVisitorTracker";
 
 // Lazy load non-critical pages
 const Legal = lazy(() => import("./pages/Legal"));
@@ -48,6 +49,8 @@ const PageLoader = () => (
 );
 
 const AppContent = () => {
+  useVisitorTracker();
+
   return (
     <ViewModeProvider>
       <MetaPixelProvider>
