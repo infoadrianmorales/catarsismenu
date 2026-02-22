@@ -44,7 +44,7 @@ export const CompactProductCard = memo(({ item, currency, displayMode = 'ambas',
     <Card className="group overflow-hidden border-border/40 bg-card hover:border-primary/50 transition-all duration-200 hover:shadow-glow h-full flex flex-col" data-meta-event="ViewContent" id={`product-card-${item.id}`}>
       <CardContent className="p-0 flex flex-col h-full">
         {/* Image - Clickable to product detail */}
-        <Link to={`/producto/${item.slug}`} className="block shrink-0">
+        <Link to={`/producto/${item.slug}`} className="block shrink-0" onMouseEnter={() => { const img = new Image(); img.src = item.imagen; }} onTouchStart={() => { const img = new Image(); img.src = item.imagen; }}>
           <div className="relative p-1 sm:p-1.5">
             {/* Zoom effect on container, only on desktop to avoid mobile rendering issues */}
             <div className="relative aspect-square overflow-hidden rounded-lg bg-white border border-foreground/10 shadow-sm sm:transition-transform sm:duration-300 sm:ease-out sm:group-hover:scale-105">
