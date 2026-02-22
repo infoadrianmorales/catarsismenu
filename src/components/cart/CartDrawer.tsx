@@ -57,6 +57,13 @@ export const CartDrawer = ({ variant = 'header' }: CartDrawerProps) => {
     return currency === 'USD' ? p.formattedUSD : p.formattedVES;
   };
 
+  const handleHeaderClick = (e: React.MouseEvent) => {
+    if (variant === 'header' && totalItems > 0) {
+      e.preventDefault();
+      navigate('/carrito');
+    }
+  };
+
   const TriggerButton = variant === 'floating' ? (
     <Button
       id="cart-drawer-floating"
@@ -95,28 +102,36 @@ export const CartDrawer = ({ variant = 'header' }: CartDrawerProps) => {
         </Badge>
       )}
     </Button>
-  ) : (
+  ) : totalItems > 0 ? (
     <Button
-      id="cart-drawer-header"
+      id="cart-btn-header"
       data-meta-event="ViewCart"
-      variant={totalItems > 0 ? "default" : "ghost"}
-      size="icon"
+      onClick={handleHeaderClick}
       className={cn(
-        "relative",
-        totalItems > 0 && "bg-secondary hover:bg-secondary/90",
+        "relative gap-2 px-3 h-10 rounded-full bg-secondary hover:bg-secondary/90 text-secondary-foreground font-bold",
         isAnimating && "scale-110",
-        "transition-all duration-200"
+        "transition-all duration-300"
       )}
       aria-label={`Carrito con ${totalItems} items`}
     >
-      <ShoppingCart className={cn("h-5 w-5", totalItems > 0 && "text-secondary-foreground")} />
-      {totalItems > 0 && (
-        <Badge 
-          className="absolute -top-2 -right-2 h-5 min-w-5 flex items-center justify-center p-0 px-1 text-xs bg-primary text-primary-foreground animate-pulse"
-        >
-          {totalItems > 99 ? '99+' : totalItems}
-        </Badge>
-      )}
+      <ShoppingCart className="h-5 w-5" />
+      <Badge 
+        className="h-5 min-w-5 flex items-center justify-center p-0 px-1 text-xs bg-primary text-primary-foreground"
+      >
+        {totalItems > 99 ? '99+' : totalItems}
+      </Badge>
+      <span className="text-sm">{formatPrice(subtotal)}</span>
+    </Button>
+  ) : (
+    <Button
+      id="cart-btn-header"
+      data-meta-event="ViewCart"
+      variant="ghost"
+      size="icon"
+      className="relative transition-all duration-200"
+      aria-label="Carrito vacío"
+    >
+      <ShoppingCart className="h-5 w-5" />
     </Button>
   );
 
