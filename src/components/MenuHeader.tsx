@@ -5,9 +5,7 @@ import { Button } from '@/components/ui/button';
 import { PriceDisplayMode } from '@/hooks/useCurrency';
 import { CartDrawer } from '@/components/cart/CartDrawer';
 import { useViewMode } from '@/contexts/ViewModeContext';
-import { MessageCircle, Instagram, MapPin } from 'lucide-react';
 import { appConfig } from '@/data/config';
-import { trackContact } from '@/lib/metaPixel';
 import logoCatarsis from '@/assets/logo-catarsis.png';
 
 interface MenuHeaderProps {
@@ -34,47 +32,6 @@ export const MenuHeader = ({ currency, onCurrencyToggle, displayMode = 'ambas' }
         </div>
         
         <div className="flex items-center gap-4">
-          {/* Mobile CTA Icons */}
-          <div className="flex md:hidden items-center gap-1">
-            {!isLocalMode && (
-              <Button
-                size="icon"
-                variant="ghost"
-                className="h-8 w-8 text-accent hover:text-accent hover:bg-accent/10"
-                onClick={() => {
-                  const message = encodeURIComponent('Hola, vengo del menú web de Catarsis. Quiero hacer un pedido.');
-                  window.open(`https://wa.me/${appConfig.whatsapp}?text=${message}`, '_blank');
-                  trackContact('header');
-                }}
-                aria-label="WhatsApp"
-              >
-                <MessageCircle className="h-4 w-4" />
-              </Button>
-            )}
-            <Button
-              size="icon"
-              variant="ghost"
-              className="h-8 w-8"
-              asChild
-            >
-              <a href={appConfig.instagram_url} target="_blank" rel="noopener noreferrer" aria-label="Instagram">
-                <Instagram className="h-4 w-4" />
-              </a>
-            </Button>
-            {!isLocalMode && (
-              <Button
-                size="icon"
-                variant="ghost"
-                className="h-8 w-8"
-                asChild
-              >
-                <a href={appConfig.maps_url} target="_blank" rel="noopener noreferrer" aria-label="Ubicación">
-                  <MapPin className="h-4 w-4" />
-                </a>
-              </Button>
-            )}
-          </div>
-
           {/* Currency Toggle - Hidden on mobile (shown in sticky bar) */}
           {showCurrencyToggle && (
             <div className="hidden md:flex items-center gap-3 bg-card/50 rounded-full px-4 py-2 border border-border/50">
