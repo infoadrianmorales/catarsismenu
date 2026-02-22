@@ -33,15 +33,26 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     );
 
-    const { data: products, error } = await supabase
-      .from('products')
-      .select('id, nombre, slug, descripcion_corta, precio_usd, categoria, imagen_url, activo, is_orderable')
-      .eq('activo', true)
-      .order('orden', { ascending: true });
+    // Fetch products and best sellers in parallel
+    const [productsResult, bestSellersResult] = await Promise.all([
+      supabase
+        .from('products')
+        .select('id, nombre, slug, descripcion_corta, precio_usd, categoria, imagen_url, activo, is_orderable')
+        .eq('activo', true)
+        .order('orden', { ascending: true }),
+      supabase
+        .from('best_sellers_food')
+        .select('id'),
+    ]);
 
-    if (error) throw error;
+    if (productsResult.error) throw productsResult.error;
 
-    const entries = (products || []).map((p: any) => {
+    // Build a Set of best seller IDs for fast lookup
+    const bestSellerIds = new Set(
+      (bestSellersResult.data || []).map((bs: any) => bs.id)
+    );
+
+    const entries = (productsResult.data || []).map((p: any) => {
       const title = escapeXml(p.nombre || '');
       const description = escapeXml(p.descripcion_corta || `${p.nombre} en Catarsis Drinks & Food`);
       const link = `${SITE_URL}/producto/${p.slug}`;
@@ -49,6 +60,7 @@ serve(async (req) => {
       const price = `${Number(p.precio_usd).toFixed(2)} USD`;
       const availability = p.is_orderable !== false ? 'in stock' : 'out of stock';
       const productType = capitalize(p.categoria || 'General');
+      const isBestSeller = bestSellerIds.has(p.id);
 
       return `  <entry>
     <g:id>${p.id}</g:id>
@@ -60,7 +72,7 @@ serve(async (req) => {
     <g:availability>${availability}</g:availability>
     <g:brand>${BRAND}</g:brand>
     <g:condition>new</g:condition>
-    <g:product_type>${escapeXml(productType)}</g:product_type>
+    <g:product_type>${escapeXml(productType)}</g:product_type>${isBestSeller ? '\n    <g:custom_label_0>Best Seller</g:custom_label_0>' : ''}
   </entry>`;
     }).join('\n');
 
