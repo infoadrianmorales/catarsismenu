@@ -9,7 +9,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Loader2, Eye, RefreshCw, Copy, Check, CreditCard, XCircle, DollarSign, ShoppingBag, Sparkles, CalendarIcon, Trash2, CheckCircle2 } from 'lucide-react';
+import { Loader2, Eye, RefreshCw, Copy, Check, CreditCard, XCircle, DollarSign, ShoppingBag, Sparkles, CalendarIcon, Trash2, CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { format, isToday, subDays, startOfDay, endOfDay } from 'date-fns';
@@ -97,6 +97,8 @@ export const OrdersPanel = () => {
   const [datePreset, setDatePreset] = useState<DatePreset>('30days');
   const [dateFrom, setDateFrom] = useState<Date | undefined>(subDays(new Date(), 30));
   const [dateTo, setDateTo] = useState<Date | undefined>(new Date());
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 20;
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -202,6 +204,13 @@ export const OrdersPanel = () => {
     all: dateFilteredOrders.length,
   }), [dateFilteredOrders]);
 
+  // Pagination
+  const totalPages = Math.max(1, Math.ceil(filteredOrders.length / PAGE_SIZE));
+  const paginatedOrders = filteredOrders.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  // Reset page when filters change
+  useEffect(() => { setCurrentPage(1); }, [activeTab, dateFrom, dateTo]);
+
   // Selection handlers
   const toggleSelect = (id: string) => {
     setSelectedIds(prev => {
@@ -212,10 +221,10 @@ export const OrdersPanel = () => {
   };
 
   const toggleSelectAll = () => {
-    if (selectedIds.size === filteredOrders.length) {
+    if (selectedIds.size === paginatedOrders.length && paginatedOrders.every(o => selectedIds.has(o.id))) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(filteredOrders.map(o => o.id)));
+      setSelectedIds(new Set(paginatedOrders.map(o => o.id)));
     }
   };
 
@@ -461,7 +470,7 @@ export const OrdersPanel = () => {
                 <TableRow>
                   <TableHead className="w-10">
                     <Checkbox
-                      checked={selectedIds.size === filteredOrders.length && filteredOrders.length > 0}
+                      checked={paginatedOrders.length > 0 && paginatedOrders.every(o => selectedIds.has(o.id))}
                       onCheckedChange={toggleSelectAll}
                     />
                   </TableHead>
@@ -475,7 +484,7 @@ export const OrdersPanel = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredOrders.map((order) => (
+                {paginatedOrders.map((order) => (
                   <TableRow key={order.id} className={cn(
                     selectedIds.has(order.id) && 'bg-primary/5',
                     order.status === 'NEW' && 'bg-blue-500/5',
@@ -533,6 +542,38 @@ export const OrdersPanel = () => {
               </TableBody>
             </Table>
           </CardContent>
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-4 py-3 border-t">
+              <p className="text-sm text-muted-foreground">
+                {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filteredOrders.length)} de {filteredOrders.length}
+              </p>
+              <div className="flex items-center gap-1">
+                <Button variant="outline" size="icon" className="h-8 w-8" disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}>
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+                  .reduce<(number | '...')[]>((acc, p, i, arr) => {
+                    if (i > 0 && p - (arr[i - 1]) > 1) acc.push('...');
+                    acc.push(p);
+                    return acc;
+                  }, [])
+                  .map((p, i) =>
+                    p === '...' ? (
+                      <span key={`e${i}`} className="px-1 text-muted-foreground">…</span>
+                    ) : (
+                      <Button key={p} variant={p === currentPage ? 'default' : 'outline'} size="icon" className="h-8 w-8 text-xs" onClick={() => setCurrentPage(p)}>
+                        {p}
+                      </Button>
+                    )
+                  )}
+                <Button variant="outline" size="icon" className="h-8 w-8" disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)}>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </Card>
       )}
 
