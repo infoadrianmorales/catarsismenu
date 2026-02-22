@@ -3,11 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Loader2, LogOut, Settings, Package, Megaphone, Users, Layers, ShoppingBag, UserCheck, Image, BarChart3, Store } from 'lucide-react';
+import { Loader2, LogOut, Settings, Package, Users, Layers, ShoppingBag, UserCheck, Image, BarChart3, Store } from 'lucide-react';
 import { AnalyticsPanel } from '@/components/admin/AnalyticsPanel';
 import { ConfigPanel } from '@/components/admin/ConfigPanel';
 import { ProductsPanel } from '@/components/admin/ProductsPanel';
-import { PromotionsPanel } from '@/components/admin/PromotionsPanel';
 import { UsersPanel } from '@/components/admin/UsersPanel';
 import { CategoriesPanel } from '@/components/admin/CategoriesPanel';
 import { OrdersPanel } from '@/components/admin/OrdersPanel';
@@ -75,7 +74,7 @@ const Admin = () => {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6">
         <Tabs defaultValue="analytics" className="w-full">
-          <TabsList className="grid w-full grid-cols-10 mb-6">
+          <TabsList className="grid w-full grid-cols-9 mb-6">
             <TabsTrigger value="analytics" className="gap-2">
               <BarChart3 className="h-4 w-4" />
               <span className="hidden sm:inline">Analíticas</span>
@@ -103,10 +102,6 @@ const Admin = () => {
             <TabsTrigger value="products" className="gap-2">
               <Package className="h-4 w-4" />
               <span className="hidden sm:inline">Productos</span>
-            </TabsTrigger>
-            <TabsTrigger value="promotions" className="gap-2">
-              <Megaphone className="h-4 w-4" />
-              <span className="hidden sm:inline">Promos</span>
             </TabsTrigger>
             <TabsTrigger value="meta-catalog" className="gap-2">
               <Store className="h-4 w-4" />
@@ -144,10 +139,6 @@ const Admin = () => {
 
           <TabsContent value="products">
             <ProductsPanel />
-          </TabsContent>
-
-          <TabsContent value="promotions">
-            <PromotionsPanel />
           </TabsContent>
 
           <TabsContent value="meta-catalog">

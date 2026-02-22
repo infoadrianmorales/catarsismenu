@@ -1,10 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ExternalLink, RefreshCw, Copy, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { ExternalLink, RefreshCw, Copy, CheckCircle2, AlertCircle, Loader2, Save, Facebook } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { useConfig } from '@/hooks/useConfig';
 
 const FEED_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/meta-catalog-feed`;
 
@@ -25,6 +30,10 @@ const fetchFeedStatus = async (): Promise<FeedStatus> => {
 
 export const MetaCatalogPanel = () => {
   const [copied, setCopied] = useState(false);
+  const { config, loading: configLoading, updateConfig } = useConfig();
+  const [metaPixelId, setMetaPixelId] = useState('');
+  const [metaPixelEnabled, setMetaPixelEnabled] = useState(false);
+  const [savingPixel, setSavingPixel] = useState(false);
 
   const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['meta-feed-status'],
@@ -33,6 +42,13 @@ export const MetaCatalogPanel = () => {
     refetchOnWindowFocus: false,
   });
 
+  useEffect(() => {
+    if (!configLoading) {
+      setMetaPixelId(config.meta_pixel_id || '');
+      setMetaPixelEnabled(config.meta_pixel_enabled || false);
+    }
+  }, [configLoading, config]);
+
   const handleCopy = () => {
     navigator.clipboard.writeText(FEED_URL);
     setCopied(true);
@@ -40,8 +56,120 @@ export const MetaCatalogPanel = () => {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleSavePixelId = async () => {
+    setSavingPixel(true);
+    try {
+      await updateConfig('meta_pixel_id', metaPixelId);
+      toast.success('Pixel ID guardado');
+    } catch {
+      toast.error('Error al guardar');
+    }
+    setSavingPixel(false);
+  };
+
+  const handleTogglePixel = async (checked: boolean) => {
+    setMetaPixelEnabled(checked);
+    try {
+      await updateConfig('meta_pixel_enabled', checked ? 'true' : 'false');
+    } catch {
+      toast.error('Error al actualizar');
+    }
+  };
+
   return (
     <div className="space-y-6">
+      {/* Meta Pixel Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Facebook className="h-5 w-5 text-blue-500" />
+            Meta Pixel (Facebook)
+          </CardTitle>
+          <CardDescription>
+            Configura el seguimiento de conversiones para Meta Ads
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Enable/Disable Toggle */}
+          <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/30">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="font-medium">Tracking Activo</span>
+                {metaPixelEnabled && metaPixelId && (
+                  <Badge variant="default" className="bg-green-500/20 text-green-500 hover:bg-green-500/30">
+                    Activo
+                  </Badge>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Habilita o deshabilita el seguimiento de eventos
+              </p>
+            </div>
+            <Switch
+              checked={metaPixelEnabled}
+              onCheckedChange={handleTogglePixel}
+              disabled={!metaPixelId}
+            />
+          </div>
+
+          {/* Pixel ID Input */}
+          <div className="space-y-2">
+            <Label htmlFor="meta_pixel_id">Pixel ID</Label>
+            <div className="flex gap-2">
+              <Input
+                id="meta_pixel_id"
+                type="text"
+                value={metaPixelId}
+                onChange={(e) => setMetaPixelId(e.target.value.replace(/\D/g, ''))}
+                className="bg-input border-border font-mono"
+                placeholder="123456789012345"
+                maxLength={16}
+              />
+              <Button
+                onClick={handleSavePixelId}
+                disabled={savingPixel}
+                size="icon"
+                variant="outline"
+              >
+                {savingPixel ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              ID de 15-16 dígitos. Encuéntralo en Meta Events Manager.
+            </p>
+            {metaPixelId && metaPixelId.length < 15 && (
+              <p className="text-xs text-destructive">
+                El Pixel ID debe tener al menos 15 dígitos
+              </p>
+            )}
+          </div>
+
+          {/* Help Link */}
+          <a
+            href="https://www.facebook.com/business/help/952192354843755"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 text-sm text-primary hover:underline"
+          >
+            <ExternalLink className="h-4 w-4" />
+            ¿Cómo encuentro mi Pixel ID?
+          </a>
+
+          {/* Events Info */}
+          <div className="p-3 rounded-lg bg-muted/50 border border-border">
+            <p className="text-sm font-medium mb-2">Eventos que se rastrean:</p>
+            <div className="flex flex-wrap gap-2">
+              {['PageView', 'ViewContent', 'AddToCart', 'RemoveFromCart', 'InitiateCheckout', 'Purchase', 'Contact', 'Search', 'AddPaymentInfo', 'ViewCategory'].map((event) => (
+                <Badge key={event} variant="secondary" className="text-xs">
+                  {event}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Catalog Feed Section */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
