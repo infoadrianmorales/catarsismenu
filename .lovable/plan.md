@@ -1,47 +1,45 @@
 
 
-## Mejorar el boton del carrito en el header
+## Hacer el buscador compatible con eventos de Meta Pixel
 
-### Situacion actual
+### Problema
 
-El boton del carrito en el header (`MenuHeader.tsx`) usa el componente `CartDrawer` con variante `header`, que se renderiza como un boton cuadrado tipo icono (`size="icon"`) con solo el icono del carrito y un badge con el numero de items. No muestra el costo total ni tiene un tamano adecuado para un evento de pixel efectivo.
+La herramienta de configuracion de eventos de Meta no puede capturar acciones en campos de texto (`<input>`). Necesita un **boton visible** al que pueda asociar el evento "Search". Por eso da error al intentar configurarlo.
 
-### Cambios propuestos
+### Solucion
 
-**Modificar la variante `header` del `CartDrawer`** para que cuando haya items en el carrito:
+Agregar un **boton de buscar** visible dentro del SearchBar que:
+- Aparezca cuando el usuario escribe texto
+- Tenga los atributos `data-meta-event="Search"` e `id="search-submit-btn"` para que Meta lo detecte
+- Al hacer clic, dispare manualmente el evento `trackSearch` del pixel
+- Reemplace el icono de lupa estatico por un boton funcional
 
-1. **Tamano mas grande**: Cambiar de `size="icon"` a un boton rectangular con padding que muestre icono + cantidad + precio
-2. **Mostrar el subtotal**: Incluir el precio formateado junto al badge de cantidad (ej: "3 | $15.50")
-3. **Animacion al agregar productos**: Mantener el efecto de escala actual pero agregar una transicion suave cuando el boton crece de icono a boton con texto
-4. **Navegacion directa**: Al hacer clic, navegar a `/carrito` en lugar de abrir el drawer (el drawer se mantiene para la variante `floating` en desktop)
-5. **Atributos de pixel**: Mantener `data-meta-event="ViewCart"` e `id="cart-btn-header"` para el rastreo de Meta Pixel
+### Cambios
 
-### Comportamiento esperado
+**`src/components/SearchBar.tsx`**
 
-- **Sin items**: Boton tipo icono ghost (igual que ahora)
-- **Con items**: Boton rectangular con fondo `secondary`, que muestra: icono carrito + badge de cantidad + subtotal formateado. Al hacer clic navega a `/carrito`
+- Agregar un boton de buscar (`<Button>`) a la derecha del input (o reemplazar la lupa de la izquierda por un boton a la derecha)
+- Cuando hay texto: mostrar el boton de buscar (con icono de lupa) + el boton de limpiar (X)
+- Cuando no hay texto: solo mostrar el icono de lupa decorativo
+- El boton de buscar tendra `id="search-submit-btn"` y `data-meta-event="Search"` 
+- Al hacer clic, llamara a `trackSearch(value)` directamente (importado de `metaPixel.ts`)
+- Envolver el input y boton en un `<form>` con `onSubmit` para que Enter tambien dispare el evento
+
+**Estructura resultante del SearchBar:**
+
+```text
+[form role="search"]
+  [icono lupa decorativo a la izquierda]
+  [input de texto]
+  [boton X para limpiar (si hay texto)]
+  [boton Buscar con id="search-submit-btn" y data-meta-event="Search" (si hay texto)]
+[/form]
+```
 
 ### Archivos a modificar
 
 | Archivo | Cambio |
 |---------|--------|
-| `src/components/cart/CartDrawer.tsx` | Modificar el `TriggerButton` de la variante `header`: cuando `totalItems > 0`, renderizar un boton mas grande con subtotal visible, y cambiar la accion de abrir drawer a navegar a `/carrito` |
-| `src/components/MenuHeader.tsx` | Ajuste menor si es necesario para acomodar el boton mas ancho |
+| `src/components/SearchBar.tsx` | Envolver en `<form>`, agregar boton de buscar visible con atributos de Meta Pixel, importar `trackSearch` |
 
-### Detalle tecnico
-
-**CartDrawer - variante header con items:**
-- Cambiar de `size="icon"` a un boton con `gap-2 px-3 h-10 rounded-full`
-- Mostrar: `ShoppingCart` icon + Badge con cantidad + subtotal formateado (usando `formatPrice`)
-- Mantener `bg-secondary hover:bg-secondary/90 text-secondary-foreground`
-- Animacion: `transition-all duration-300` para la transicion suave de tamano
-- Cuando `totalItems > 0`, el boton del Sheet no abre el drawer sino que navega a `/carrito` usando `onClick` con `e.preventDefault()` en el `SheetTrigger` y redirigiendo con `navigate`
-
-**CartDrawer - variante header sin items:**
-- Se mantiene igual: boton ghost con icono solamente
-
-**Flujo resultante:**
-- Usuario agrega producto -> boton header crece suavemente mostrando cantidad y total
-- Usuario hace clic en el boton -> navega a `/carrito`
-- En `/carrito` puede finalizar la compra
-
+No se necesitan cambios en otros archivos. El `useSearch` ya tiene el tracking con debounce que seguira funcionando para busquedas automaticas, y el boton agregara un punto de captura adicional para la herramienta de Meta.
