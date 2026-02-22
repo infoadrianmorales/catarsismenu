@@ -1,52 +1,89 @@
 
 
-## Optimizaciones de UX y Rendimiento
+## Best Seller como categoria promocionable en Meta Ads
 
-### 1. Agregar `<noscript>` fallback para Meta Pixel
+### Problema actual
 
-Actualmente falta el tag `<noscript>` en `index.html`. Este tag es necesario para que Meta pueda rastrear usuarios que tienen JavaScript deshabilitado, y tambien es requerido por el verificador de Pixel de Meta.
+"Best Seller" es una categoria virtual generada por codigo, no existe en la base de datos. Por eso:
+- No aparece en el feed XML que sincroniza con Meta Commerce Manager
+- No se puede crear un "Product Set" en Meta para promocionar solo los best sellers
+- No tiene una URL limpia para usar en anuncios
 
-**Archivo:** `index.html`
-- Agregar el tag `<noscript>` con el pixel image justo despues de `<body>`, usando el pixel ID desde la configuracion dinamica (hardcoded como fallback)
+### Solucion
 
-### 2. Imagen del ProductPage sin OptimizedImage
+Usar el campo `custom_label_0` del estandar de Meta Product Feed para etiquetar automaticamente los productos best seller. Esto permite crear **Product Sets** en Meta Commerce Manager y usarlos en anuncios de Instagram/Facebook sin modificar las categorias reales de los productos.
 
-La pagina de detalle de producto (`ProductPage.tsx`) usa un `<img>` directo en lugar de `OptimizedImage`. Esto significa que no aprovecha WebP responsivo, lazy loading con IntersectionObserver, ni srcset.
+### Cambios
 
-**Archivo:** `src/pages/ProductPage.tsx`
-- Reemplazar el `<img>` por `<OptimizedImage>` con `variant="full"` y `loading="eager"`
-- Eliminar el estado `imageLoaded` manual ya que `OptimizedImage` lo gestiona internamente
+**1. Edge Function: `meta-catalog-feed/index.ts`**
+- Consultar tambien la vista `best_sellers_food` para obtener los IDs de los productos mas vendidos
+- Agregar el campo `<g:custom_label_0>Best Seller</g:custom_label_0>` a los productos que aparezcan en esa vista
+- Esto permite en Meta Commerce Manager crear un Product Set con filtro `custom_label_0 = "Best Seller"` para promociones
 
-### 3. Prefetch de la pagina de producto al hover
+**2. Ruta corta: `src/App.tsx`**
+- Agregar ruta `/best-seller` que renderice directamente `CategoryPage` (sin redirect, URL limpia)
+- Esto permite usar `catarsiszone.com/best-seller` en anuncios de Meta
 
-Cuando un usuario pasa el dedo o mouse sobre una tarjeta de producto, podemos pre-cargar la imagen en tamano completo para que al entrar a la pagina de detalle, la imagen ya este en cache.
+**3. Vercel rewrites: `vercel.json`**
+- Agregar rewrite de `/best-seller` a `/categoria/best-seller` para produccion (invisible, mantiene URL limpia)
+- Agregar rewrites para las demas categorias tambien (`/hamburguesas`, `/pizzas`, etc.)
 
-**Archivo:** `src/components/CompactProductCard.tsx` y `src/components/MenuCard.tsx`
-- Agregar `onMouseEnter` / `onTouchStart` en el Link que haga un `new Image().src = item.imagen` para pre-cargar la imagen full
+**4. SEO: `src/pages/CategoryPage.tsx`**
+- Agregar `<link rel="canonical">` apuntando a `/categoria/:slug` para evitar contenido duplicado entre `/hamburguesas` y `/categoria/hamburguesas`
 
-### 4. Skeleton del Hero con altura fija para evitar CLS
+### Como funciona con Meta
 
-El Hero Section no muestra skeleton mientras carga los slides, lo que puede causar Content Layout Shift (CLS). Si los slides tardan, el contenido salta.
+```text
+Meta Commerce Manager
+    |
+    v
+Feed XML (edge function) -> Productos con custom_label_0 = "Best Seller"
+    |
+    v
+Crear Product Set en Meta: filtro custom_label_0 = "Best Seller"
+    |
+    v
+Usar ese Product Set en anuncios de Instagram/Facebook
+    |
+    v
+Link del anuncio: catarsiszone.com/best-seller (URL limpia)
+```
 
-**Archivo:** `src/components/HeroSection.tsx`
-- Agregar un skeleton/placeholder con `min-h-[60vh]` mientras `loading` es true, evitando el salto de contenido
+### URLs disponibles para Meta Ads
 
-### 5. Mejorar accesibilidad del formulario de checkout
+| Destino | URL para anuncios |
+|---------|-------------------|
+| Best Seller | catarsiszone.com/best-seller |
+| Hamburguesas | catarsiszone.com/hamburguesas |
+| Pizzas | catarsiszone.com/pizzas |
+| Emparedados | catarsiszone.com/emparedados |
+| Parrilla | catarsiszone.com/parrilla |
+| Entradas | catarsiszone.com/entradas |
+| Ensaladas | catarsiszone.com/ensaladas |
+| Cocteleria | catarsiszone.com/cocteleria |
 
-El formulario de checkout no tiene `aria-describedby` para los mensajes de error, ni `aria-invalid` en los campos con error. Esto afecta la experiencia con lectores de pantalla.
+### Detalle tecnico
 
-**Archivo:** `src/pages/Checkout.tsx`
-- Agregar `aria-invalid={!!errors.fieldName}` y `aria-describedby` a los inputs con error
-- Agregar `role="alert"` a los mensajes de error
+**Feed XML actualizado (ejemplo de producto best seller):**
+```text
+<entry>
+  <g:id>abc-123</g:id>
+  <g:title>Smash Burger Doble</g:title>
+  <g:product_type>Hamburguesas</g:product_type>
+  <g:custom_label_0>Best Seller</g:custom_label_0>
+  ...
+</entry>
+```
 
-### Resumen de cambios
+**Vercel rewrites (no redirects, mantiene URL visible):**
+- `/best-seller` -> `/categoria/best-seller` (rewrite 200)
+- `/hamburguesas` -> `/categoria/hamburguesas` (rewrite 200)
+- Todas las categorias activas de la base de datos
 
-| Archivo | Cambio | Impacto |
-|---------|--------|---------|
-| `index.html` | Agregar `<noscript>` pixel tag | Meta Pixel: tracking sin JS |
-| `src/pages/ProductPage.tsx` | Usar `OptimizedImage` en vez de `<img>` | Rendimiento: WebP + srcset |
-| `src/components/CompactProductCard.tsx` | Prefetch imagen al hover | UX: carga instantanea del detalle |
-| `src/components/MenuCard.tsx` | Prefetch imagen al hover | UX: carga instantanea del detalle |
-| `src/components/HeroSection.tsx` | Skeleton durante carga de slides | Rendimiento: menos CLS |
-| `src/pages/Checkout.tsx` | Atributos ARIA en campos de error | Accesibilidad |
+**React Router:**
+- Se agrega una ruta catch-all inteligente que verifica si el slug es una categoria valida antes de mostrar 404
+- `CategoryPage` recibe el slug y funciona igual que antes
+
+**Canonical tag:**
+- Se agrega `<link rel="canonical" href="https://www.catarsiszone.com/categoria/{slug}">` para evitar penalizacion por contenido duplicado en Google
 
