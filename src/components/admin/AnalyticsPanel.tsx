@@ -6,25 +6,27 @@ import { Progress } from '@/components/ui/progress';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { 
   BarChart3, 
-  Users, 
-  Eye, 
   ShoppingBag, 
   DollarSign, 
   TrendingUp, 
   CreditCard,
   Calendar as CalendarIcon,
-  Loader2
+  Eye,
+  Globe,
+  ArrowUpRight,
+  ArrowDownRight,
 } from 'lucide-react';
 import { format, subDays, startOfMonth, startOfDay, endOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useSalesAnalytics } from '@/hooks/useSalesAnalytics';
+import { usePageViews } from '@/hooks/usePageViews';
 import { cn } from '@/lib/utils';
 
 type DatePreset = 'today' | 'yesterday' | '7days' | '30days' | 'thisMonth' | 'custom';
-type MetricType = 'orders' | 'revenue';
+type MetricType = 'orders' | 'revenue' | 'avgTicket' | 'views';
 
 const presets: { key: DatePreset; label: string }[] = [
   { key: 'today', label: 'Hoy' },
@@ -39,9 +41,10 @@ const getDateRange = (preset: DatePreset, customRange?: { from: Date; to: Date }
   switch (preset) {
     case 'today':
       return { start: startOfDay(now), end: endOfDay(now), granularity: 'hourly' as const };
-    case 'yesterday':
+    case 'yesterday': {
       const yesterday = subDays(now, 1);
       return { start: startOfDay(yesterday), end: endOfDay(yesterday), granularity: 'hourly' as const };
+    }
     case '7days':
       return { start: startOfDay(subDays(now, 6)), end: endOfDay(now), granularity: 'daily' as const };
     case '30days':
@@ -58,6 +61,14 @@ const getDateRange = (preset: DatePreset, customRange?: { from: Date; to: Date }
   }
 };
 
+// Get the previous period of equal duration for comparison
+const getPreviousPeriod = (start: Date, end: Date) => {
+  const durationMs = end.getTime() - start.getTime();
+  const prevEnd = new Date(start.getTime() - 1);
+  const prevStart = new Date(prevEnd.getTime() - durationMs);
+  return { start: prevStart, end: prevEnd };
+};
+
 export const AnalyticsPanel = () => {
   const [selectedPreset, setSelectedPreset] = useState<DatePreset>('7days');
   const [customRange, setCustomRange] = useState<{ from: Date; to: Date } | undefined>();
@@ -69,37 +80,58 @@ export const AnalyticsPanel = () => {
     [selectedPreset, customRange]
   );
 
-  const { series, summary, topProducts, paymentMethods, loading, error } = useSalesAnalytics(
-    start,
-    end,
-    granularity
-  );
+  const prev = useMemo(() => getPreviousPeriod(start, end), [start, end]);
+
+  // Current period data
+  const { series, summary, topProducts, paymentMethods, loading, error } = useSalesAnalytics(start, end, granularity);
+  const { series: viewsSeries, summary: viewsSummary, popularPages, loading: viewsLoading } = usePageViews(start, end, granularity);
+
+  // Previous period data for comparison
+  const { summary: prevSummary } = useSalesAnalytics(prev.start, prev.end, granularity);
+  const { summary: prevViewsSummary } = usePageViews(prev.start, prev.end, granularity);
+
+  const metricColors: Record<MetricType, string> = {
+    orders: 'hsl(var(--primary))',
+    revenue: 'hsl(142 71% 45%)',
+    avgTicket: 'hsl(38 92% 50%)',
+    views: 'hsl(221 83% 53%)',
+  };
 
   const chartConfig = {
-    orders: {
-      label: 'Pedidos',
-      color: 'hsl(var(--primary))',
-    },
-    revenue: {
-      label: 'Ingresos',
-      color: 'hsl(142 71% 45%)',
+    value: {
+      label: selectedMetric === 'orders' ? 'Pedidos' : selectedMetric === 'revenue' ? 'Ingresos' : selectedMetric === 'avgTicket' ? 'Ticket Prom.' : 'Visitas',
+      color: metricColors[selectedMetric],
     },
   };
 
   const chartData = useMemo(() => {
-    return series.map(point => ({
-      ...point,
-      dateLabel: granularity === 'hourly' 
-        ? format(new Date(point.date), 'HH:mm')
-        : format(new Date(point.date), 'd MMM', { locale: es })
-    }));
-  }, [series, granularity]);
+    if (selectedMetric === 'views') {
+      return viewsSeries.map(point => ({
+        dateLabel: granularity === 'hourly'
+          ? format(new Date(point.date), 'HH:mm')
+          : format(new Date(point.date), 'd MMM', { locale: es }),
+        value: point.views,
+      }));
+    }
+
+    return series.map((point, i) => {
+      let value = 0;
+      if (selectedMetric === 'orders') value = point.orders;
+      else if (selectedMetric === 'revenue') value = point.revenue;
+      else if (selectedMetric === 'avgTicket') value = point.orders > 0 ? point.revenue / point.orders : 0;
+
+      return {
+        dateLabel: granularity === 'hourly'
+          ? format(new Date(point.date), 'HH:mm')
+          : format(new Date(point.date), 'd MMM', { locale: es }),
+        value,
+      };
+    });
+  }, [series, viewsSeries, selectedMetric, granularity]);
 
   const handlePresetClick = (preset: DatePreset) => {
     setSelectedPreset(preset);
-    if (preset !== 'custom') {
-      setCustomRange(undefined);
-    }
+    if (preset !== 'custom') setCustomRange(undefined);
   };
 
   const handleDateSelect = (range: { from?: Date; to?: Date } | undefined) => {
@@ -110,6 +142,48 @@ export const AnalyticsPanel = () => {
     }
   };
 
+  // Calculate deltas
+  const calcDelta = (current: number, previous: number) => {
+    if (previous === 0) return current > 0 ? 100 : 0;
+    return Math.round(((current - previous) / previous) * 100);
+  };
+
+  const kpis = [
+    {
+      key: 'orders' as MetricType,
+      title: 'Pedidos',
+      value: summary.totalOrders,
+      delta: calcDelta(summary.totalOrders, prevSummary.totalOrders),
+      icon: ShoppingBag,
+      format: 'number' as const,
+    },
+    {
+      key: 'revenue' as MetricType,
+      title: 'Ingresos',
+      value: summary.totalRevenue,
+      delta: calcDelta(summary.totalRevenue, prevSummary.totalRevenue),
+      icon: DollarSign,
+      format: 'currency' as const,
+    },
+    {
+      key: 'avgTicket' as MetricType,
+      title: 'Ticket Promedio',
+      value: summary.avgOrderValue,
+      delta: calcDelta(summary.avgOrderValue, prevSummary.avgOrderValue),
+      icon: TrendingUp,
+      format: 'currency' as const,
+    },
+    {
+      key: 'views' as MetricType,
+      title: 'Visitas',
+      value: viewsSummary.totalViews,
+      delta: calcDelta(viewsSummary.totalViews, prevViewsSummary.totalViews),
+      icon: Eye,
+      format: 'number' as const,
+      subtitle: `${viewsSummary.uniqueVisitors} únicos`,
+    },
+  ];
+
   if (error) {
     return (
       <Card className="py-12 text-center">
@@ -119,6 +193,8 @@ export const AnalyticsPanel = () => {
       </Card>
     );
   }
+
+  const isLoading = loading || viewsLoading;
 
   return (
     <div className="space-y-6">
@@ -170,71 +246,66 @@ export const AnalyticsPanel = () => {
         </div>
       </div>
 
-      {/* KPI Cards */}
+      {/* Interactive KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard
-          title="Pedidos"
-          value={summary.totalOrders}
-          icon={ShoppingBag}
-          loading={loading}
-          format="number"
-        />
-        <KPICard
-          title="Ingresos"
-          value={summary.totalRevenue}
-          icon={DollarSign}
-          loading={loading}
-          format="currency"
-        />
-        <KPICard
-          title="Ticket Promedio"
-          value={summary.avgOrderValue}
-          icon={TrendingUp}
-          loading={loading}
-          format="currency"
-        />
-        <KPICard
-          title="Productos Vendidos"
-          value={topProducts.reduce((sum, p) => sum + p.quantity, 0)}
-          icon={Eye}
-          loading={loading}
-          format="number"
-        />
+        {kpis.map(kpi => (
+          <Card
+            key={kpi.key}
+            className={cn(
+              'cursor-pointer transition-all hover:shadow-md',
+              selectedMetric === kpi.key && 'ring-2 ring-primary shadow-md'
+            )}
+            onClick={() => setSelectedMetric(kpi.key)}
+          >
+            <CardContent className="p-4">
+              {isLoading ? (
+                <>
+                  <Skeleton className="h-8 w-20 mb-2" />
+                  <Skeleton className="h-4 w-16" />
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between mb-1">
+                    <kpi.icon className="h-5 w-5 text-muted-foreground" />
+                    {kpi.delta !== 0 && (
+                      <span className={cn(
+                        'flex items-center text-xs font-medium',
+                        kpi.delta > 0 ? 'text-emerald-600' : 'text-red-500'
+                      )}>
+                        {kpi.delta > 0 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+                        {Math.abs(kpi.delta)}%
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-2xl font-bold">
+                    {kpi.format === 'currency' ? `$${kpi.value.toFixed(2)}` : kpi.value.toLocaleString()}
+                  </p>
+                  <p className="text-sm text-muted-foreground">{kpi.title}</p>
+                  {kpi.subtitle && (
+                    <p className="text-xs text-muted-foreground/70">{kpi.subtitle}</p>
+                  )}
+                </>
+              )}
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {/* Chart */}
       <Card>
         <CardHeader className="pb-2">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-            <CardTitle className="text-lg">Tendencia</CardTitle>
-            <div className="flex gap-2">
-              <Button
-                variant={selectedMetric === 'orders' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setSelectedMetric('orders')}
-              >
-                Pedidos
-              </Button>
-              <Button
-                variant={selectedMetric === 'revenue' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setSelectedMetric('revenue')}
-              >
-                Ingresos
-              </Button>
-            </div>
-          </div>
+          <CardTitle className="text-lg">
+            Tendencia: {chartConfig.value.label}
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          {loading ? (
+          {isLoading ? (
             <Skeleton className="h-64 w-full" />
-          ) : chartData.length === 0 || chartData.every(d => d.orders === 0 && d.revenue === 0) ? (
+          ) : chartData.length === 0 || chartData.every(d => d.value === 0) ? (
             <div className="h-64 flex items-center justify-center">
               <div className="text-center">
                 <BarChart3 className="h-12 w-12 mx-auto text-muted-foreground/30" />
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Sin datos para este período
-                </p>
+                <p className="mt-2 text-sm text-muted-foreground">Sin datos para este período</p>
               </div>
             </div>
           ) : (
@@ -242,48 +313,32 @@ export const AnalyticsPanel = () => {
               <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorMetric" x1="0" y1="0" x2="0" y2="1">
-                    <stop 
-                      offset="5%" 
-                      stopColor={selectedMetric === 'orders' ? 'hsl(var(--primary))' : 'hsl(142 71% 45%)'} 
-                      stopOpacity={0.3}
-                    />
-                    <stop 
-                      offset="95%" 
-                      stopColor={selectedMetric === 'orders' ? 'hsl(var(--primary))' : 'hsl(142 71% 45%)'} 
-                      stopOpacity={0}
-                    />
+                    <stop offset="5%" stopColor={metricColors[selectedMetric]} stopOpacity={0.3} />
+                    <stop offset="95%" stopColor={metricColors[selectedMetric]} stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-                <XAxis 
-                  dataKey="dateLabel" 
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fontSize: 12 }}
-                  tickMargin={8}
+                <XAxis dataKey="dateLabel" axisLine={false} tickLine={false} tick={{ fontSize: 12 }} tickMargin={8} />
+                <YAxis
+                  axisLine={false} tickLine={false} tick={{ fontSize: 12 }} tickMargin={8}
+                  tickFormatter={(v) => ['revenue', 'avgTicket'].includes(selectedMetric) ? `$${v}` : String(v)}
                 />
-                <YAxis 
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fontSize: 12 }}
-                  tickMargin={8}
-                  tickFormatter={(value) => selectedMetric === 'revenue' ? `$${value}` : value}
-                />
-                <ChartTooltip 
+                <ChartTooltip
                   content={
-                    <ChartTooltipContent 
-                      labelFormatter={(value) => value}
-                      formatter={(value, name) => {
-                        if (name === 'revenue') return [`$${Number(value).toFixed(2)}`, 'Ingresos'];
-                        return [value, 'Pedidos'];
+                    <ChartTooltipContent
+                      labelFormatter={(v) => v}
+                      formatter={(value) => {
+                        if (['revenue', 'avgTicket'].includes(selectedMetric))
+                          return [`$${Number(value).toFixed(2)}`, chartConfig.value.label];
+                        return [value, chartConfig.value.label];
                       }}
                     />
                   }
                 />
                 <Area
                   type="monotone"
-                  dataKey={selectedMetric}
-                  stroke={selectedMetric === 'orders' ? 'hsl(var(--primary))' : 'hsl(142 71% 45%)'}
+                  dataKey="value"
+                  stroke={metricColors[selectedMetric]}
                   fill="url(#colorMetric)"
                   strokeWidth={2}
                 />
@@ -293,8 +348,8 @@ export const AnalyticsPanel = () => {
         </CardContent>
       </Card>
 
-      {/* Bottom widgets */}
-      <div className="grid md:grid-cols-2 gap-6">
+      {/* Bottom widgets: 3 columns */}
+      <div className="grid md:grid-cols-3 gap-6">
         {/* Top Products */}
         <Card>
           <CardHeader>
@@ -304,7 +359,7 @@ export const AnalyticsPanel = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {loading ? (
+            {isLoading ? (
               <div className="space-y-3">
                 {[1, 2, 3, 4, 5].map(i => (
                   <div key={i} className="flex items-center justify-between">
@@ -326,10 +381,10 @@ export const AnalyticsPanel = () => {
                       <span className="text-sm font-medium text-muted-foreground w-5 shrink-0">
                         {index + 1}.
                       </span>
-                      <span className="font-medium truncate">{product.name}</span>
+                      <span className="font-medium truncate text-sm">{product.name}</span>
                     </div>
                     <div className="text-right shrink-0 ml-4">
-                      <p className="font-semibold">{product.quantity} uds</p>
+                      <p className="font-semibold text-sm">{product.quantity} uds</p>
                       <p className="text-xs text-muted-foreground">${product.revenue.toFixed(2)}</p>
                     </div>
                   </div>
@@ -348,7 +403,7 @@ export const AnalyticsPanel = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {loading ? (
+            {isLoading ? (
               <div className="space-y-4">
                 {[1, 2, 3].map(i => (
                   <div key={i} className="space-y-2">
@@ -382,49 +437,48 @@ export const AnalyticsPanel = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Popular Pages */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Globe className="h-5 w-5" />
+              Páginas Populares
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {viewsLoading ? (
+              <div className="space-y-3">
+                {[1, 2, 3, 4, 5].map(i => (
+                  <div key={i} className="flex items-center justify-between">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-4 w-12" />
+                  </div>
+                ))}
+              </div>
+            ) : popularPages.length === 0 ? (
+              <div className="py-8 text-center text-muted-foreground">
+                <Globe className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">Sin visitas registradas</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {popularPages.map((page, index) => (
+                  <div key={page.path} className="flex items-center justify-between">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="text-sm font-medium text-muted-foreground w-5 shrink-0">
+                        {index + 1}.
+                      </span>
+                      <span className="font-medium truncate text-sm font-mono">{page.path}</span>
+                    </div>
+                    <span className="text-sm font-semibold shrink-0 ml-4">{page.views}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
-  );
-};
-
-// KPI Card Component
-interface KPICardProps {
-  title: string;
-  value: number;
-  icon: React.ComponentType<{ className?: string }>;
-  loading: boolean;
-  format: 'number' | 'currency' | 'percent';
-}
-
-const KPICard = ({ title, value, icon: Icon, loading, format: formatType }: KPICardProps) => {
-  const formattedValue = useMemo(() => {
-    if (formatType === 'currency') {
-      return `$${value.toFixed(2)}`;
-    }
-    if (formatType === 'percent') {
-      return `${value.toFixed(1)}%`;
-    }
-    return value.toLocaleString();
-  }, [value, formatType]);
-
-  return (
-    <Card>
-      <CardContent className="p-4">
-        {loading ? (
-          <>
-            <Skeleton className="h-8 w-20 mb-2" />
-            <Skeleton className="h-4 w-16" />
-          </>
-        ) : (
-          <>
-            <div className="flex items-center justify-between mb-1">
-              <Icon className="h-5 w-5 text-muted-foreground" />
-            </div>
-            <p className="text-2xl font-bold">{formattedValue}</p>
-            <p className="text-sm text-muted-foreground">{title}</p>
-          </>
-        )}
-      </CardContent>
-    </Card>
   );
 };
