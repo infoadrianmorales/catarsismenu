@@ -1,52 +1,61 @@
 
-## Swipe en el banner + mover botones CTA al banner (movil)
 
-### Dos cambios en un solo archivo
+## Reorganizar controles del banner movil
 
-**Archivo:** `src/components/HeroSection.tsx`
+### Resumen
 
-### 1. Soporte de swipe/deslizar con el dedo
+Dos cambios:
+1. **Mover botones CTA (WhatsApp, Instagram, Ubicacion) al header** junto al carrito, solo en movil
+2. **Mover los dots (indicadores de slide) dentro del banner**, entre las flechas de navegacion, reemplazando los iconos CTA que estaban ahi
 
-Se agregara deteccion de gestos tactiles usando `onTouchStart` y `onTouchEnd` nativos de React (sin dependencias externas). Si el usuario desliza mas de 50px horizontalmente, se cambia al slide anterior o siguiente.
+### Resultado visual
 
-- Se agregan dos estados con `useRef`: `touchStartX` y `touchEndX`
-- `onTouchStart` guarda la posicion inicial del dedo
-- `onTouchEnd` calcula la diferencia y ejecuta `goToNext()` o `goToPrev()` segun la direccion
-- Se pausa el auto-play al hacer swipe (igual que con las flechas)
-- Esto se aplica al contenedor de la zona de imagen (linea 84)
+**Header movil:**
+```text
+[Logo]                    [wa] [ig] [map] [carrito]
+```
 
-### 2. Mover botones CTA dentro del banner (movil)
-
-Los 3 botones de contacto (WhatsApp, Instagram, Ubicacion) que actualmente estan en el `MenuHeader.tsx` se moveran a la parte inferior del banner, junto a las flechas de navegacion.
-
-**Layout resultante en movil:**
-
+**Banner movil (parte inferior):**
 ```text
 +-------------------------------+
 |                               |
 |      IMAGEN DEL BANNER        |
 |                               |
-|  [<]   (wa) (ig) (map)   [>] |
-+-------------------------------+
-|          * * * * *            |
+|  [<]      * * * * *      [>]  |
 +-------------------------------+
 | TAPE DIVIDER                  |
 +-------------------------------+
 ```
 
-- Se modifica el bloque de "Mobile Navigation Arrows" (lineas 187-205) para incluir los 3 iconos CTA entre las flechas izquierda y derecha
-- Los iconos seran circulares (`rounded-full`, `bg-black/30`, `text-white`) con el mismo estilo que las flechas para mantener coherencia visual
-- WhatsApp conserva su color accent (`text-green-400`)
-- Se eliminan los botones CTA del `MenuHeader.tsx` (lineas 37-76, el bloque "Mobile CTA Icons")
+### Archivos a modificar
+
+**1. `src/components/MenuHeader.tsx`**
+- Importar `MessageCircle`, `Instagram`, `MapPin` de lucide-react y `trackContact` de `@/lib/metaPixel`
+- Agregar un bloque `flex md:hidden items-center gap-1` antes del CartDrawer con los 3 botones icono (`h-8 w-8`, variante `ghost`)
+- WhatsApp usa `text-accent`, Instagram y MapPin usan variante ghost normal
+- WhatsApp y MapPin se ocultan en modo local; Instagram siempre visible
+
+**2. `src/components/HeroSection.tsx`**
+- En el bloque "Mobile Navigation Arrows + CTA Icons" (lineas 211-265): reemplazar los iconos CTA del centro por los dot indicators
+- Layout: `[<] ... dots ... [>]`
+- Eliminar la seccion "Mobile Controls Zone" de dots (lineas 278-295) ya que los dots se mueven dentro del banner
+- La Mobile Controls Zone solo conserva el tape divider
+- Limpiar imports no usados si aplica (MessageCircle, Instagram, MapPin se mantienen para desktop)
 
 ### Detalle tecnico
 
-**`src/components/HeroSection.tsx`:**
-- Agregar `useRef` para touch tracking
-- Agregar handlers `handleTouchStart` y `handleTouchEnd`
-- Aplicar `onTouchStart`/`onTouchEnd` al div de la zona de imagen
-- Expandir el bloque de flechas moviles para incluir los 3 iconos CTA en el centro
+En el bloque movil del banner, el centro pasara de los 3 iconos CTA a los dots:
 
-**`src/components/MenuHeader.tsx`:**
-- Eliminar el bloque `div` con clase `flex md:hidden items-center gap-1` (lineas 38-76)
-- Mantener las importaciones que se usen en otras partes (si no se usan, se limpian)
+```text
+<div className="flex items-center gap-2">
+  {slides.map((_, index) => (
+    <button
+      className={`w-2 h-2 rounded-full ... ${
+        index === currentIndex ? 'bg-white w-5' : 'bg-white/40'
+      }`}
+    />
+  ))}
+</div>
+```
+
+Los dots usaran colores claros (`bg-white`, `bg-white/40`) ya que estaran superpuestos sobre la imagen, a diferencia de los dots anteriores que usaban colores de tema sobre fondo solido.
