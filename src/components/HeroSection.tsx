@@ -184,6 +184,26 @@ export const HeroSection = ({ mode = 'delivery' }: HeroSectionProps) => {
           </div>
         </div>
 
+        {/* Mobile Navigation Arrows - overlaid on bottom of image */}
+        {showCarousel && (
+          <div className="flex md:hidden absolute bottom-4 left-4 right-4 z-20 justify-between">
+            <button
+              onClick={() => { goToPrev(); setIsAutoPlaying(false); }}
+              className="p-2 rounded-full bg-black/30 hover:bg-black/50 text-white transition-colors"
+              aria-label="Slide anterior"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <button
+              onClick={() => { goToNext(); setIsAutoPlaying(false); }}
+              className="p-2 rounded-full bg-black/30 hover:bg-black/50 text-white transition-colors"
+              aria-label="Siguiente slide"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          </div>
+        )}
+
         {/* Desktop Tape Divider */}
         <div className="hidden md:block absolute bottom-0 left-0 right-0">
           <div className="tape-divider overflow-hidden">
@@ -196,37 +216,21 @@ export const HeroSection = ({ mode = 'delivery' }: HeroSectionProps) => {
 
       {/* Mobile Controls Zone - solid background, below image */}
       <div className="md:hidden bg-background px-4 py-4 flex flex-col items-center gap-3">
-        {/* Mobile Navigation: arrows + dots */}
+        {/* Mobile Dot indicators */}
         {showCarousel && (
-          <div className="flex items-center justify-center gap-3">
-            <button
-              onClick={() => { goToPrev(); setIsAutoPlaying(false); }}
-              className="p-1.5 rounded-full bg-muted hover:bg-muted/80 text-foreground transition-colors"
-              aria-label="Slide anterior"
-            >
-              <ChevronLeft className="h-5 w-5" />
-            </button>
-            <div className="flex gap-2">
-              {slides.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => goToSlide(index)}
-                  className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                    index === currentIndex 
-                      ? 'bg-primary w-5' 
-                      : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
-                  }`}
-                  aria-label={`Ir al slide ${index + 1}`}
-                />
-              ))}
-            </div>
-            <button
-              onClick={() => { goToNext(); setIsAutoPlaying(false); }}
-              className="p-1.5 rounded-full bg-muted hover:bg-muted/80 text-foreground transition-colors"
-              aria-label="Siguiente slide"
-            >
-              <ChevronRight className="h-5 w-5" />
-            </button>
+          <div className="flex justify-center gap-2">
+            {slides.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => goToSlide(index)}
+                className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                  index === currentIndex 
+                    ? 'bg-primary w-5' 
+                    : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
+                }`}
+                aria-label={`Ir al slide ${index + 1}`}
+              />
+            ))}
           </div>
         )}
 
