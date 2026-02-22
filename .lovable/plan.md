@@ -1,51 +1,52 @@
 
 
-## Optimizar integración con Meta Pixel
+## Optimizaciones de UX y Rendimiento
 
-### Mejoras a implementar
+### 1. Agregar `<noscript>` fallback para Meta Pixel
 
-**1. Disparar `trackSearch` con debounce**
-- Archivo: `src/hooks/useSearch.ts`
-- Agregar un `useEffect` con debounce de 500ms que llame a `trackSearch(query)` cuando el usuario deje de escribir
-- Esto activa el evento estandar `Search` de Meta que actualmente solo existe como funcion pero nunca se ejecuta
+Actualmente falta el tag `<noscript>` en `index.html`. Este tag es necesario para que Meta pueda rastrear usuarios que tienen JavaScript deshabilitado, y tambien es requerido por el verificador de Pixel de Meta.
 
-**2. Agregar evento `AddPaymentInfo`**
-- Archivo: `src/lib/metaPixel.ts` — agregar funcion `trackAddPaymentInfo(method, value)`
-- Archivo: `src/pages/Checkout.tsx` — disparar cuando el usuario selecciona un metodo de pago
-- Este es un evento estandar de Meta que mejora la atribucion de conversiones
+**Archivo:** `index.html`
+- Agregar el tag `<noscript>` con el pixel image justo despues de `<body>`, usando el pixel ID desde la configuracion dinamica (hardcoded como fallback)
 
-**3. Agregar evento custom `ViewCategory`**
-- Archivo: `src/pages/CategoryPage.tsx` — agregar un `useEffect` que dispare `trackCustomEvent('ViewCategory', { category: slug })` al cargar la pagina de categoria
-- Permite construir audiencias segmentadas por interes en categorias especificas
+### 2. Imagen del ProductPage sin OptimizedImage
 
-**4. Agregar evento custom `RemoveFromCart`**
-- Archivo: `src/lib/metaPixel.ts` — agregar funcion `trackRemoveFromCart(product)`
-- Archivo: `src/components/cart/AddToCartButton.tsx` — disparar en `handleDecrease` cuando se elimina del carrito
-- Util para remarketing y entender patrones de abandono
+La pagina de detalle de producto (`ProductPage.tsx`) usa un `<img>` directo en lugar de `OptimizedImage`. Esto significa que no aprovecha WebP responsivo, lazy loading con IntersectionObserver, ni srcset.
 
-**5. Agregar `data-meta-event` e IDs a tarjetas de producto**
-- Archivo: `src/components/CompactProductCard.tsx` — agregar `data-meta-event="ViewContent"` e `id={product-card-${item.id}}` al Link/Card principal
-- Archivo: `src/components/MenuCard.tsx` — igual
-- Permite mapear clicks en productos desde el Event Setup Tool
+**Archivo:** `src/pages/ProductPage.tsx`
+- Reemplazar el `<img>` por `<OptimizedImage>` con `variant="full"` y `loading="eager"`
+- Eliminar el estado `imageLoaded` manual ya que `OptimizedImage` lo gestiona internamente
 
-### Resumen de cambios por archivo
+### 3. Prefetch de la pagina de producto al hover
 
-| Archivo | Cambio |
-|---------|--------|
-| `src/hooks/useSearch.ts` | Agregar debounce para disparar `trackSearch` |
-| `src/lib/metaPixel.ts` | Agregar `trackAddPaymentInfo` y `trackRemoveFromCart` |
-| `src/pages/Checkout.tsx` | Disparar `trackAddPaymentInfo` al seleccionar metodo de pago |
-| `src/pages/CategoryPage.tsx` | Disparar `trackCustomEvent('ViewCategory')` al cargar |
-| `src/components/CompactProductCard.tsx` | Agregar atributos `data-meta-event` e `id` |
-| `src/components/MenuCard.tsx` | Agregar atributos `data-meta-event` e `id` |
-| `src/components/cart/AddToCartButton.tsx` | Disparar `trackRemoveFromCart` al eliminar producto |
+Cuando un usuario pasa el dedo o mouse sobre una tarjeta de producto, podemos pre-cargar la imagen en tamano completo para que al entrar a la pagina de detalle, la imagen ya este en cache.
 
-### Eventos resultantes (despues de los cambios)
+**Archivo:** `src/components/CompactProductCard.tsx` y `src/components/MenuCard.tsx`
+- Agregar `onMouseEnter` / `onTouchStart` en el Link que haga un `new Image().src = item.imagen` para pre-cargar la imagen full
 
-```text
-Embudo completo:
-PageView -> Search -> ViewCategory -> ViewContent -> AddToCart -> RemoveFromCart (si aplica)
--> InitiateCheckout -> AddPaymentInfo -> Purchase -> Contact
-```
+### 4. Skeleton del Hero con altura fija para evitar CLS
 
-Todos estos son eventos estandar o custom reconocidos por Meta, lo que mejora la optimizacion de campanas, la creacion de audiencias y la atribucion de conversiones.
+El Hero Section no muestra skeleton mientras carga los slides, lo que puede causar Content Layout Shift (CLS). Si los slides tardan, el contenido salta.
+
+**Archivo:** `src/components/HeroSection.tsx`
+- Agregar un skeleton/placeholder con `min-h-[60vh]` mientras `loading` es true, evitando el salto de contenido
+
+### 5. Mejorar accesibilidad del formulario de checkout
+
+El formulario de checkout no tiene `aria-describedby` para los mensajes de error, ni `aria-invalid` en los campos con error. Esto afecta la experiencia con lectores de pantalla.
+
+**Archivo:** `src/pages/Checkout.tsx`
+- Agregar `aria-invalid={!!errors.fieldName}` y `aria-describedby` a los inputs con error
+- Agregar `role="alert"` a los mensajes de error
+
+### Resumen de cambios
+
+| Archivo | Cambio | Impacto |
+|---------|--------|---------|
+| `index.html` | Agregar `<noscript>` pixel tag | Meta Pixel: tracking sin JS |
+| `src/pages/ProductPage.tsx` | Usar `OptimizedImage` en vez de `<img>` | Rendimiento: WebP + srcset |
+| `src/components/CompactProductCard.tsx` | Prefetch imagen al hover | UX: carga instantanea del detalle |
+| `src/components/MenuCard.tsx` | Prefetch imagen al hover | UX: carga instantanea del detalle |
+| `src/components/HeroSection.tsx` | Skeleton durante carga de slides | Rendimiento: menos CLS |
+| `src/pages/Checkout.tsx` | Atributos ARIA en campos de error | Accesibilidad |
+
