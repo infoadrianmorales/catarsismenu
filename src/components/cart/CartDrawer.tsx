@@ -18,7 +18,7 @@ import { cn } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 
 interface CartDrawerProps {
-  variant?: 'header' | 'sticky';
+  variant?: 'header' | 'sticky' | 'floating';
 }
 
 export const CartDrawer = ({ variant = 'header' }: CartDrawerProps) => {
@@ -57,7 +57,24 @@ export const CartDrawer = ({ variant = 'header' }: CartDrawerProps) => {
     return currency === 'USD' ? p.formattedUSD : p.formattedVES;
   };
 
-  const TriggerButton = variant === 'sticky' ? (
+  const TriggerButton = variant === 'floating' ? (
+    <Button
+      id="cart-drawer-floating"
+      data-meta-event="ViewCart"
+      className={cn(
+        "relative gap-3 bg-secondary hover:bg-secondary/90 text-secondary-foreground font-bold",
+        "h-14 px-5 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+      )}
+    >
+      <div className="relative">
+        <ShoppingCart className="h-5 w-5" />
+        <Badge className="absolute -top-2 -right-3 h-5 min-w-5 flex items-center justify-center p-0 px-1 text-[10px] bg-primary text-primary-foreground">
+          {totalItems > 99 ? '99+' : totalItems}
+        </Badge>
+      </div>
+      <span className="text-sm">{formatPrice(subtotal)}</span>
+    </Button>
+  ) : variant === 'sticky' ? (
     <Button
       id="cart-drawer-sticky"
       data-meta-event="ViewCart"

@@ -3,13 +3,13 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { CartProvider } from "@/contexts/CartContext";
 import { ViewModeProvider } from "@/contexts/ViewModeContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
-import { FloatingWhatsApp } from "./components/FloatingWhatsApp";
+import { FloatingCart } from "./components/FloatingCart";
 import { MetaPixelProvider } from "./components/MetaPixelProvider";
 import { ScrollToTop } from "./components/ScrollToTop";
 
@@ -48,10 +48,6 @@ const PageLoader = () => (
 );
 
 const AppContent = () => {
-  const location = useLocation();
-  // Hide floating WhatsApp on admin, auth, and local menu pages
-  const hideFloatingWhatsApp = ['/admin', '/auth', '/local'].includes(location.pathname);
-
   return (
     <ViewModeProvider>
       <MetaPixelProvider>
@@ -82,7 +78,7 @@ const AppContent = () => {
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
-        {!hideFloatingWhatsApp && <FloatingWhatsApp />}
+        <FloatingCart />
       </MetaPixelProvider>
     </ViewModeProvider>
   );

@@ -1,11 +1,15 @@
 import { Currency } from '@/types/menu';
 import { appConfig } from '@/data/config';
-import { MessageCircle, Share2 } from 'lucide-react';
+import { MessageCircle, Share2, ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import { PriceDisplayMode } from '@/hooks/useCurrency';
 import { trackContact } from '@/lib/metaPixel';
+import { useCart } from '@/contexts/CartContext';
+import { useNavigate } from 'react-router-dom';
+import { cn } from '@/lib/utils';
 
 interface StickyActionBarProps {
   currency: Currency;
@@ -15,6 +19,8 @@ interface StickyActionBarProps {
 
 export const StickyActionBar = ({ currency, onCurrencyToggle, displayMode = 'ambas' }: StickyActionBarProps) => {
   const showCurrencyToggle = displayMode === 'ambas';
+  const { totalItems } = useCart();
+  const navigate = useNavigate();
 
   const handleWhatsAppClick = () => {
     const message = encodeURIComponent('Hola, vengo del menú web de Catarsis. Quiero hacer un pedido.');
@@ -92,16 +98,42 @@ export const StickyActionBar = ({ currency, onCurrencyToggle, displayMode = 'amb
             >
               <Share2 className="h-5 w-5" />
             </Button>
+
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={handleWhatsAppClick}
+              className="h-9 w-9 p-0 text-muted-foreground"
+              data-meta-event="Contact"
+              id="sticky-whatsapp-btn"
+              aria-label="WhatsApp"
+            >
+              <MessageCircle className="h-4 w-4" />
+            </Button>
             
             <Button
               size="sm"
-              onClick={handleWhatsAppClick}
-              className="bg-accent hover:bg-accent/90 text-accent-foreground font-bold gap-2"
-              data-meta-event="Contact"
-              id="sticky-whatsapp-btn"
+              onClick={() => navigate(totalItems > 0 ? '/carrito' : '/')}
+              className={cn(
+                "font-bold gap-2 relative",
+                totalItems > 0
+                  ? "bg-secondary hover:bg-secondary/90 text-secondary-foreground"
+                  : "bg-muted text-muted-foreground"
+              )}
+              data-meta-event="ViewCart"
+              id="sticky-cart-btn"
             >
-              <MessageCircle className="h-4 w-4" />
-              Pedir
+              <ShoppingCart className="h-4 w-4" />
+              {totalItems > 0 ? (
+                <>
+                  Carrito
+                  <Badge className="h-5 min-w-5 flex items-center justify-center p-0 px-1 text-[10px] bg-primary text-primary-foreground">
+                    {totalItems}
+                  </Badge>
+                </>
+              ) : (
+                <span>Menú</span>
+              )}
             </Button>
           </div>
         </div>
