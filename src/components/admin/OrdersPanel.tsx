@@ -1,16 +1,20 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Eye, RefreshCw, Copy, Check, Clock, CreditCard, XCircle, DollarSign, ShoppingBag, Sparkles } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Loader2, Eye, RefreshCw, Copy, Check, CreditCard, XCircle, DollarSign, ShoppingBag, Sparkles, CalendarIcon, Trash2, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { format, isToday, startOfWeek, isWithinInterval } from 'date-fns';
+import { format, isToday, subDays, startOfDay, endOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 interface Order {
   id: string;
@@ -23,6 +27,7 @@ interface Order {
   currency_mode: string;
   exchange_rate: number | null;
   payment_method: string;
+  payment_currency: string;
   subtotal: number;
   total: number;
   status: string;
@@ -37,16 +42,15 @@ interface OrderItem {
   line_total: number;
 }
 
-type OrderTab = 'new' | 'pending' | 'paid' | 'canceled' | 'all';
+type OrderTab = 'new' | 'paid' | 'canceled' | 'all';
+type DatePreset = 'today' | '7days' | '30days' | 'all';
 
-// Status options for the dropdown selector (simplified to 3 options)
 const STATUS_OPTIONS = [
   { value: 'PAID', label: 'Pagado', color: 'bg-green-500' },
   { value: 'PENDING', label: 'Pendiente', color: 'bg-yellow-500' },
   { value: 'CANCELED', label: 'Cancelado', color: 'bg-red-500' },
 ];
 
-// Display configuration for all statuses (for badges)
 const STATUS_DISPLAY: Record<string, { label: string; color: string }> = {
   NEW: { label: 'Nuevo', color: 'bg-blue-500' },
   PENDING: { label: 'Pendiente', color: 'bg-yellow-500' },
@@ -66,36 +70,16 @@ const PAYMENT_LABELS: Record<string, string> = {
 };
 
 const TAB_CONFIG: Record<OrderTab, { label: string; icon: React.ReactNode }> = {
-  new: { 
-    label: 'Nuevas', 
-    icon: <Sparkles className="h-4 w-4" />
-  },
-  pending: { 
-    label: 'Pendientes', 
-    icon: <Clock className="h-4 w-4" />
-  },
-  paid: { 
-    label: 'Pagadas', 
-    icon: <CreditCard className="h-4 w-4" />
-  },
-  canceled: { 
-    label: 'Canceladas', 
-    icon: <XCircle className="h-4 w-4" />
-  },
-  all: { 
-    label: 'Todas', 
-    icon: <ShoppingBag className="h-4 w-4" />
-  },
+  new: { label: 'Nuevas', icon: <Sparkles className="h-4 w-4" /> },
+  paid: { label: 'Pagadas', icon: <CreditCard className="h-4 w-4" /> },
+  canceled: { label: 'Canceladas', icon: <XCircle className="h-4 w-4" /> },
+  all: { label: 'Todas', icon: <ShoppingBag className="h-4 w-4" /> },
 };
 
-// Classify an order into the appropriate tab based on status
-// NEW orders always go to "Nuevas" (no time-based rule)
 const classifyOrder = (order: Order): OrderTab => {
   if (order.status === 'CANCELED') return 'canceled';
   if (order.status === 'PAID' || order.status === 'DELIVERED') return 'paid';
-  if (order.status === 'NEW') return 'new';
-  if (['IN_PROGRESS', 'PAYMENT_SUBMITTED', 'PENDING'].includes(order.status)) return 'pending';
-  return 'all';
+  return 'new'; // NEW, IN_PROGRESS, PENDING, PAYMENT_SUBMITTED
 };
 
 export const OrdersPanel = () => {
@@ -106,6 +90,10 @@ export const OrdersPanel = () => {
   const [loadingItems, setLoadingItems] = useState(false);
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<OrderTab>('new');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [datePreset, setDatePreset] = useState<DatePreset>('30days');
+  const [dateFrom, setDateFrom] = useState<Date | undefined>(subDays(new Date(), 30));
+  const [dateTo, setDateTo] = useState<Date | undefined>(new Date());
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -123,67 +111,126 @@ export const OrdersPanel = () => {
     setLoading(false);
   };
 
+  const runAutoCancel = useCallback(async () => {
+    const { data, error } = await supabase.rpc('auto_cancel_stale_orders');
+    if (!error && data && data > 0) {
+      toast.info(`${data} orden(es) antigua(s) cancelada(s) automáticamente`);
+      fetchOrders();
+    }
+  }, []);
+
   const fetchOrderItems = async (orderId: string) => {
     setLoadingItems(true);
     const { data, error } = await supabase
       .from('order_items')
       .select('*')
       .eq('order_id', orderId);
-
-    if (error) {
-      toast.error('Error al cargar items');
-    } else {
-      setOrderItems(data || []);
-    }
+    if (error) toast.error('Error al cargar items');
+    else setOrderItems(data || []);
     setLoadingItems(false);
   };
 
   useEffect(() => {
     fetchOrders();
+    runAutoCancel();
   }, []);
 
-  // Calculate KPIs with the new classification logic
-  const kpis = useMemo(() => {
+  // Date preset handler
+  const handleDatePreset = (preset: DatePreset) => {
+    setDatePreset(preset);
     const now = new Date();
-    const weekStart = startOfWeek(now, { weekStartsOn: 1 });
+    switch (preset) {
+      case 'today':
+        setDateFrom(startOfDay(now));
+        setDateTo(endOfDay(now));
+        break;
+      case '7days':
+        setDateFrom(subDays(now, 7));
+        setDateTo(now);
+        break;
+      case '30days':
+        setDateFrom(subDays(now, 30));
+        setDateTo(now);
+        break;
+      case 'all':
+        setDateFrom(undefined);
+        setDateTo(undefined);
+        break;
+    }
+  };
 
-    // New orders (< 60 min)
-    const newOrders = orders.filter(o => classifyOrder(o) === 'new').length;
-    
-    // Pending orders (> 60 min or IN_PROGRESS/PAYMENT_SUBMITTED)
-    const pending = orders.filter(o => classifyOrder(o) === 'pending').length;
-    
-    const paidOrders = orders.filter(o => o.status === 'PAID' || o.status === 'DELIVERED');
-    const paidToday = paidOrders.filter(o => isToday(new Date(o.created_at))).length;
-    const paidThisWeek = paidOrders.filter(o => 
-      isWithinInterval(new Date(o.created_at), { start: weekStart, end: now })
-    ).length;
-    
-    const revenueToday = paidOrders
-      .filter(o => isToday(new Date(o.created_at)))
-      .reduce((sum, o) => sum + Number(o.total), 0);
-    
-    const canceled = orders.filter(o => o.status === 'CANCELED').length;
+  // Filter orders by date range
+  const dateFilteredOrders = useMemo(() => {
+    if (!dateFrom && !dateTo) return orders;
+    return orders.filter(o => {
+      const d = new Date(o.created_at);
+      if (dateFrom && d < startOfDay(dateFrom)) return false;
+      if (dateTo && d > endOfDay(dateTo)) return false;
+      return true;
+    });
+  }, [orders, dateFrom, dateTo]);
 
-    return { newOrders, pending, paidToday, paidThisWeek, revenueToday, canceled };
-  }, [orders]);
+  // KPIs from date-filtered orders
+  const kpis = useMemo(() => {
+    const total = dateFilteredOrders.length;
+    const nonCanceled = dateFilteredOrders.filter(o => o.status !== 'CANCELED');
+    const revenueUsd = nonCanceled.reduce((s, o) => s + Number(o.total), 0);
+    const revenueBs = nonCanceled.reduce((s, o) => {
+      if (o.exchange_rate) return s + Number(o.total) * Number(o.exchange_rate);
+      return s;
+    }, 0);
+    const avgTicket = nonCanceled.length > 0 ? revenueUsd / nonCanceled.length : 0;
+    const canceled = dateFilteredOrders.filter(o => o.status === 'CANCELED').length;
+    const cancelRate = total > 0 ? (canceled / total) * 100 : 0;
+    return { total, revenueUsd, revenueBs, avgTicket, canceled, cancelRate };
+  }, [dateFilteredOrders]);
 
-  // Filter orders by active tab using the classification logic
+  // Filter by tab
   const filteredOrders = useMemo(() => {
-    if (activeTab === 'all') return orders;
-    return orders.filter(o => classifyOrder(o) === activeTab);
-  }, [orders, activeTab]);
+    if (activeTab === 'all') return dateFilteredOrders;
+    return dateFilteredOrders.filter(o => classifyOrder(o) === activeTab);
+  }, [dateFilteredOrders, activeTab]);
 
-  // Count orders per tab using the classification logic
-  const tabCounts = useMemo(() => {
-    return {
-      new: orders.filter(o => classifyOrder(o) === 'new').length,
-      pending: orders.filter(o => classifyOrder(o) === 'pending').length,
-      paid: orders.filter(o => classifyOrder(o) === 'paid').length,
-      canceled: orders.filter(o => classifyOrder(o) === 'canceled').length,
-      all: orders.length,
-    };
-  }, [orders]);
+  // Tab counts
+  const tabCounts = useMemo(() => ({
+    new: dateFilteredOrders.filter(o => classifyOrder(o) === 'new').length,
+    paid: dateFilteredOrders.filter(o => classifyOrder(o) === 'paid').length,
+    canceled: dateFilteredOrders.filter(o => classifyOrder(o) === 'canceled').length,
+    all: dateFilteredOrders.length,
+  }), [dateFilteredOrders]);
+
+  // Selection handlers
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredOrders.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredOrders.map(o => o.id)));
+    }
+  };
+
+  const handleBatchStatusChange = async (newStatus: string) => {
+    const ids = Array.from(selectedIds);
+    const { error } = await supabase
+      .from('orders')
+      .update({ status: newStatus })
+      .in('id', ids);
+
+    if (error) {
+      toast.error('Error al actualizar órdenes');
+    } else {
+      toast.success(`${ids.length} orden(es) actualizada(s) a ${STATUS_DISPLAY[newStatus]?.label || newStatus}`);
+      setOrders(prev => prev.map(o => ids.includes(o.id) ? { ...o, status: newStatus } : o));
+      setSelectedIds(new Set());
+    }
+  };
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
     const { error } = await supabase
@@ -195,9 +242,7 @@ export const OrdersPanel = () => {
       toast.error('Error al actualizar estado');
     } else {
       toast.success('Estado actualizado');
-      setOrders(prev =>
-        prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o)
-      );
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
       if (selectedOrder?.id === orderId) {
         setSelectedOrder(prev => prev ? { ...prev, status: newStatus } : null);
       }
@@ -219,18 +264,22 @@ export const OrdersPanel = () => {
   };
 
   const getStatusBadge = (status: string) => {
-    const statusConfig = STATUS_DISPLAY[status] || { label: status, color: 'bg-gray-500' };
-    return (
-      <Badge className={`${statusConfig.color} text-white`}>
-        {statusConfig.label}
-      </Badge>
-    );
+    const cfg = STATUS_DISPLAY[status] || { label: status, color: 'bg-gray-500' };
+    return <Badge className={`${cfg.color} text-white`}>{cfg.label}</Badge>;
   };
 
-  const formatPrice = (amount: number, currency: string) => {
-    return currency === 'VES' 
-      ? `Bs ${amount.toFixed(2)}`
-      : `$${amount.toFixed(2)}`;
+  const formatTotal = (order: Order) => {
+    const usd = `$${Number(order.total).toFixed(2)}`;
+    if (order.payment_currency === 'VES' && order.exchange_rate) {
+      const bs = (Number(order.total) * Number(order.exchange_rate)).toFixed(2);
+      return (
+        <div className="text-right">
+          <p className="font-semibold">{usd}</p>
+          <p className="text-xs text-muted-foreground">Bs {bs}</p>
+        </div>
+      );
+    }
+    return <span className="font-semibold">{usd}</span>;
   };
 
   if (loading) {
@@ -246,74 +295,120 @@ export const OrdersPanel = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-display font-bold">Órdenes</h2>
-        <Button variant="outline" size="sm" onClick={fetchOrders} className="gap-2">
-          <RefreshCw className="h-4 w-4" />
-          Actualizar
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => { runAutoCancel(); }} className="gap-2 text-xs">
+            <Trash2 className="h-3.5 w-3.5" />
+            Limpiar antiguas
+          </Button>
+          <Button variant="outline" size="sm" onClick={fetchOrders} className="gap-2">
+            <RefreshCw className="h-4 w-4" />
+            Actualizar
+          </Button>
+        </div>
+      </div>
+
+      {/* Date Filter */}
+      <div className="flex flex-wrap items-center gap-2">
+        {(['today', '7days', '30days', 'all'] as DatePreset[]).map(p => (
+          <Button
+            key={p}
+            variant={datePreset === p ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => handleDatePreset(p)}
+          >
+            {{ today: 'Hoy', '7days': '7 días', '30days': '30 días', all: 'Todo' }[p]}
+          </Button>
+        ))}
+        <div className="flex items-center gap-1 ml-2">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className={cn("gap-1 text-xs", !dateFrom && "text-muted-foreground")}>
+                <CalendarIcon className="h-3.5 w-3.5" />
+                {dateFrom ? format(dateFrom, 'dd/MM/yy') : 'Desde'}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={dateFrom}
+                onSelect={(d) => { setDateFrom(d); setDatePreset('all'); }}
+                initialFocus
+                className="p-3 pointer-events-auto"
+              />
+            </PopoverContent>
+          </Popover>
+          <span className="text-muted-foreground text-xs">—</span>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className={cn("gap-1 text-xs", !dateTo && "text-muted-foreground")}>
+                <CalendarIcon className="h-3.5 w-3.5" />
+                {dateTo ? format(dateTo, 'dd/MM/yy') : 'Hasta'}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={dateTo}
+                onSelect={(d) => { setDateTo(d); setDatePreset('all'); }}
+                initialFocus
+                className="p-3 pointer-events-auto"
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4 flex items-center gap-3">
             <div className="p-2 rounded-lg bg-blue-500/10">
-              <Sparkles className="h-5 w-5 text-blue-600" />
+              <ShoppingBag className="h-5 w-5 text-blue-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold">{kpis.newOrders}</p>
-              <p className="text-xs text-muted-foreground">Nuevas</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-yellow-500/10">
-              <Clock className="h-5 w-5 text-yellow-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">{kpis.pending}</p>
-              <p className="text-xs text-muted-foreground">Pendientes</p>
+              <p className="text-2xl font-bold">{kpis.total}</p>
+              <p className="text-xs text-muted-foreground">Total Órdenes</p>
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4 flex items-center gap-3">
             <div className="p-2 rounded-lg bg-green-500/10">
-              <CreditCard className="h-5 w-5 text-green-600" />
+              <DollarSign className="h-5 w-5 text-green-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold">{kpis.paidToday} <span className="text-sm font-normal text-muted-foreground">/ {kpis.paidThisWeek}</span></p>
-              <p className="text-xs text-muted-foreground">Pagadas hoy / semana</p>
+              <p className="text-2xl font-bold">${kpis.revenueUsd.toFixed(0)}</p>
+              <p className="text-xs text-muted-foreground">Ingresos USD</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-yellow-500/10">
+              <DollarSign className="h-5 w-5 text-yellow-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold">Bs {kpis.revenueBs.toFixed(0)}</p>
+              <p className="text-xs text-muted-foreground">Ingresos Bs</p>
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4 flex items-center gap-3">
             <div className="p-2 rounded-lg bg-secondary/10">
-              <DollarSign className="h-5 w-5 text-secondary" />
+              <CreditCard className="h-5 w-5 text-secondary" />
             </div>
             <div>
-              <p className="text-2xl font-bold">${kpis.revenueToday.toFixed(0)}</p>
-              <p className="text-xs text-muted-foreground">Ingresos hoy</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-red-500/10">
-              <XCircle className="h-5 w-5 text-red-500" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">{kpis.canceled}</p>
-              <p className="text-xs text-muted-foreground">Canceladas</p>
+              <p className="text-2xl font-bold">${kpis.avgTicket.toFixed(2)}</p>
+              <p className="text-xs text-muted-foreground">Ticket Promedio</p>
             </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as OrderTab)}>
-        <TabsList className="grid w-full grid-cols-5">
+      <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as OrderTab); setSelectedIds(new Set()); }}>
+        <TabsList className="grid w-full grid-cols-4">
           {(Object.keys(TAB_CONFIG) as OrderTab[]).map((tab) => (
             <TabsTrigger key={tab} value={tab} className="gap-2 text-xs sm:text-sm">
               <span className="hidden sm:inline">{TAB_CONFIG[tab].icon}</span>
@@ -328,6 +423,26 @@ export const OrdersPanel = () => {
         </TabsList>
       </Tabs>
 
+      {/* Batch Actions Bar */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-3 p-3 bg-muted rounded-lg border">
+          <span className="text-sm font-medium">{selectedIds.size} orden(es) seleccionada(s)</span>
+          <div className="flex gap-2 ml-auto">
+            <Button size="sm" variant="outline" className="gap-1 text-green-700 border-green-300 hover:bg-green-50" onClick={() => handleBatchStatusChange('PAID')}>
+              <CheckCircle2 className="h-4 w-4" />
+              Pagadas
+            </Button>
+            <Button size="sm" variant="outline" className="gap-1 text-red-700 border-red-300 hover:bg-red-50" onClick={() => handleBatchStatusChange('CANCELED')}>
+              <XCircle className="h-4 w-4" />
+              Canceladas
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())}>
+              Deseleccionar
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Orders Table */}
       {filteredOrders.length === 0 ? (
         <Card>
@@ -341,10 +456,16 @@ export const OrdersPanel = () => {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10">
+                    <Checkbox
+                      checked={selectedIds.size === filteredOrders.length && filteredOrders.length > 0}
+                      onCheckedChange={toggleSelectAll}
+                    />
+                  </TableHead>
                   <TableHead>ID</TableHead>
                   <TableHead>Fecha</TableHead>
                   <TableHead>Cliente</TableHead>
-                  <TableHead>Total</TableHead>
+                  <TableHead className="text-right">Total</TableHead>
                   <TableHead>Pago</TableHead>
                   <TableHead>Estado</TableHead>
                   <TableHead className="text-right">Acciones</TableHead>
@@ -352,11 +473,17 @@ export const OrdersPanel = () => {
               </TableHeader>
               <TableBody>
                 {filteredOrders.map((order) => (
-                  <TableRow key={order.id} className={
-                    order.status === 'NEW' ? 'bg-blue-500/5' :
-                    order.status === 'PAYMENT_SUBMITTED' ? 'bg-orange-500/5' :
-                    undefined
-                  }>
+                  <TableRow key={order.id} className={cn(
+                    selectedIds.has(order.id) && 'bg-primary/5',
+                    order.status === 'NEW' && 'bg-blue-500/5',
+                    order.status === 'PAYMENT_SUBMITTED' && 'bg-orange-500/5',
+                  )}>
+                    <TableCell>
+                      <Checkbox
+                        checked={selectedIds.has(order.id)}
+                        onCheckedChange={() => toggleSelect(order.id)}
+                      />
+                    </TableCell>
                     <TableCell className="font-mono text-xs font-semibold">
                       {order.order_number || `#${order.id.slice(0, 8).toUpperCase()}`}
                     </TableCell>
@@ -369,9 +496,7 @@ export const OrdersPanel = () => {
                         <p className="text-xs text-muted-foreground">{order.phone}</p>
                       </div>
                     </TableCell>
-                    <TableCell className="font-semibold">
-                      {formatPrice(order.total, order.currency_mode)}
-                    </TableCell>
+                    <TableCell>{formatTotal(order)}</TableCell>
                     <TableCell className="text-sm">
                       {PAYMENT_LABELS[order.payment_method] || order.payment_method}
                     </TableCell>
@@ -396,11 +521,7 @@ export const OrdersPanel = () => {
                       </Select>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => openOrderDetail(order)}
-                      >
+                      <Button variant="ghost" size="icon" onClick={() => openOrderDetail(order)}>
                         <Eye className="h-4 w-4" />
                       </Button>
                     </TableCell>
@@ -426,10 +547,7 @@ export const OrdersPanel = () => {
             <div className="space-y-6">
               {/* Customer Info */}
               <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm">Datos del Cliente</CardTitle>
-                </CardHeader>
-                <CardContent className="grid sm:grid-cols-2 gap-4 text-sm">
+                <CardContent className="pt-4 grid sm:grid-cols-2 gap-4 text-sm">
                   <div>
                     <p className="text-muted-foreground">Nombre</p>
                     <p className="font-medium">{selectedOrder.first_name} {selectedOrder.last_name}</p>
@@ -453,10 +571,7 @@ export const OrdersPanel = () => {
 
               {/* Items */}
               <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm">Items del Pedido</CardTitle>
-                </CardHeader>
-                <CardContent>
+                <CardContent className="pt-4">
                   {loadingItems ? (
                     <div className="flex justify-center py-4">
                       <Loader2 className="h-6 w-6 animate-spin" />
@@ -482,10 +597,7 @@ export const OrdersPanel = () => {
 
               {/* Payment Info */}
               <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm">Información de Pago</CardTitle>
-                </CardHeader>
-                <CardContent className="grid sm:grid-cols-2 gap-4 text-sm">
+                <CardContent className="pt-4 grid sm:grid-cols-2 gap-4 text-sm">
                   <div>
                     <p className="text-muted-foreground">Método</p>
                     <p className="font-medium">
@@ -493,8 +605,8 @@ export const OrdersPanel = () => {
                     </p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground">Moneda</p>
-                    <p className="font-medium">{selectedOrder.currency_mode}</p>
+                    <p className="text-muted-foreground">Moneda de pago</p>
+                    <p className="font-medium">{selectedOrder.payment_currency}</p>
                   </div>
                   {selectedOrder.exchange_rate && (
                     <div>
@@ -504,28 +616,35 @@ export const OrdersPanel = () => {
                   )}
                   <div>
                     <p className="text-muted-foreground">Total</p>
-                    <p className="font-bold text-lg text-secondary">
-                      {formatPrice(selectedOrder.total, selectedOrder.currency_mode)}
-                    </p>
+                    <div className="font-bold text-lg text-secondary">
+                      ${Number(selectedOrder.total).toFixed(2)}
+                      {selectedOrder.payment_currency === 'VES' && selectedOrder.exchange_rate && (
+                        <span className="text-sm font-normal text-muted-foreground ml-2">
+                          / Bs {(Number(selectedOrder.total) * Number(selectedOrder.exchange_rate)).toFixed(2)}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
 
               {/* WhatsApp Message */}
-              <Card>
-                <CardHeader className="pb-2 flex flex-row items-center justify-between">
-                  <CardTitle className="text-sm">Mensaje de WhatsApp</CardTitle>
-                  <Button variant="outline" size="sm" onClick={copyWhatsAppMessage} className="gap-2">
-                    {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                    {copied ? 'Copiado' : 'Copiar'}
-                  </Button>
-                </CardHeader>
-                <CardContent>
-                  <pre className="text-xs bg-muted p-4 rounded-lg whitespace-pre-wrap overflow-x-auto">
-                    {selectedOrder.whatsapp_message}
-                  </pre>
-                </CardContent>
-              </Card>
+              {selectedOrder.whatsapp_message && (
+                <Card>
+                  <CardContent className="pt-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-sm font-medium">Mensaje de WhatsApp</p>
+                      <Button variant="outline" size="sm" onClick={copyWhatsAppMessage} className="gap-2">
+                        {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                        {copied ? 'Copiado' : 'Copiar'}
+                      </Button>
+                    </div>
+                    <pre className="text-xs bg-muted p-4 rounded-lg whitespace-pre-wrap overflow-x-auto">
+                      {selectedOrder.whatsapp_message}
+                    </pre>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           )}
         </DialogContent>
