@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { appConfig } from '@/data/config';
 import { Button } from '@/components/ui/button';
 import { MessageCircle, Instagram, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -16,6 +16,26 @@ export const HeroSection = ({ mode = 'delivery' }: HeroSectionProps) => {
   const isLocalMode = mode === 'local';
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+  const touchStartX = useRef(0);
+  const touchEndX = useRef(0);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    touchEndX.current = e.changedTouches[0].clientX;
+    const diff = touchStartX.current - touchEndX.current;
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) {
+        goToNext();
+      } else {
+        goToPrev();
+      }
+      setIsAutoPlaying(false);
+      setTimeout(() => setIsAutoPlaying(true), 5000);
+    }
+  };
 
   // Use slides from DB or fallback to static image
   const allSlides = activeSlides.length > 0 
@@ -81,7 +101,11 @@ export const HeroSection = ({ mode = 'delivery' }: HeroSectionProps) => {
   return (
     <section className="relative flex flex-col md:block md:min-h-[70vh] overflow-hidden">
       {/* Image Zone */}
-      <div className="relative min-h-[45vh] md:min-h-[70vh] flex items-end justify-center">
+      <div
+        className="relative min-h-[45vh] md:min-h-[70vh] flex items-end justify-center"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
         {/* Background Images Carousel */}
         <div className="absolute inset-0">
           {slides.map((slide, index) => (
@@ -184,9 +208,9 @@ export const HeroSection = ({ mode = 'delivery' }: HeroSectionProps) => {
           </div>
         </div>
 
-        {/* Mobile Navigation Arrows - overlaid on bottom of image */}
-        {showCarousel && (
-          <div className="flex md:hidden absolute bottom-4 left-4 right-4 z-20 justify-between">
+        {/* Mobile Navigation Arrows + CTA Icons - overlaid on bottom of image */}
+        <div className="flex md:hidden absolute bottom-4 left-4 right-4 z-20 justify-between items-center">
+          {showCarousel ? (
             <button
               onClick={() => { goToPrev(); setIsAutoPlaying(false); }}
               className="p-2 rounded-full bg-black/30 hover:bg-black/50 text-white transition-colors"
@@ -194,6 +218,42 @@ export const HeroSection = ({ mode = 'delivery' }: HeroSectionProps) => {
             >
               <ChevronLeft className="h-5 w-5" />
             </button>
+          ) : <div className="w-9" />}
+
+          {/* CTA Icons */}
+          <div className="flex items-center gap-3">
+            {!isLocalMode && (
+              <button
+                onClick={handleWhatsAppClick}
+                className="p-2 rounded-full bg-black/30 hover:bg-black/50 text-green-400 transition-colors"
+                aria-label="WhatsApp"
+              >
+                <MessageCircle className="h-5 w-5" />
+              </button>
+            )}
+            <a
+              href={appConfig.instagram_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-2 rounded-full bg-black/30 hover:bg-black/50 text-white transition-colors"
+              aria-label="Instagram"
+            >
+              <Instagram className="h-5 w-5" />
+            </a>
+            {!isLocalMode && (
+              <a
+                href={appConfig.maps_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 rounded-full bg-black/30 hover:bg-black/50 text-white transition-colors"
+                aria-label="Ubicación"
+              >
+                <MapPin className="h-5 w-5" />
+              </a>
+            )}
+          </div>
+
+          {showCarousel ? (
             <button
               onClick={() => { goToNext(); setIsAutoPlaying(false); }}
               className="p-2 rounded-full bg-black/30 hover:bg-black/50 text-white transition-colors"
@@ -201,8 +261,8 @@ export const HeroSection = ({ mode = 'delivery' }: HeroSectionProps) => {
             >
               <ChevronRight className="h-5 w-5" />
             </button>
-          </div>
-        )}
+          ) : <div className="w-9" />}
+        </div>
 
         {/* Desktop Tape Divider */}
         <div className="hidden md:block absolute bottom-0 left-0 right-0">
