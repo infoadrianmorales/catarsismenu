@@ -1,27 +1,20 @@
 
 
-## Reestructurar HeroSection en movil
+## Reestructurar HeroSection en movil - Separar imagen de controles
 
 ### Problema actual
 
-En movil, las flechas de navegacion del slider estan centradas verticalmente (`top-1/2`) sobre la imagen del banner, y los puntos indicadores estan a `bottom-32` (128px del fondo). Ambos elementos obstruyen la imagen. Ademas, los 3 botones CTA (WhatsApp, Instagram, Como llegar) se apilan de forma desordenada.
+Los botones CTA, flechas y dots ocupan casi la mitad inferior del banner en movil, tapando la imagen. El enfoque de posicionar todo con `absolute` dentro del mismo contenedor no funciona porque hay demasiados elementos compitiendo por el espacio.
 
-### Cambios propuestos
+### Solucion propuesta
 
-**Archivo:** `src/components/HeroSection.tsx`
+Cambiar la estructura en movil para que la imagen y los controles esten en zonas claramente separadas:
 
-#### 1. Flechas de navegacion: mover abajo en movil
-- En movil: posicionar las flechas en la zona inferior del banner (sobre el gradiente oscuro), junto a los dots, en vez de centradas verticalmente sobre la imagen.
-- En desktop: mantener la posicion actual (`top-1/2`).
-- Implementacion: en movil, las flechas y los dots se agrupan en un solo contenedor horizontal (flecha izq + dots + flecha der) posicionado justo encima de los botones CTA.
+**En movil:** La seccion usa `flex-col` con dos zonas:
+1. **Zona de imagen** - ocupa la mayor parte del alto, sin nada encima excepto un gradiente suave al fondo
+2. **Zona de controles** - una franja oscura solida al fondo con los dots/flechas y los botones CTA
 
-#### 2. Puntos indicadores: integrar con flechas
-- Mover los dots de su posicion actual (`bottom-32`) a dentro del contenedor unificado de navegacion en movil.
-- En desktop, mantener dots y flechas en sus posiciones actuales.
-
-#### 3. Botones CTA: apilar verticalmente en movil
-- En movil: los botones se muestran en columna (uno debajo del otro) a ancho completo para mejor accesibilidad tactil.
-- En desktop: mantener el layout horizontal actual (`flex-wrap`).
+**En desktop:** sin cambios, se mantiene el layout actual con posicionamiento absoluto.
 
 ### Resultado visual en movil
 
@@ -29,13 +22,14 @@ En movil, las flechas de navegacion del slider estan centradas verticalmente (`t
 +---------------------------+
 |                           |
 |    IMAGEN DEL BANNER      |
-|    (sin obstrucciones)    |
+|    (limpia, sin nada)     |
 |                           |
 |                           |
-+--- gradiente oscuro ------+
-|   < * * * * >             |  <- flechas + dots juntos
++===========================+
+|  bg-background solido     |
+|   < * * * * >             |
 |                           |
-| [Pedir por WhatsApp     ] |  <- botones en columna
+| [Pedir por WhatsApp     ] |
 | [Ver en Instagram       ] |
 | [Como llegar            ] |
 +---------------------------+
@@ -45,7 +39,27 @@ En movil, las flechas de navegacion del slider estan centradas verticalmente (`t
 
 ### Detalle tecnico
 
-- Crear dos bloques de navegacion: uno para movil (`md:hidden`) y otro para desktop (`hidden md:block`).
-- El bloque movil es un `div` con `flex items-center justify-center gap-3` que contiene flecha izq, dots, flecha der, posicionado con `absolute bottom-36 z-20`.
-- Los botones CTA cambian de `flex flex-wrap` a `flex flex-col w-full` en movil (`flex-col md:flex-row md:flex-wrap`).
-- Los botones en movil usan `w-full` para ocupar todo el ancho.
+**Archivo:** `src/components/HeroSection.tsx`
+
+1. Cambiar la seccion principal en movil a una estructura de dos bloques:
+   - La imagen de fondo se mantiene como `absolute inset-0` pero la seccion usa `min-h-[50vh]` en movil (reducida de 60vh) para dar mas espacio a la zona de controles
+   - Los controles CTA pasan de `pb-16 pt-8` a una zona con `bg-background` solido, sin transparencia, para que no se mezclen con la imagen
+
+2. Navegacion movil (flechas + dots):
+   - Mover de `absolute bottom-36` a `relative` dentro de la zona de controles, como primer elemento
+   - Padding vertical reducido para compactar
+
+3. Botones CTA en movil:
+   - Dentro de la zona de controles con fondo solido
+   - Padding lateral generoso para legibilidad
+   - `gap-2` en vez de `gap-3` para compactar
+
+4. Gradiente del banner:
+   - En movil: gradiente mas corto, solo un fade suave al fondo de la imagen (`from-background via-transparent to-transparent` con menor cobertura)
+   - En desktop: mantener el gradiente actual
+
+5. La estructura del JSX cambiara a:
+   - En movil: `section > [imagen absolute] + [div relative con controles y fondo solido]`
+   - En desktop: se mantiene el layout actual con todo posicionado absolutamente sobre la imagen
+   - Se usara `md:absolute md:bottom-0` en el contenedor de controles para que en desktop flote sobre la imagen y en movil sea un bloque normal debajo
+
