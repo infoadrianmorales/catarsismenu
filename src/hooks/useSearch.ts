@@ -17,7 +17,7 @@ export const useSearch = (items: MenuItem[], bestSellers: MenuItem[] = []) => {
     if (searchQuery.trim()) {
       searchTimeoutRef.current = setTimeout(() => {
         trackSearch(searchQuery);
-      }, 1000); // 1 second debounce
+      }, 500); // 500ms debounce
     }
     
     return () => {

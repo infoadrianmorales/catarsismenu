@@ -15,7 +15,7 @@ import { toast } from 'sonner';
 import { MenuHeader } from '@/components/MenuHeader';
 import { Footer } from '@/components/Footer';
 import { z } from 'zod';
-import { trackInitiateCheckout, trackPurchase, trackContact } from '@/lib/metaPixel';
+import { trackInitiateCheckout, trackPurchase, trackContact, trackAddPaymentInfo } from '@/lib/metaPixel';
 
 // Generate a unique session ID for abandoned cart tracking
 const getSessionId = (): string => {
@@ -274,6 +274,12 @@ const Checkout = () => {
     if (errors.paymentMethod) {
       setErrors(prev => ({ ...prev, paymentMethod: '' }));
     }
+  };
+
+  // Track AddPaymentInfo when payment method is selected
+  const handlePaymentMethodChange = (method: string) => {
+    handleInputChange('paymentMethod', method);
+    trackAddPaymentInfo(method, subtotal, paymentCurrency);
   };
 
   if (items.length === 0) {
@@ -759,7 +765,7 @@ Correo: ${formData.email.toLowerCase()}`;
                 </Label>
                 <RadioGroup
                   value={formData.paymentMethod}
-                  onValueChange={(value) => handleInputChange('paymentMethod', value)}
+                  onValueChange={(value) => handlePaymentMethodChange(value)}
                   className="grid grid-cols-2 gap-3"
                 >
                   {availablePaymentMethods.map((method) => {

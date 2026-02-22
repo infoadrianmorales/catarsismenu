@@ -47,7 +47,7 @@ export const MenuCard = ({ item, currency, displayMode = 'ambas' }: MenuCardProp
   };
 
   return (
-    <Card className="group overflow-hidden border-border/40 bg-card hover:border-primary/50 transition-all duration-200 hover:shadow-glow hover:-translate-y-1">
+    <Card className="group overflow-hidden border-border/40 bg-card hover:border-primary/50 transition-all duration-200 hover:shadow-glow hover:-translate-y-1" data-meta-event="ViewContent" id={`product-card-${item.id}`}>
       <CardContent className="p-0">
         {/* White-background image container - zoom only on desktop */}
         <div className="relative p-1.5 sm:p-2">
