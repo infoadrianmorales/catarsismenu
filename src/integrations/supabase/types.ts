@@ -547,6 +547,7 @@ export type Database = {
       }
     }
     Functions: {
+      auto_cancel_stale_orders: { Args: never; Returns: number }
       check_rate_limit: {
         Args: {
           p_action: string
