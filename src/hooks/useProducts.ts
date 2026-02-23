@@ -81,7 +81,6 @@ export const useProducts = () => {
     if (!productsData) return [];
     return productsData
       .filter(p => p.destacado)
-      .slice(0, 4)
       .map(transformProduct);
   }, [productsData]);
 

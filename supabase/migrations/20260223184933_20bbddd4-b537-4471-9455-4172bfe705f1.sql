@@ -1,0 +1,1 @@
+ALTER VIEW public.best_sellers_food SET (security_invoker = on);
