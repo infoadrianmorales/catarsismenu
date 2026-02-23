@@ -1,61 +1,52 @@
 
 
-## Reorganizar controles del banner movil
+## Modificar Best Sellers: Top 8 de los ultimos 15 dias
 
-### Resumen
+### Problema actual
 
-Dos cambios:
-1. **Mover botones CTA (WhatsApp, Instagram, Ubicacion) al header** junto al carrito, solo en movil
-2. **Mover los dots (indicadores de slide) dentro del banner**, entre las flechas de navegacion, reemplazando los iconos CTA que estaban ahi
+La vista `best_sellers_food` suma **todas** las ventas historicas sin limite de tiempo ni limite de resultados. Esto significa que los "mas vendidos" nunca cambian realmente y no reflejan tendencias recientes.
 
-### Resultado visual
+### Solucion
 
-**Header movil:**
-```text
-[Logo]                    [wa] [ig] [map] [carrito]
+Recrear la vista para:
+1. Filtrar solo ordenes de los **ultimos 15 dias** (`o.created_at >= now() - interval '15 days'`)
+2. Limitar el resultado a **8 productos** (`LIMIT 8`)
+
+### Cambio en base de datos
+
+Una migracion SQL que ejecuta `CREATE OR REPLACE VIEW` con las dos condiciones nuevas:
+
+```sql
+CREATE OR REPLACE VIEW public.best_sellers_food AS
+SELECT 
+  p.id, p.nombre, p.slug, p.descripcion_corta, p.imagen_url,
+  p.precio_usd, p.categoria, p.activo, p.destacado, p.is_orderable,
+  p.orden, p.tags,
+  COALESCE(sum(oi.quantity), 0) AS total_sold
+FROM products p
+LEFT JOIN order_items oi ON oi.product_id = p.id
+LEFT JOIN orders o ON o.id = oi.order_id 
+  AND o.status <> 'CANCELED'
+  AND o.created_at >= now() - interval '15 days'   -- NUEVO: solo ultimos 15 dias
+WHERE p.activo = true 
+  AND p.categoria NOT IN ('bebidas','postres','acompanantes','cocktails','cocteleria')
+GROUP BY p.id
+HAVING COALESCE(sum(oi.quantity), 0) > 0           -- NUEVO: solo productos con ventas
+ORDER BY total_sold DESC, p.orden
+LIMIT 8;                                            -- NUEVO: maximo 8
 ```
 
-**Banner movil (parte inferior):**
-```text
-+-------------------------------+
-|                               |
-|      IMAGEN DEL BANNER        |
-|                               |
-|  [<]      * * * * *      [>]  |
-+-------------------------------+
-| TAPE DIVIDER                  |
-+-------------------------------+
-```
+### Cambio en frontend
 
-### Archivos a modificar
+**Archivo:** `src/hooks/useProducts.ts`
 
-**1. `src/components/MenuHeader.tsx`**
-- Importar `MessageCircle`, `Instagram`, `MapPin` de lucide-react y `trackContact` de `@/lib/metaPixel`
-- Agregar un bloque `flex md:hidden items-center gap-1` antes del CartDrawer con los 3 botones icono (`h-8 w-8`, variante `ghost`)
-- WhatsApp usa `text-accent`, Instagram y MapPin usan variante ghost normal
-- WhatsApp y MapPin se ocultan en modo local; Instagram siempre visible
+Eliminar el `.slice(0, 4)` en `featuredProducts` (no aplica aqui) y asegurar que `bestSellers` no aplique un slice adicional, ya que la vista ya limita a 8.
 
-**2. `src/components/HeroSection.tsx`**
-- En el bloque "Mobile Navigation Arrows + CTA Icons" (lineas 211-265): reemplazar los iconos CTA del centro por los dot indicators
-- Layout: `[<] ... dots ... [>]`
-- Eliminar la seccion "Mobile Controls Zone" de dots (lineas 278-295) ya que los dots se mueven dentro del banner
-- La Mobile Controls Zone solo conserva el tape divider
-- Limpiar imports no usados si aplica (MessageCircle, Instagram, MapPin se mantienen para desktop)
+No se requieren otros cambios en el frontend; el hook `useProducts` ya consume `best_sellers_food` y el componente `CategorySection` muestra lo que recibe.
 
-### Detalle tecnico
+### Comportamiento resultante
 
-En el bloque movil del banner, el centro pasara de los 3 iconos CTA a los dots:
+- Si hay ventas en los ultimos 15 dias: se muestran los 8 productos con mayor volumen
+- Si no hay ventas recientes: la seccion Best Seller aparece vacia o se oculta automaticamente (el componente ya maneja este caso)
+- La vista se actualiza en tiempo real con cada consulta (no requiere cron)
 
-```text
-<div className="flex items-center gap-2">
-  {slides.map((_, index) => (
-    <button
-      className={`w-2 h-2 rounded-full ... ${
-        index === currentIndex ? 'bg-white w-5' : 'bg-white/40'
-      }`}
-    />
-  ))}
-</div>
-```
-
-Los dots usaran colores claros (`bg-white`, `bg-white/40`) ya que estaran superpuestos sobre la imagen, a diferencia de los dots anteriores que usaban colores de tema sobre fondo solido.
