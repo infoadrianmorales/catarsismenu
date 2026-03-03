@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Save, DollarSign, MessageCircle, Instagram, MapPin, RefreshCw, CheckCircle2, Eye } from 'lucide-react';
+import { Loader2, Save, DollarSign, MessageCircle, Instagram, MapPin, RefreshCw, CheckCircle2, Eye, BarChart3 } from 'lucide-react';
 
 type PriceDisplayMode = 'solo_usd' | 'solo_ves' | 'ambas';
 type RateSource = 'bcv' | 'manual';
@@ -20,6 +20,7 @@ export const ConfigPanel = () => {
   const [lastSync, setLastSync] = useState<string | null>(null);
   const [priceDisplayMode, setPriceDisplayMode] = useState<PriceDisplayMode>('ambas');
   const [rateSource, setRateSource] = useState<RateSource>('bcv');
+  const [metricoolHash, setMetricoolHash] = useState('');
   const [formValues, setFormValues] = useState({
     tasa_ves: '',
     tasa_manual: '',
@@ -49,7 +50,7 @@ export const ConfigPanel = () => {
       const { data } = await supabase
         .from('config')
         .select('key, value')
-        .in('key', ['bcv_last_sync', 'price_display_mode', 'rate_source', 'tasa_manual']);
+        .in('key', ['bcv_last_sync', 'price_display_mode', 'rate_source', 'tasa_manual', 'metricool_hash']);
       
       if (data) {
         data.forEach(item => {
@@ -61,6 +62,8 @@ export const ConfigPanel = () => {
             setRateSource(item.value as RateSource);
           } else if (item.key === 'tasa_manual') {
             setFormValues(prev => ({ ...prev, tasa_manual: item.value }));
+          } else if (item.key === 'metricool_hash') {
+            setMetricoolHash(item.value);
           }
         });
       }
@@ -243,7 +246,7 @@ export const ConfigPanel = () => {
               </Button>
             </div>
             <p className="text-xs text-muted-foreground mt-2">
-              Se actualiza automáticamente a las 5:00 AM y 5:00 PM (hora Venezuela)
+              Se actualiza automáticamente cada hora entre 5:00 PM y 9:00 PM (hora Venezuela)
             </p>
           </div>
 
@@ -497,6 +500,49 @@ export const ConfigPanel = () => {
                 )}
               </Button>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Metricool */}
+      <Card className="bg-card border-border">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="h-5 w-5" />
+            Metricool
+          </CardTitle>
+          <CardDescription>
+            Configuración del script de seguimiento de Metricool
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="metricool_hash">Hash ID de Metricool</Label>
+            <div className="flex gap-2">
+              <Input
+                id="metricool_hash"
+                type="text"
+                value={metricoolHash}
+                onChange={(e) => setMetricoolHash(e.target.value)}
+                className="bg-input border-border font-mono"
+                placeholder="4157fa87e6bd40d5b2591b9947e24168"
+              />
+              <Button
+                onClick={() => handleSave('metricool_hash', metricoolHash)}
+                disabled={saving === 'metricool_hash'}
+                size="icon"
+                variant="outline"
+              >
+                {saving === 'metricool_hash' ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Identificador único de tu cuenta Metricool. Se carga dinámicamente en el sitio. Si se deja vacío, el script no se cargará.
+            </p>
           </div>
         </CardContent>
       </Card>
