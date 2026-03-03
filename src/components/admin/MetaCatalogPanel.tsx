@@ -6,11 +6,12 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { ExternalLink, RefreshCw, Copy, CheckCircle2, AlertCircle, Loader2, Save, Facebook } from 'lucide-react';
+import { ExternalLink, RefreshCw, Copy, CheckCircle2, AlertCircle, Loader2, Save, Facebook, Link2, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useConfig } from '@/hooks/useConfig';
 
+const BASE_URL = 'https://www.catarsiszone.com';
 const FEED_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/meta-catalog-feed`;
 
 interface FeedStatus {
@@ -27,6 +28,21 @@ const fetchFeedStatus = async (): Promise<FeedStatus> => {
   const count = (xml.match(/<entry>/g) || []).length;
   return { ok: true, productCount: count, fetchedAt: new Date().toISOString() };
 };
+
+const DEEP_LINK_URLS = [
+  { label: 'Página principal', path: '/' },
+  { label: 'Hamburguesas', path: '/hamburguesas' },
+  { label: 'Pizzas', path: '/pizzas' },
+  { label: 'Coctelería', path: '/cocteleria' },
+  { label: 'Alitas', path: '/alitas' },
+  { label: 'Entradas', path: '/entradas' },
+  { label: 'Ensaladas', path: '/ensaladas' },
+  { label: 'Emparedados', path: '/emparedados' },
+  { label: 'Parrilla', path: '/parrilla' },
+  { label: 'Best Sellers', path: '/best-seller' },
+];
+
+const UTM_EXAMPLE = '?utm_source=facebook&utm_medium=cpc&utm_campaign=nombre_campaña';
 
 export const MetaCatalogPanel = () => {
   const [copied, setCopied] = useState(false);
@@ -49,10 +65,10 @@ export const MetaCatalogPanel = () => {
     }
   }, [configLoading, config]);
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(FEED_URL);
+  const handleCopy = (text?: string) => {
+    navigator.clipboard.writeText(text || FEED_URL);
     setCopied(true);
-    toast.success('URL copiada al portapapeles');
+    toast.success('Copiado al portapapeles');
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -187,7 +203,7 @@ export const MetaCatalogPanel = () => {
               <code className="flex-1 bg-muted px-3 py-2 rounded-md text-xs break-all font-mono">
                 {FEED_URL}
               </code>
-              <Button variant="outline" size="icon" onClick={handleCopy}>
+              <Button variant="outline" size="icon" onClick={() => handleCopy()}>
                 {copied ? <CheckCircle2 className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
               </Button>
               <Button variant="outline" size="icon" asChild>
@@ -264,6 +280,98 @@ export const MetaCatalogPanel = () => {
               <li>Seleccionar "Feed de datos" como fuente</li>
               <li>Pegar la URL del feed de arriba</li>
               <li>Configurar actualización diaria</li>
+            </ol>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Deep Links Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Link2 className="h-5 w-5 text-primary" />
+            Enlaces Profundos (Deep Links)
+          </CardTitle>
+          <CardDescription>
+            URLs directas para usar en anuncios de Meta. Llevan al usuario a una página específica en lugar de la página principal.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Domain Verification Status */}
+          <div className="flex items-center gap-2 p-3 rounded-lg border border-border bg-muted/30">
+            <ShieldCheck className="h-5 w-5 text-primary" />
+            <div className="flex-1">
+              <span className="text-sm font-medium">Verificación de dominio</span>
+              <p className="text-xs text-muted-foreground">Meta tag configurada en index.html</p>
+            </div>
+            <Badge variant="default" className="bg-primary/20 text-primary hover:bg-primary/30">
+              Configurada
+            </Badge>
+          </div>
+
+          {/* URL Table */}
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium text-foreground">URLs disponibles</h4>
+            <div className="rounded-lg border border-border overflow-hidden">
+              <div className="divide-y divide-border">
+                {DEEP_LINK_URLS.map((item) => (
+                  <div key={item.path} className="flex items-center justify-between px-3 py-2 hover:bg-muted/50">
+                    <div className="min-w-0 flex-1">
+                      <span className="text-sm font-medium text-foreground">{item.label}</span>
+                      <p className="text-xs text-muted-foreground font-mono truncate">{BASE_URL}{item.path}</p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 shrink-0"
+                      onClick={() => handleCopy(`${BASE_URL}${item.path}`)}
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                ))}
+                {/* Product pattern */}
+                <div className="flex items-center justify-between px-3 py-2 bg-muted/20">
+                  <div className="min-w-0 flex-1">
+                    <span className="text-sm font-medium text-foreground">Producto individual</span>
+                    <p className="text-xs text-muted-foreground font-mono">{BASE_URL}/producto/<span className="italic text-primary">{'{slug}'}</span></p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              💡 El catálogo XML ya incluye los deep links de cada producto automáticamente para anuncios dinámicos.
+            </p>
+          </div>
+
+          {/* UTM Parameters */}
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium text-foreground">Parámetros UTM (recomendado)</h4>
+            <div className="flex items-center gap-2">
+              <code className="flex-1 bg-muted px-3 py-2 rounded-md text-xs break-all font-mono">
+                {UTM_EXAMPLE}
+              </code>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => handleCopy(UTM_EXAMPLE)}
+              >
+                <Copy className="h-4 w-4" />
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Agrega estos parámetros al final de cualquier URL para rastrear el origen de las visitas en tu analítica.
+            </p>
+          </div>
+
+          {/* Instructions */}
+          <div className="border-t pt-4 space-y-2">
+            <h4 className="text-sm font-medium text-foreground">Cómo usar en Meta Ads Manager</h4>
+            <ol className="text-sm text-muted-foreground list-decimal list-inside space-y-1">
+              <li>Al crear un anuncio, pega la URL directa en el campo <strong>"Website URL"</strong></li>
+              <li>Para <strong>anuncios dinámicos</strong> con catálogo, el feed ya incluye los enlaces — no necesitas configurarlos</li>
+              <li>Agrega parámetros UTM para diferenciar campañas en tu analítica</li>
+              <li>Ejemplo completo: <code className="bg-muted px-1 rounded text-xs">{BASE_URL}/hamburguesas{UTM_EXAMPLE}</code></li>
             </ol>
           </div>
         </CardContent>
