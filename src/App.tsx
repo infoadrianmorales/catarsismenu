@@ -12,6 +12,7 @@ import NotFound from "./pages/NotFound";
 import { FloatingCart } from "./components/FloatingCart";
 import { MetaPixelProvider } from "./components/MetaPixelProvider";
 import { ScrollToTop } from "./components/ScrollToTop";
+import { MetricoolProvider } from "./components/MetricoolProvider";
 import { useVisitorTracker } from "./hooks/useVisitorTracker";
 
 // Lazy load non-critical pages
@@ -55,6 +56,7 @@ const AppContent = () => {
     <ViewModeProvider>
       <MetaPixelProvider>
         <ScrollToTop />
+        <MetricoolProvider />
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/" element={<Index />} />

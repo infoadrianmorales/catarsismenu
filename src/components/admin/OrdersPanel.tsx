@@ -94,9 +94,9 @@ export const OrdersPanel = () => {
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<OrderTab>('new');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [datePreset, setDatePreset] = useState<DatePreset>('30days');
-  const [dateFrom, setDateFrom] = useState<Date | undefined>(subDays(new Date(), 30));
-  const [dateTo, setDateTo] = useState<Date | undefined>(new Date());
+  const [datePreset, setDatePreset] = useState<DatePreset>('all');
+  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
+  const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 20;
 

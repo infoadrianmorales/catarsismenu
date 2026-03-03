@@ -134,11 +134,15 @@ export const AnalyticsPanel = () => {
     if (preset !== 'custom') setCustomRange(undefined);
   };
 
+  const [pendingRange, setPendingRange] = useState<{ from?: Date; to?: Date } | undefined>();
+
   const handleDateSelect = (range: { from?: Date; to?: Date } | undefined) => {
+    setPendingRange(range);
     if (range?.from && range?.to) {
       setCustomRange({ from: range.from, to: range.to });
       setSelectedPreset('custom');
       setCalendarOpen(false);
+      setPendingRange(undefined);
     }
   };
 
@@ -236,10 +240,11 @@ export const AnalyticsPanel = () => {
             <PopoverContent className="w-auto p-0" align="end">
               <Calendar
                 mode="range"
-                selected={customRange ? { from: customRange.from, to: customRange.to } : undefined}
+                selected={pendingRange?.from ? { from: pendingRange.from, to: pendingRange.to } : (customRange ? { from: customRange.from, to: customRange.to } : undefined)}
                 onSelect={handleDateSelect}
                 numberOfMonths={2}
-                disabled={(date) => date > new Date()}
+                disabled={(date: Date) => date > new Date()}
+                className="pointer-events-auto"
               />
             </PopoverContent>
           </Popover>
