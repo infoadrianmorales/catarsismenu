@@ -164,11 +164,13 @@ const ProductPage = () => {
         <Button 
           variant="ghost" 
           size="sm" 
-          onClick={() => navigate(-1)}
+          asChild
           className="mb-4 -ml-2"
         >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Volver
+          <Link to="/">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Volver al menú
+          </Link>
         </Button>
 
         <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
@@ -231,38 +233,53 @@ const ProductPage = () => {
                     Agregar al carrito
                   </Button>
                 ) : (
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-3 bg-secondary/10 rounded-full p-1">
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-3 bg-secondary/10 rounded-full p-1">
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          className="h-10 w-10 rounded-full"
+                          onClick={handleDecrement}
+                        >
+                          <Minus className="h-4 w-4" />
+                        </Button>
+                        <span className="text-xl font-bold min-w-[2rem] text-center">
+                          {quantity}
+                        </span>
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          className="h-10 w-10 rounded-full"
+                          onClick={handleIncrement}
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="flex gap-3">
                       <Button 
-                        variant="ghost" 
-                        size="icon"
-                        className="h-10 w-10 rounded-full"
-                        onClick={handleDecrement}
+                        variant="outline"
+                        size="lg" 
+                        className="flex-1 gap-2"
+                        asChild
                       >
-                        <Minus className="h-4 w-4" />
+                        <Link to="/">
+                          <ArrowLeft className="h-4 w-4" />
+                          Seguir comprando
+                        </Link>
                       </Button>
-                      <span className="text-xl font-bold min-w-[2rem] text-center">
-                        {quantity}
-                      </span>
                       <Button 
-                        variant="ghost" 
-                        size="icon"
-                        className="h-10 w-10 rounded-full"
-                        onClick={handleIncrement}
+                        size="lg" 
+                        className="flex-1 gap-2"
+                        asChild
                       >
-                        <Plus className="h-4 w-4" />
+                        <Link to="/carrito">
+                          <ShoppingCart className="h-5 w-5" />
+                          Ver carrito
+                        </Link>
                       </Button>
                     </div>
-                    <Button 
-                      size="lg" 
-                      className="flex-1 gap-2"
-                      asChild
-                    >
-                      <Link to="/carrito">
-                        <ShoppingCart className="h-5 w-5" />
-                        Ver carrito
-                      </Link>
-                    </Button>
                   </div>
                 )}
               </div>
