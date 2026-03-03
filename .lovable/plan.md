@@ -1,36 +1,24 @@
 
-Objetivo: corregir definitivamente el selector de rango “Personalizado” en Analíticas para que permita elegir fechas como 01 Feb → 01 Mar sin bloquear interacción.
+Diagnóstico confirmado: el calendario sí está interactivo, pero en `AnalyticsPanel` se está cerrando en el primer clic porque `react-day-picker` puede devolver un rango “completo” en ese primer clic (`from` y `to` iguales). La condición actual (`if (range.from && range.to)`) lo toma como selección final y cierra el popover.
 
-1) Diagnóstico técnico (causa probable)
-- El calendario se renderiza dentro de un Popover y el wrapper base del `DayPicker` en `src/components/ui/calendar.tsx` no trae `pointer-events-auto` por defecto.
-- Aunque en `AnalyticsPanel` ya se pasa `className="pointer-events-auto"`, en este layout hay casos donde el contenedor/portal sigue absorbiendo eventos y la selección no se completa consistentemente.
+Plan de corrección:
 
-2) Cambios a implementar
-- Archivo: `src/components/ui/calendar.tsx`
-  - Ajustar clase base del `DayPicker` de:
-    - `className={cn("p-3", className)}`
-  - a:
-    - `className={cn("p-3 pointer-events-auto", className)}`
-  - Esto deja el calendario interactivo de forma global en cualquier popover/dialog del admin.
+1) Ajustar lógica de cierre en `src/components/admin/AnalyticsPanel.tsx`
+- Modificar `handleDateSelect` para **no cerrar** cuando `from` y `to` sean el mismo día en el primer clic.
+- Solo cerrar cuando el rango esté realmente completado con segunda fecha (rango efectivo).
+- Mantener `pendingRange` visible mientras se selecciona la segunda fecha.
 
-- Archivo: `src/components/admin/AnalyticsPanel.tsx`
-  - Mantener y reforzar el flujo de rango:
-    - `pendingRange` para selección parcial (`from`) y final (`to`).
-    - cerrar popover solo cuando existan ambas fechas.
-  - Tipar con `DateRange` de `react-day-picker` para evitar inconsistencias de evento/estado.
-  - Asegurar que el botón “Personalizado” quede activo al completar rango y que el label superior refleje el período seleccionado.
+2) Forzar selección en dos pasos para “Personalizado”
+- En el `<Calendar mode="range" ... />`, agregar `min={1}` para evitar que el primer clic cuente como rango final.
+- Resultado esperado: primer clic = fecha inicial; segundo clic = fecha final.
 
-- Ajuste UX pequeño (mismo archivo)
-  - Al abrir “Personalizado”, inicializar `pendingRange` con `customRange` si existe, para que el usuario pueda editar el rango previo sin perder contexto.
+3) Mantener UX consistente del popover
+- Conservar `handleCalendarOpen` para precargar `pendingRange` desde `customRange` al abrir.
+- Al completar rango válido, guardar en `customRange`, cambiar preset a `custom` y cerrar popover.
 
-3) Verificación funcional (criterios de aceptación)
-- En Admin > Analíticas > Personalizado:
-  - Se puede hacer click en cualquier día del calendario.
-  - Primer click define `from`, segundo click define `to`.
-  - Ejemplo solicitado funciona: 01 de febrero a 01 de marzo.
-  - El popover se cierra al completar `to`.
-  - El encabezado de fechas y los KPIs/gráfico se recalculan con el nuevo rango.
-
-4) Riesgo e impacto
-- Riesgo bajo: cambio acotado al calendario UI + estado local de Analíticas.
-- Impacto positivo transversal: otros calendarios del panel (órdenes/filtros) también quedan más robustos al estar `pointer-events-auto` en el componente base.
+4) Verificación funcional
+- Probar Admin → Analíticas → Personalizado:
+  - Clic en 01 Feb: el calendario permanece abierto.
+  - Clic en 01 Mar: se cierra y aplica rango completo.
+  - El encabezado y métricas se recalculan con ese rango.
+- Validar también un segundo intento cambiando rango para confirmar que `pendingRange` no se pierde.
