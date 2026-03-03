@@ -24,6 +24,7 @@ import { es } from 'date-fns/locale';
 import { useSalesAnalytics } from '@/hooks/useSalesAnalytics';
 import { usePageViews } from '@/hooks/usePageViews';
 import { cn } from '@/lib/utils';
+import type { DateRange } from 'react-day-picker';
 
 type DatePreset = 'today' | 'yesterday' | '7days' | '30days' | 'thisMonth' | 'custom';
 type MetricType = 'orders' | 'revenue' | 'avgTicket' | 'views';
@@ -134,14 +135,27 @@ export const AnalyticsPanel = () => {
     if (preset !== 'custom') setCustomRange(undefined);
   };
 
-  const [pendingRange, setPendingRange] = useState<{ from?: Date; to?: Date } | undefined>();
+  const [pendingRange, setPendingRange] = useState<DateRange | undefined>();
 
-  const handleDateSelect = (range: { from?: Date; to?: Date } | undefined) => {
+  const handleDateSelect = (range: DateRange | undefined) => {
+    if (!range) {
+      setPendingRange(undefined);
+      return;
+    }
     setPendingRange(range);
-    if (range?.from && range?.to) {
+    if (range.from && range.to) {
       setCustomRange({ from: range.from, to: range.to });
       setSelectedPreset('custom');
       setCalendarOpen(false);
+      setPendingRange(undefined);
+    }
+  };
+
+  const handleCalendarOpen = (open: boolean) => {
+    setCalendarOpen(open);
+    if (open && customRange) {
+      setPendingRange({ from: customRange.from, to: customRange.to });
+    } else if (!open) {
       setPendingRange(undefined);
     }
   };
@@ -226,7 +240,7 @@ export const AnalyticsPanel = () => {
             </Button>
           ))}
           
-          <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+          <Popover open={calendarOpen} onOpenChange={handleCalendarOpen}>
             <PopoverTrigger asChild>
               <Button
                 variant={selectedPreset === 'custom' ? 'default' : 'outline'}
@@ -240,11 +254,10 @@ export const AnalyticsPanel = () => {
             <PopoverContent className="w-auto p-0" align="end">
               <Calendar
                 mode="range"
-                selected={pendingRange?.from ? { from: pendingRange.from, to: pendingRange.to } : (customRange ? { from: customRange.from, to: customRange.to } : undefined)}
+                selected={pendingRange ?? (customRange ? { from: customRange.from, to: customRange.to } : undefined)}
                 onSelect={handleDateSelect}
                 numberOfMonths={2}
                 disabled={(date: Date) => date > new Date()}
-                className="pointer-events-auto"
               />
             </PopoverContent>
           </Popover>
