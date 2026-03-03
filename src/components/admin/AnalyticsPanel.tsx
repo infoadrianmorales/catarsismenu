@@ -143,7 +143,8 @@ export const AnalyticsPanel = () => {
       return;
     }
     setPendingRange(range);
-    if (range.from && range.to) {
+    // Only close when we have two distinct dates (real range completed)
+    if (range.from && range.to && range.from.getTime() !== range.to.getTime()) {
       setCustomRange({ from: range.from, to: range.to });
       setSelectedPreset('custom');
       setCalendarOpen(false);
