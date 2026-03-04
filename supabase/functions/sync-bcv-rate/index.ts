@@ -12,6 +12,20 @@ interface RateResult {
   lastUpdated: string;
 }
 
+// Check if a date is stale (more than 26 hours old)
+function isStale(dateStr: string): boolean {
+  try {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffHours = diffMs / (1000 * 60 * 60);
+    console.log(`Rate date: ${dateStr}, age: ${diffHours.toFixed(1)} hours`);
+    return diffHours > 26;
+  } catch {
+    return false; // If we can't parse, don't skip
+  }
+}
+
 // API 1: ve.dolarapi.com (primary)
 async function fetchFromDolarApi(): Promise<RateResult | null> {
   try {
@@ -31,10 +45,18 @@ async function fetchFromDolarApi(): Promise<RateResult | null> {
     const rate = data.promedio || data.venta;
     if (!rate || rate <= 0) return null;
     
+    const lastUpdated = data.fechaActualizacion || new Date().toISOString();
+    
+    // Freshness check: skip if data is too old
+    if (isStale(lastUpdated)) {
+      console.log('ve.dolarapi.com rate is stale, trying next source...');
+      return null;
+    }
+    
     return {
       rate,
       source: 've.dolarapi.com (BCV oficial)',
-      lastUpdated: data.fechaActualizacion
+      lastUpdated,
     };
   } catch (error) {
     console.error('Error fetching from ve.dolarapi.com:', error);
@@ -42,33 +64,40 @@ async function fetchFromDolarApi(): Promise<RateResult | null> {
   }
 }
 
-// API 2: exchangemonitor.net API
-async function fetchFromExchangeMonitor(): Promise<RateResult | null> {
+// API 2: pydolarve.org API
+async function fetchFromPyDolarVe(): Promise<RateResult | null> {
   try {
-    console.log('Trying exchangemonitor.net...');
-    const response = await fetch('https://exchangemonitor.net/api/v1/dolar', {
+    console.log('Trying pydolarve.org...');
+    const response = await fetch('https://pydolarve.org/api/v2/dollar?monitor=bcv', {
       headers: { 'Accept': 'application/json' }
     });
     
     if (!response.ok) {
-      console.error('exchangemonitor.net responded with:', response.status);
+      console.error('pydolarve.org responded with:', response.status);
       return null;
     }
     
     const data = await response.json();
-    console.log('exchangemonitor.net response:', JSON.stringify(data));
+    console.log('pydolarve.org response:', JSON.stringify(data));
     
-    // Find BCV rate in the response
-    const bcvEntry = data?.find?.((item: { key: string }) => item.key === 'bcv');
-    if (!bcvEntry || !bcvEntry.price || bcvEntry.price <= 0) return null;
+    // Extract BCV rate from response
+    const price = data?.price || data?.monitors?.bcv?.price;
+    if (!price || price <= 0) return null;
+
+    const lastUpdated = data?.last_update || data?.monitors?.bcv?.last_update || new Date().toISOString();
+
+    if (typeof lastUpdated === 'string' && isStale(lastUpdated)) {
+      console.log('pydolarve.org rate is stale, trying next source...');
+      return null;
+    }
     
     return {
-      rate: bcvEntry.price,
-      source: 'exchangemonitor.net (BCV)',
-      lastUpdated: bcvEntry.last_update || new Date().toISOString()
+      rate: price,
+      source: 'pydolarve.org (BCV)',
+      lastUpdated,
     };
   } catch (error) {
-    console.error('Error fetching from exchangemonitor.net:', error);
+    console.error('Error fetching from pydolarve.org:', error);
     return null;
   }
 }
@@ -92,59 +121,77 @@ async function fetchFromBcvDirect(): Promise<RateResult | null> {
     
     const html = await response.text();
     
-    // Parse the USD rate from the BCV page
-    // The rate is typically in a div with id "dolar" or class containing "recuadroMoneda"
-    const usdMatch = html.match(/id="dolar"[^>]*>[\s\S]*?<strong[^>]*>([\d,\.]+)/i);
+    // Multiple regex patterns for robustness
+    const patterns = [
+      /id="dolar"[^>]*>[\s\S]*?<strong[^>]*>([\d,\.]+)/i,
+      /Dólar[\s\S]*?<strong[^>]*>([\d,\.]+)/i,
+      /USD[\s\S]*?<strong[^>]*>([\d,\.]+)/i,
+      /dolar[^>]*>[\s\S]*?([\d]+[,.][\d]+)/i,
+    ];
     
-    if (!usdMatch) {
-      // Try alternative pattern
-      const altMatch = html.match(/Dólar[\s\S]*?<strong[^>]*>([\d,\.]+)/i);
-      if (!altMatch) {
-        console.error('Could not find USD rate in BCV HTML');
-        return null;
+    for (const pattern of patterns) {
+      const match = html.match(pattern);
+      if (match) {
+        // Venezuelan format: 1.234,56 → need to convert to 1234.56
+        const rateStr = match[1].replace(/\./g, '').replace(',', '.');
+        const rate = parseFloat(rateStr);
+        
+        if (!isNaN(rate) && rate > 0) {
+          console.log(`BCV scraping matched with pattern, raw: "${match[1]}", parsed: ${rate}`);
+          return {
+            rate,
+            source: 'bcv.org.ve (directo)',
+            lastUpdated: new Date().toISOString(),
+          };
+        }
       }
-      
-      const rateStr = altMatch[1].replace('.', '').replace(',', '.');
-      const rate = parseFloat(rateStr);
-      
-      if (isNaN(rate) || rate <= 0) return null;
-      
-      return {
-        rate,
-        source: 'bcv.org.ve (directo)',
-        lastUpdated: new Date().toISOString()
-      };
     }
     
-    const rateStr = usdMatch[1].replace('.', '').replace(',', '.');
-    const rate = parseFloat(rateStr);
-    
-    if (isNaN(rate) || rate <= 0) return null;
-    
-    return {
-      rate,
-      source: 'bcv.org.ve (directo)',
-      lastUpdated: new Date().toISOString()
-    };
+    console.error('Could not find USD rate in BCV HTML');
+    return null;
   } catch (error) {
     console.error('Error fetching from bcv.org.ve:', error);
     return null;
   }
 }
 
+// API 4: ve.dolarapi.com WITHOUT freshness check (last resort before scraping fails)
+async function fetchFromDolarApiNoFreshness(): Promise<RateResult | null> {
+  try {
+    console.log('Trying ve.dolarapi.com (accepting stale)...');
+    const response = await fetch('https://ve.dolarapi.com/v1/dolares/oficial', {
+      headers: { 'Accept': 'application/json' }
+    });
+    
+    if (!response.ok) return null;
+    
+    const data = await response.json();
+    const rate = data.promedio || data.venta;
+    if (!rate || rate <= 0) return null;
+    
+    return {
+      rate,
+      source: 've.dolarapi.com (BCV oficial - última disponible)',
+      lastUpdated: data.fechaActualizacion || new Date().toISOString(),
+    };
+  } catch {
+    return null;
+  }
+}
+
 // Main rate fetcher with fallbacks
 async function fetchBcvRate(): Promise<RateResult> {
-  // Try each source in order until one works
   const sources = [
-    fetchFromDolarApi,
-    fetchFromExchangeMonitor,
-    fetchFromBcvDirect,
+    fetchFromDolarApi,         // Primary with freshness check
+    fetchFromPyDolarVe,        // New fallback with freshness check
+    fetchFromBcvDirect,        // Direct scraping
+    fetchFromDolarApiNoFreshness, // Accept stale as last resort
   ];
   
   for (const fetchSource of sources) {
     const result = await fetchSource();
     if (result && result.rate > 0) {
-      console.log(`Successfully got rate from ${result.source}: ${result.rate}`);
+      console.log(`✓ Rate from ${result.source}: ${result.rate} (date: ${result.lastUpdated})`);
       return result;
     }
   }
@@ -153,7 +200,6 @@ async function fetchBcvRate(): Promise<RateResult> {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -161,12 +207,11 @@ serve(async (req) => {
   try {
     console.log('Starting BCV rate sync...');
     
-    // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
-    // Check if rate_source is set to 'manual' - if so, skip automatic update
+    // Check if rate_source is set to 'manual'
     const { data: rateSourceConfig } = await supabase
       .from('config')
       .select('value')
@@ -176,35 +221,22 @@ serve(async (req) => {
     if (rateSourceConfig?.value === 'manual') {
       console.log('Rate source is set to manual, skipping automatic update');
       return new Response(
-        JSON.stringify({
-          success: true,
-          skipped: true,
-          message: 'Rate source is set to manual, automatic update skipped',
-        }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 200,
-        }
+        JSON.stringify({ success: true, skipped: true, message: 'Rate source is manual' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
       );
     }
     
-    // Fetch the BCV rate from available sources
     const rateResult = await fetchBcvRate();
     
-    console.log('BCV rate obtained:', rateResult.rate);
-    console.log('Source:', rateResult.source);
-    console.log('Last updated:', rateResult.lastUpdated);
+    console.log(`Syncing rate: ${rateResult.rate} from ${rateResult.source} (date: ${rateResult.lastUpdated})`);
     
-    // Update the config with the new rate
     const { data, error } = await supabase
       .from('config')
       .upsert({
         key: 'tasa_ves',
         value: rateResult.rate.toString(),
         updated_at: new Date().toISOString(),
-      }, {
-        onConflict: 'key',
-      })
+      }, { onConflict: 'key' })
       .select()
       .single();
     
@@ -215,23 +247,13 @@ serve(async (req) => {
     
     console.log('Config updated successfully:', data);
     
-    // Also update bcv_last_sync timestamp and source info
     await supabase
       .from('config')
       .upsert([
-        {
-          key: 'bcv_last_sync',
-          value: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        },
-        {
-          key: 'bcv_source',
-          value: rateResult.source,
-          updated_at: new Date().toISOString(),
-        }
-      ], {
-        onConflict: 'key',
-      });
+        { key: 'bcv_last_sync', value: new Date().toISOString(), updated_at: new Date().toISOString() },
+        { key: 'bcv_source', value: rateResult.source, updated_at: new Date().toISOString() },
+        { key: 'bcv_rate_date', value: rateResult.lastUpdated, updated_at: new Date().toISOString() },
+      ], { onConflict: 'key' });
     
     return new Response(
       JSON.stringify({
@@ -241,26 +263,15 @@ serve(async (req) => {
         lastUpdated: rateResult.lastUpdated,
         syncedAt: new Date().toISOString(),
       }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     );
     
   } catch (error: unknown) {
     console.error('Error syncing BCV rate:', error);
-    
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-    
     return new Response(
-      JSON.stringify({
-        success: false,
-        error: errorMessage,
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500,
-      }
+      JSON.stringify({ success: false, error: errorMessage }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     );
   }
 });
