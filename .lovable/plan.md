@@ -1,34 +1,25 @@
 
 
-## Plan: Corregir sincronización de tasa BCV
+## Fix: Error "data.rate.toFixed is not a function" en botón Sincronizar
 
-### Problema actual
-La función acepta la primera fuente que responde (ve.dolarapi.com) aunque devuelva una tasa vieja (421.88), porque la lógica `isStale` solo marca como viejo si es después de las 4 PM VET y la tasa es de un día anterior. Resultado: nunca intenta las otras fuentes que sí tienen la tasa actualizada (425.67).
+### Problema
+La edge function `sync-bcv-rate` devuelve `rate` como string (`"425.674100000"`), pero `ConfigPanel.tsx` línea 102 llama `data.rate.toFixed(2)` que solo funciona en números.
 
-### Cambios
+### Solución
+**Archivo:** `src/components/admin/ConfigPanel.tsx` (línea 102 y 108)
 
-#### 1. Edge Function: consultar TODAS las fuentes y elegir la más reciente
-**Archivo:** `supabase/functions/sync-bcv-rate/index.ts`
+Convertir `data.rate` a número con `parseFloat()` antes de usar `.toFixed()`:
 
-- Cambiar la estrategia de "primera que responda" a **consultar todas las fuentes en paralelo** y elegir la que tenga la fecha más reciente o la tasa más alta (cuando las fechas coinciden).
-- Cada fuente devuelve su resultado independientemente. Al final se comparan todas las respuestas válidas y se selecciona la mejor.
-- Esto aplica tanto para el botón "Sincronizar" como para las ejecuciones automáticas por cron.
+```typescript
+const rateNum = parseFloat(data.rate);
+toast({
+  title: 'Tasa sincronizada',
+  description: `Tasa BCV actualizada: Bs ${rateNum.toFixed(2)}`,
+});
+refetch();
+setLastSync(data.syncedAt);
+setFormValues(prev => ({ ...prev, tasa_ves: rateNum.toString() }));
+```
 
-#### 2. Cron: actualizar horario
-**Horario actual:** `0 21,22,23,0,1 * * *` (UTC) = 5-9 PM VET
-
-**Nuevo horario (2 jobs):**
-- **Job vespertino:** `0 20,21,22,23,0,1 * * *` (UTC) = **4 PM - 9 PM VET**, cada 60 min
-- **Job matutino:** `0 15 * * *` (UTC) = **11 AM VET**, confirmación antes de apertura
-
-Se eliminará el cron actual y se crearán los dos nuevos.
-
-#### 3. Prueba de verificación
-Después de desplegar, se invocará la función manualmente para confirmar que consulta todas las fuentes y selecciona la tasa correcta (425.67).
-
-### Resumen de fuentes consultadas (en paralelo)
-1. `ve.dolarapi.com` — API primaria
-2. `pydolarve.org` — API alternativa
-3. `exchangedyn.com` — API alternativa
-4. `bcv.org.ve` — scraping directo del BCV (fuente oficial)
+Cambio mínimo de 2 líneas. Esto corrige tanto el toast como la actualización del formulario.
 
