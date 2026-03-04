@@ -1,36 +1,34 @@
 
 
-## Diagnóstico: Tasa BCV desactualizada (421.88 vs 425.67)
+## Plan: Corregir sincronización de tasa BCV
 
-### Problema raíz
+### Problema actual
+La función acepta la primera fuente que responde (ve.dolarapi.com) aunque devuelva una tasa vieja (421.88), porque la lógica `isStale` solo marca como viejo si es después de las 4 PM VET y la tasa es de un día anterior. Resultado: nunca intenta las otras fuentes que sí tienen la tasa actualizada (425.67).
 
-La función `isStale()` usa un umbral de **26 horas**, pero `ve.dolarapi.com` devuelve la tasa del 3 de marzo con timestamp `2026-03-03T21:01:05Z` — que solo tiene ~8 horas de antigüedad. Por lo tanto pasa la validación y se acepta como "fresca", impidiendo que se intente el scraping directo de bcv.org.ve que sí tiene la tasa correcta (425,67).
+### Cambios
 
-### Estado actual de las fuentes
-
-| Fuente | Tasa | Estado |
-|--------|------|--------|
-| ve.dolarapi.com | 421.8772 (3 mar) | Retrasada, pero pasa filtro de 26h |
-| pydolarve.org | N/A | No responde (posiblemente caída) |
-| bcv.org.ve (scraping) | **425,67410000** (4 mar) | Funciona correctamente |
-
-### Plan de corrección
-
+#### 1. Edge Function: consultar TODAS las fuentes y elegir la más reciente
 **Archivo:** `supabase/functions/sync-bcv-rate/index.ts`
 
-1. **Cambiar validación de frescura**: En vez de comparar horas absolutas (26h), comparar la **fecha del rate** contra la **fecha actual en zona horaria Venezuela (UTC-4)**. Si la fecha del rate es anterior a hoy y ya son más de las 4 PM VET (hora habitual de publicación del BCV), considerar el dato como viejo.
+- Cambiar la estrategia de "primera que responda" a **consultar todas las fuentes en paralelo** y elegir la que tenga la fecha más reciente o la tasa más alta (cuando las fechas coinciden).
+- Cada fuente devuelve su resultado independientemente. Al final se comparan todas las respuestas válidas y se selecciona la mejor.
+- Esto aplica tanto para el botón "Sincronizar" como para las ejecuciones automáticas por cron.
 
-2. **Priorizar scraping de BCV**: Mover `fetchFromBcvDirect` más arriba en la cadena de fallbacks — como segunda opción después de la API primaria. El scraping del BCV es la fuente más confiable ya que es el dato oficial directo. Además, comparar el rate obtenido de la API contra el rate almacenado: si la API devuelve exactamente el mismo valor que ya tenemos, intentar la siguiente fuente (puede haber una actualización que la API aún no refleja).
+#### 2. Cron: actualizar horario
+**Horario actual:** `0 21,22,23,0,1 * * *` (UTC) = 5-9 PM VET
 
-3. **Mejorar regex de scraping**: El HTML del BCV muestra el USD como `**425,67410000**` precedido por `USD`. Los patrones actuales deberían capturarlo, pero ajustaremos para ser más específicos al formato `XXX,XXXXXXXX` (8 decimales).
+**Nuevo horario (2 jobs):**
+- **Job vespertino:** `0 20,21,22,23,0,1 * * *` (UTC) = **4 PM - 9 PM VET**, cada 60 min
+- **Job matutino:** `0 15 * * *` (UTC) = **11 AM VET**, confirmación antes de apertura
 
-4. **Agregar fuente adicional**: Intentar `https://api.exchangedyn.com/markets/quotes/usdves/bcv` como fuente alternativa antes del scraping directo.
+Se eliminará el cron actual y se crearán los dos nuevos.
 
-### Orden final de fuentes
+#### 3. Prueba de verificación
+Después de desplegar, se invocará la función manualmente para confirmar que consulta todas las fuentes y selecciona la tasa correcta (425.67).
 
-1. `ve.dolarapi.com` — con validación de fecha (mismo día VET)
-2. `pydolarve.org` — con validación de fecha
-3. `exchangedyn.com` — nueva fuente alternativa
-4. `bcv.org.ve` scraping directo — fuente oficial
-5. `ve.dolarapi.com` sin validación — último recurso
+### Resumen de fuentes consultadas (en paralelo)
+1. `ve.dolarapi.com` — API primaria
+2. `pydolarve.org` — API alternativa
+3. `exchangedyn.com` — API alternativa
+4. `bcv.org.ve` — scraping directo del BCV (fuente oficial)
 
