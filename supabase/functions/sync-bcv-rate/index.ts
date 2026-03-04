@@ -12,53 +12,26 @@ interface RateResult {
   lastUpdated: string;
 }
 
-// Get current date in Venezuela timezone (UTC-4)
-function getVenezuelaDate(): Date {
-  const now = new Date();
-  return new Date(now.getTime() - 4 * 60 * 60 * 1000);
-}
-
-// Check if rate date is from today (Venezuela time). After 4 PM VET, yesterday's rate is stale.
-function isStale(dateStr: string): boolean {
+// Parse a date string into a timestamp, handling various formats
+function parseDate(dateStr: string): Date | null {
   try {
-    const rateDate = new Date(dateStr);
-    const vetNow = getVenezuelaDate();
-    
-    const rateDateStr = rateDate.toISOString().slice(0, 10);
-    const todayStr = vetNow.toISOString().slice(0, 10);
-    
-    console.log(`Rate date: ${rateDateStr}, VET today: ${todayStr}, VET hour: ${vetNow.getUTCHours()}`);
-    
-    if (rateDateStr === todayStr) return false; // Same day = fresh
-    
-    // If it's after 4 PM VET and rate is from yesterday or older, it's stale
-    if (vetNow.getUTCHours() >= 16) {
-      console.log('Rate is from a previous day and it is past 4 PM VET — marking as stale');
-      return true;
-    }
-    
-    // Before 4 PM VET, yesterday's rate is still acceptable
-    const diffMs = vetNow.getTime() - rateDate.getTime();
-    const diffHours = diffMs / (1000 * 60 * 60);
-    if (diffHours > 24) {
-      console.log(`Rate is ${diffHours.toFixed(1)}h old — stale`);
-      return true;
-    }
-    
-    return false;
+    // Try ISO format first
+    const d = new Date(dateStr);
+    if (!isNaN(d.getTime())) return d;
+    return null;
   } catch {
-    return false;
+    return null;
   }
 }
 
-// API 1: ve.dolarapi.com (primary)
+// API 1: ve.dolarapi.com
 async function fetchFromDolarApi(): Promise<RateResult | null> {
   try {
     console.log('Trying ve.dolarapi.com...');
     const response = await fetch('https://ve.dolarapi.com/v1/dolares/oficial', {
       headers: { 'Accept': 'application/json' }
     });
-    if (!response.ok) return null;
+    if (!response.ok) { await response.text(); return null; }
     
     const data = await response.json();
     console.log('ve.dolarapi.com response:', JSON.stringify(data));
@@ -67,12 +40,6 @@ async function fetchFromDolarApi(): Promise<RateResult | null> {
     if (!rate || rate <= 0) return null;
     
     const lastUpdated = data.fechaActualizacion || new Date().toISOString();
-    
-    if (isStale(lastUpdated)) {
-      console.log('ve.dolarapi.com rate is stale, skipping');
-      return null;
-    }
-    
     return { rate, source: 've.dolarapi.com (BCV oficial)', lastUpdated };
   } catch (error) {
     console.error('Error from ve.dolarapi.com:', error);
@@ -87,7 +54,7 @@ async function fetchFromPyDolarVe(): Promise<RateResult | null> {
     const response = await fetch('https://pydolarve.org/api/v2/dollar?monitor=bcv', {
       headers: { 'Accept': 'application/json' }
     });
-    if (!response.ok) return null;
+    if (!response.ok) { await response.text(); return null; }
     
     const data = await response.json();
     console.log('pydolarve.org response:', JSON.stringify(data));
@@ -96,12 +63,6 @@ async function fetchFromPyDolarVe(): Promise<RateResult | null> {
     if (!price || price <= 0) return null;
 
     const lastUpdated = data?.last_update || data?.monitors?.bcv?.last_update || new Date().toISOString();
-
-    if (typeof lastUpdated === 'string' && isStale(lastUpdated)) {
-      console.log('pydolarve.org rate is stale, skipping');
-      return null;
-    }
-    
     return { rate: price, source: 'pydolarve.org (BCV)', lastUpdated };
   } catch (error) {
     console.error('Error from pydolarve.org:', error);
@@ -116,25 +77,15 @@ async function fetchFromExchangeDyn(): Promise<RateResult | null> {
     const response = await fetch('https://api.exchangedyn.com/markets/quotes/usdves/bcv', {
       headers: { 'Accept': 'application/json' }
     });
-    if (!response.ok) {
-      console.error('exchangedyn.com responded with:', response.status);
-      return null;
-    }
+    if (!response.ok) { await response.text(); return null; }
     
     const data = await response.json();
     console.log('exchangedyn.com response:', JSON.stringify(data));
     
-    // Try common response shapes
     const rate = data?.sources?.BCV?.quote || data?.quote || data?.rate || data?.price;
     if (!rate || rate <= 0) return null;
     
     const lastUpdated = data?.sources?.BCV?.last_retrieved || data?.last_update || new Date().toISOString();
-    
-    if (typeof lastUpdated === 'string' && isStale(lastUpdated)) {
-      console.log('exchangedyn.com rate is stale, skipping');
-      return null;
-    }
-    
     return { rate, source: 'exchangedyn.com (BCV)', lastUpdated };
   } catch (error) {
     console.error('Error from exchangedyn.com:', error);
@@ -153,7 +104,7 @@ async function fetchFromBcvDirect(): Promise<RateResult | null> {
         'Accept-Language': 'es-VE,es;q=0.9',
       }
     });
-    if (!response.ok) return null;
+    if (!response.ok) { await response.text(); return null; }
     
     const html = await response.text();
     
@@ -186,48 +137,69 @@ async function fetchFromBcvDirect(): Promise<RateResult | null> {
   }
 }
 
-// Last resort: ve.dolarapi.com without freshness check
-async function fetchFromDolarApiNoFreshness(): Promise<RateResult | null> {
-  try {
-    console.log('Trying ve.dolarapi.com (accepting stale)...');
-    const response = await fetch('https://ve.dolarapi.com/v1/dolares/oficial', {
-      headers: { 'Accept': 'application/json' }
-    });
-    if (!response.ok) return null;
+// Select best rate from all results: prefer highest rate (most recent BCV update = higher value)
+function selectBestRate(results: RateResult[]): RateResult {
+  if (results.length === 0) throw new Error('No valid rates from any source');
+  if (results.length === 1) return results[0];
+
+  console.log(`Comparing ${results.length} results:`);
+  results.forEach(r => console.log(`  ${r.source}: ${r.rate} (${r.lastUpdated})`));
+
+  // Try to pick by most recent date first
+  const withDates = results.map(r => ({ ...r, parsedDate: parseDate(r.lastUpdated) }));
+  const dated = withDates.filter(r => r.parsedDate !== null);
+
+  if (dated.length > 0) {
+    // Sort by date descending
+    dated.sort((a, b) => b.parsedDate!.getTime() - a.parsedDate!.getTime());
+    const newest = dated[0];
     
-    const data = await response.json();
-    const rate = data.promedio || data.venta;
-    if (!rate || rate <= 0) return null;
+    // If there are multiple with the same date (within 1 hour), pick highest rate
+    const sameDay = dated.filter(r => 
+      Math.abs(r.parsedDate!.getTime() - newest.parsedDate!.getTime()) < 3600000
+    );
     
-    return {
-      rate,
-      source: 've.dolarapi.com (BCV oficial - última disponible)',
-      lastUpdated: data.fechaActualizacion || new Date().toISOString(),
-    };
-  } catch {
-    return null;
+    if (sameDay.length > 1) {
+      sameDay.sort((a, b) => b.rate - a.rate);
+      console.log(`Multiple same-date results, picking highest: ${sameDay[0].rate} from ${sameDay[0].source}`);
+      return sameDay[0];
+    }
+    
+    console.log(`Picking newest: ${newest.rate} from ${newest.source}`);
+    return newest;
   }
+
+  // Fallback: pick highest rate (newer BCV rates are typically higher due to devaluation)
+  results.sort((a, b) => b.rate - a.rate);
+  console.log(`No parseable dates, picking highest rate: ${results[0].rate} from ${results[0].source}`);
+  return results[0];
 }
 
-// Main rate fetcher with fallback chain
+// Main: fetch ALL sources in parallel and pick best
 async function fetchBcvRate(): Promise<RateResult> {
-  const sources = [
-    fetchFromDolarApi,
-    fetchFromPyDolarVe,
-    fetchFromExchangeDyn,
-    fetchFromBcvDirect,
-    fetchFromDolarApiNoFreshness,
+  const fetchers = [
+    fetchFromDolarApi(),
+    fetchFromPyDolarVe(),
+    fetchFromExchangeDyn(),
+    fetchFromBcvDirect(),
   ];
   
-  for (const fetchSource of sources) {
-    const result = await fetchSource();
-    if (result && result.rate > 0) {
-      console.log(`✓ Rate from ${result.source}: ${result.rate} (date: ${result.lastUpdated})`);
-      return result;
+  const settled = await Promise.allSettled(fetchers);
+  const results: RateResult[] = [];
+  
+  for (const result of settled) {
+    if (result.status === 'fulfilled' && result.value && result.value.rate > 0) {
+      results.push(result.value);
     }
   }
   
-  throw new Error('All API sources failed to provide a valid rate');
+  console.log(`Got ${results.length} valid results out of ${fetchers.length} sources`);
+  
+  if (results.length === 0) {
+    throw new Error('All API sources failed to provide a valid rate');
+  }
+  
+  return selectBestRate(results);
 }
 
 serve(async (req) => {
@@ -236,7 +208,7 @@ serve(async (req) => {
   }
 
   try {
-    console.log('Starting BCV rate sync...');
+    console.log('Starting BCV rate sync (parallel mode)...');
     
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -259,7 +231,7 @@ serve(async (req) => {
     
     const rateResult = await fetchBcvRate();
     
-    console.log(`Syncing rate: ${rateResult.rate} from ${rateResult.source} (date: ${rateResult.lastUpdated})`);
+    console.log(`✓ Best rate: ${rateResult.rate} from ${rateResult.source} (date: ${rateResult.lastUpdated})`);
     
     const { data, error } = await supabase
       .from('config')
