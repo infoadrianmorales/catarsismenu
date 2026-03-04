@@ -97,15 +97,16 @@ export const ConfigPanel = () => {
       if (error) throw error;
       
       if (data.success) {
+        const rateNum = parseFloat(data.rate);
         toast({
           title: 'Tasa sincronizada',
-          description: `Tasa BCV actualizada: Bs ${data.rate.toFixed(2)}`,
+          description: `Tasa BCV actualizada: Bs ${rateNum.toFixed(2)}`,
         });
         
         // Refresh config to show new rate
         refetch();
         setLastSync(data.syncedAt);
-        setFormValues(prev => ({ ...prev, tasa_ves: data.rate.toString() }));
+        setFormValues(prev => ({ ...prev, tasa_ves: rateNum.toString() }));
       } else {
         throw new Error(data.error || 'Error desconocido');
       }
