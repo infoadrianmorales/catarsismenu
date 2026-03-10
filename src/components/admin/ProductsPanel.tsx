@@ -52,6 +52,7 @@ export const ProductsPanel = () => {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('todos');
+  const [exporting, setExporting] = useState(false);
 
   const filteredProducts = selectedCategory === 'todos' 
     ? products 
