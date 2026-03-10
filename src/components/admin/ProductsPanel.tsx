@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Plus, Package, Info } from 'lucide-react';
+import { Loader2, Plus, Package, Info, FileDown } from 'lucide-react';
+import { generateMenuPdf } from '@/lib/menuPdfExport';
 import { ProductForm } from './ProductForm';
 import { SortableProductCard } from './SortableProductCard';
 import { toast } from 'sonner';
@@ -51,6 +52,7 @@ export const ProductsPanel = () => {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('todos');
+  const [exporting, setExporting] = useState(false);
 
   const filteredProducts = selectedCategory === 'todos' 
     ? products 
@@ -212,6 +214,59 @@ export const ProductsPanel = () => {
     return found?.label || categoria;
   };
 
+  const handleExportPdf = async () => {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      // Fetch ALL products (active + inactive)
+      const { data: allProducts, error: prodError } = await supabase
+        .from('products')
+        .select('*')
+        .order('categoria', { ascending: true })
+        .order('orden', { ascending: true });
+
+      if (prodError) throw prodError;
+
+      // Fetch categories
+      const { data: cats, error: catError } = await supabase
+        .from('categories')
+        .select('slug, nombre, orden')
+        .order('orden', { ascending: true });
+
+      if (catError) throw catError;
+
+      if (!allProducts || allProducts.length === 0) {
+        toast.error('No hay productos para exportar');
+        return;
+      }
+
+      const result = await generateMenuPdf(
+        allProducts.map(p => ({
+          id: p.id,
+          nombre: p.nombre,
+          descripcion_corta: p.descripcion_corta,
+          precio_usd: Number(p.precio_usd),
+          categoria: p.categoria,
+          imagen_url: p.imagen_url,
+          activo: p.activo,
+          orden: p.orden,
+        })),
+        (cats || []).map(c => ({ slug: c.slug, nombre: c.nombre, orden: c.orden }))
+      );
+
+      const msg = result.failedImages > 0
+        ? `PDF generado (${result.totalProducts} productos). ${result.failedImages} imagen(es) no pudieron cargarse.`
+        : `PDF generado con ${result.totalProducts} productos en ${result.totalCategories} categorías.`;
+
+      toast.success(msg);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast.error('Error al generar el PDF');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -245,6 +300,15 @@ export const ProductsPanel = () => {
               ))}
             </SelectContent>
           </Select>
+          <Button 
+            onClick={handleExportPdf} 
+            variant="outline" 
+            className="gap-2"
+            disabled={exporting || products.length === 0}
+          >
+            {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}
+            {exporting ? 'Generando...' : 'Exportar PDF'}
+          </Button>
           <Button onClick={handleAddProduct} className="gap-2 bg-primary hover:bg-primary/90">
             <Plus className="h-4 w-4" />
             Agregar
