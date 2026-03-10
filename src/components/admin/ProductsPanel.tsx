@@ -214,6 +214,59 @@ export const ProductsPanel = () => {
     return found?.label || categoria;
   };
 
+  const handleExportPdf = async () => {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      // Fetch ALL products (active + inactive)
+      const { data: allProducts, error: prodError } = await supabase
+        .from('products')
+        .select('*')
+        .order('categoria', { ascending: true })
+        .order('orden', { ascending: true });
+
+      if (prodError) throw prodError;
+
+      // Fetch categories
+      const { data: cats, error: catError } = await supabase
+        .from('categories')
+        .select('slug, nombre, orden')
+        .order('orden', { ascending: true });
+
+      if (catError) throw catError;
+
+      if (!allProducts || allProducts.length === 0) {
+        toast.error('No hay productos para exportar');
+        return;
+      }
+
+      const result = await generateMenuPdf(
+        allProducts.map(p => ({
+          id: p.id,
+          nombre: p.nombre,
+          descripcion_corta: p.descripcion_corta,
+          precio_usd: Number(p.precio_usd),
+          categoria: p.categoria,
+          imagen_url: p.imagen_url,
+          activo: p.activo,
+          orden: p.orden,
+        })),
+        (cats || []).map(c => ({ slug: c.slug, nombre: c.nombre, orden: c.orden }))
+      );
+
+      const msg = result.failedImages > 0
+        ? `PDF generado (${result.totalProducts} productos). ${result.failedImages} imagen(es) no pudieron cargarse.`
+        : `PDF generado con ${result.totalProducts} productos en ${result.totalCategories} categorías.`;
+
+      toast.success(msg);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast.error('Error al generar el PDF');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
