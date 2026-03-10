@@ -6,7 +6,7 @@ export const useSearch = (items: MenuItem[], bestSellers: MenuItem[] = []) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<MenuCategory>('todos');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Track search with debounce
   useEffect(() => {
