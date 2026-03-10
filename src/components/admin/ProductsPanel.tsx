@@ -300,6 +300,15 @@ export const ProductsPanel = () => {
               ))}
             </SelectContent>
           </Select>
+          <Button 
+            onClick={handleExportPdf} 
+            variant="outline" 
+            className="gap-2"
+            disabled={exporting || products.length === 0}
+          >
+            {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}
+            {exporting ? 'Generando...' : 'Exportar PDF'}
+          </Button>
           <Button onClick={handleAddProduct} className="gap-2 bg-primary hover:bg-primary/90">
             <Plus className="h-4 w-4" />
             Agregar
