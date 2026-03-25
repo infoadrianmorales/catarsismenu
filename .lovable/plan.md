@@ -1,39 +1,32 @@
 
 
-## Plan: Generar PDF del menú completo de Catarsis
+## Plan: Corregir precios y actualizar carta completa
 
-### Datos disponibles (ya consultados)
+### 4 correcciones en 3 archivos
 
-He obtenido todos los productos activos de la base de datos:
-- **Entradas**: 10 productos (Alitas, Animal Fries, Papas con Queso, Rebozados del Mar, Tequeños, Aros de Cebolla, Chili con Papas, Ración de Papas, Tenders de Pollo, Crispy Bites)
-- **Hamburguesas**: 13 productos (Chicken Crunch, Thousand Smash, Shrimp Crunch, BBQ Champions, Smash, Honeyholic, Clásica Americana, Texmex, Chicken Spicy, Thousand Cheesy, Onion Queen, Double Cheesy, Chicken Mayo)
-- **Emparedados**: 4 productos (Chicken Crunch Americano, Perla Negra, Fondue de Lomito, Chicken Cesar)
-- **Pizzas**: 6 productos (Margarita, Paradise, Pepperoni, Tasty, Hot Honey, Veggie)
-- **Parrilla**: 5 productos (Mar y Tierra, Lomito, Mariscos, Pollo, Mixta)
-- **Ensaladas**: 3 productos (César con Langostino, César Clásica, César de Pollo)
-- **Coctelería**: 10+ productos (Spicy Tamarindo, Passion Fruit Mule, Catarsis Punch, Whipped, Le Fraisier, etc.)
-- **Postres**: 2 productos (Brownie con Helado, Sweet Bites)
-
-**Total: ~53 productos activos**
-
-### Generación del PDF
-
-Ejecutaré un script Python con `reportlab` que genera un PDF A4 con:
-
-1. **Portada**: Fondo oscuro (#010C23), título "CATARSIS DRINKS & FOOD" en dorado, subtítulo "Menú Completo", ubicación y fecha
-2. **Páginas de contenido**: Productos agrupados por categoría con:
-   - Encabezado de categoría (barra oscura con nombre y conteo)
-   - Cada producto: nombre + línea punteada + precio USD en verde
-   - Descripción en gris debajo del nombre
-3. **Pie**: Marca y ubicación
-
-El archivo se guardará en `/mnt/documents/menu-catarsis.pdf` listo para descargar.
-
-### Archivos involucrados
-| Archivo | Acción |
+| Archivo | Cambio |
 |---------|--------|
-| `/tmp/gen_menu.py` | Script temporal para generar el PDF |
-| `/mnt/documents/menu-catarsis.pdf` | PDF final descargable |
+| `src/components/FAQSchema.tsx` | C1: Actualizar precio hamburguesas de $3.99 → $7.99 en la pregunta "¿Cuánto cuestan..." (línea 64) |
+| `src/components/RestaurantSchema.tsx` | C2: Reemplazar array `mentions` (líneas 162-237) con 25 entidades con precios reales. C4: Actualizar descripciones de las 8 MenuSections (líneas 83-132) con platos y precios reales |
+| `public/llms.txt` | C3: Reemplazar sección `menu_highlights` (líneas 40-64) con carta completa de 8 categorías, todos los platos y precios |
 
-No se modifica ningún archivo del proyecto.
+### Detalle
+
+**C1 — FAQSchema precio hamburguesas**
+- Línea 64: texto actual dice "$3.99 USD" → reemplazar con texto completo que lista las 13 hamburguesas con precios reales desde $7.99
+
+**C2 — RestaurantSchema mentions**
+- Reemplazar las 13 entidades actuales (sin precios) por 25 entidades con precios USD verificados
+- Incluye: 13 hamburguesas, 4 emparedados, 1 pizza (Hot Honey), 5 cócteles, 2 Things (Delivery/Vida nocturna)
+
+**C3 — llms.txt menu_highlights**
+- Reemplazar líneas 40-64 con carta completa: 8 categorías, ~55 platos con precios individuales y precios "desde" por categoría
+
+**C4 — RestaurantSchema MenuSections**
+- Actualizar descripciones de las 8 secciones (líneas 83-132) con conteo de platos, precios desde y nombres reales
+
+### Sin cambios
+- No se eliminan campos existentes fuera de lo indicado
+- Estructura JSON-LD se mantiene válida
+- FAQSchema AEO questions no se tocan (ya tienen precio correcto de $3.99 referido a entradas)
 
