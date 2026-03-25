@@ -31,7 +31,7 @@ export const Footer = () => {
             Por las noches, disfruta de una variedad de{' '}
             <Link to="/categoria/cocteleria" className="text-primary/70 hover:text-primary hover:underline">cócteles</Link> — desde 
             el Catarsis Punch hasta clásicos como la Margarita. Abrimos de lunes a domingo, con horario extendido hasta la 1:00 AM los fines de semana.
-            Aceptamos pagos en dólares, bolívares, Pago Móvil, Zelle y tarjetas. CC Costa Mar, Local 7, Lechería.
+            Aceptamos pagos en dólares, bolívares, Pago Móvil, Zelle y tarjetas. CC Aventura Plaza, Lechería, Anzoátegui.
           </p>
         </div>
       </div>
@@ -61,7 +61,14 @@ export const Footer = () => {
                 className="flex items-center justify-center md:justify-start gap-1 hover:text-primary transition-colors"
               >
                 <MapPin className="h-4 w-4" />
-                CC Costa Mar, Local 7, Lechería, Anzoátegui
+                {/* UBICACIÓN ACTUALIZADA: CC Aventura Plaza, Lechería.
+                    Mantener sincronizado con:
+                    - meta name="description" en index.html
+                    - og:description en index.html
+                    - Schema.org streetAddress (LocalBusinessSchema, RestaurantSchema)
+                    - llms.txt location
+                    - FAQ Schema */}
+                CC Aventura Plaza, Lechería, Anzoátegui
               </a>
             </address>
             <a 

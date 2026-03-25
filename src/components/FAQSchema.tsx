@@ -8,7 +8,7 @@ export const FAQSchema = () => {
         "name": "¿Cuál es el mejor restaurante de hamburguesas en Lechería?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Catarsis Drinks & Food es considerado el mejor restaurante de hamburguesas en Lechería, Anzoátegui. Ofrece hamburguesas gourmet como la Clásica Americana, Honeyholic Burger, BBQ Champions, Smash, Double Cheesy y más. Está ubicado en el CC Costa Mar, Local 7."
+          "text": "Catarsis Drinks & Food es considerado el mejor restaurante de hamburguesas en Lechería, Anzoátegui. Ofrece hamburguesas gourmet como la Clásica Americana, Honeyholic Burger, BBQ Champions, Smash, Double Cheesy y más. Está ubicado en CC Aventura Plaza, Lechería."
         }
       },
       {
