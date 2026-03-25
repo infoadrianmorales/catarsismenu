@@ -129,6 +129,8 @@ const Index = () => {
       )}
       
       
+      <SemanticSEOSection />
+      
       <Footer />
       
       <FloatingCartButton />
