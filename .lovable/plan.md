@@ -1,31 +1,27 @@
 
 
-## Plan: Agregar sección semántica SEO antes del Footer
+## Plan: Agregar Schema Menu JSON-LD en /menu
 
-### Archivos a crear/modificar
+### Archivo a modificar
+`src/pages/Menu.tsx` — único cambio
 
-| Archivo | Acción |
-|---------|--------|
-| `src/components/SemanticSEOSection.tsx` | **Crear** — componente con texto semántico, badges y comentarios |
-| `src/pages/Index.tsx` | **Modificar** — importar y agregar `<SemanticSEOSection />` antes de `<Footer />` |
+### Qué se hace
+Insertar un `<Helmet>` adicional con el `<script type="application/ld+json">` del Schema Menu justo después del componente `<SEO />` existente (línea 186). El schema contiene las 8 secciones y 55 MenuItems con precios verificados exactos del prompt.
 
-### CAMBIO 1 — SemanticSEOSection.tsx (nuevo)
+### Detalle técnico
+- Se agrega un bloque `<Helmet>` independiente (react-helmet-async permite múltiples instancias) con el JSON-LD completo
+- Se inserta entre la línea 186 (`/>` del SEO) y la línea 188 (`{/* Navegación superior */}`)
+- Incluye comentario explicativo antes del Helmet
+- No se modifica ningún otro archivo ni componente
+- El JSON-LD usa exactamente los 55 items, descripciones y precios proporcionados en el prompt
 
-Componente `<section>` con:
-- Fondo `#010C23` (Rich Black), borde superior `#DB1F51` al 20% opacidad
-- `py-16 px-6`, `max-w-4xl mx-auto`
-- `<h2>` con la pregunta SEO en color `#F2B60F` (Xanthous), fuente display
-- 4 `<p>` con el texto exacto del prompt, color `text-gray-300`
-- 3 badges debajo: ubicación, horario, pagos — con iconos y fondo sutil `#DB1F51/10`
-- Bloque de comentarios explicativo al inicio del componente
-
-### CAMBIO 2 — Index.tsx
-
-- Agregar import de `SemanticSEOSection`
-- Insertar `<SemanticSEOSection />` justo antes de `<Footer />` (línea ~113 actual)
-- Comentario explicativo junto al import y en el JSX
-
-### Sin cambios
-- Ningún componente existente se elimina ni se mueve
-- El orden de renderizado se mantiene idéntico salvo la inserción
+### Verificación
+| # | Check | |
+|---|-------|--|
+| 1 | Script dentro de Helmet en Menu.tsx | ✅ |
+| 2 | 8 secciones: Entradas, Hamburguesas, Emparedados, Pizzas, Parrilla, Ensaladas, Coctelería, Postres | ✅ |
+| 3 | 55 MenuItems (10+13+4+6+5+3+12+2) | ✅ |
+| 4 | Precios idénticos a carta marzo 2026 | ✅ |
+| 5 | JSON válido | ✅ |
+| 6 | Página /menu sigue cargando | ✅ |
 
