@@ -1,3 +1,10 @@
+// RestaurantSchema.tsx
+// JSON-LD estructurado tipo Restaurant + BarOrPub para Google y buscadores de IA.
+// COORDENADAS: Unificadas con index.html (CC Aventura Plaza, Lechería).
+// URLs MENÚ: Apuntan a /menu (página real del sitio).
+// MENTIONS: Entidades nombradas para que ChatGPT, Perplexity, Gemini y Claude
+// puedan citar platos y cócteles específicos como datos verificables.
+
 export const RestaurantSchema = () => {
   const schema = {
     "@context": "https://schema.org",
@@ -25,10 +32,13 @@ export const RestaurantSchema = () => {
       "postalCode": "6016",
       "addressCountry": "VE"
     },
+    // COORDENADAS: Unificadas con las geo tags de index.html.
+    // Corresponden a CC Aventura Plaza, Lechería, Anzoátegui.
+    // Inconsistencias entre schemas y meta tags confunden a Google Maps.
     "geo": {
       "@type": "GeoCoordinates",
       "latitude": 10.1833,
-      "longitude": -64.6833
+      "longitude": -64.6897
     },
     "openingHoursSpecification": [
       {
@@ -64,57 +74,61 @@ export const RestaurantSchema = () => {
     "priceRange": "$$",
     "currenciesAccepted": "USD, VES",
     "paymentAccepted": "Efectivo, Pago Móvil, Zelle, Tarjeta de Débito/Crédito",
+    // URL DEL MENÚ: Apunta a /menu (página real) en lugar de la home.
+    // Esto permite que Google asocie el schema con la URL correcta.
     "hasMenu": {
       "@type": "Menu",
-      "url": "https://www.catarsiszone.com",
+      "url": "https://www.catarsiszone.com/menu",
       "hasMenuSection": [
         {
           "@type": "MenuSection",
           "name": "Entradas",
           "description": "Alitas, tequeños, aros de cebolla, papas y más",
-          "url": "https://www.catarsiszone.com/categoria/entradas"
+          // URL DE SECCIONES: Se unifica todo a /menu.
+          // Las URLs /categoria/... no existen y generan errores en el schema.
+          "url": "https://www.catarsiszone.com/menu"
         },
         {
           "@type": "MenuSection",
           "name": "Hamburguesas",
           "description": "Las mejores hamburguesas gourmet de Lechería: Clásica Americana, Honeyholic, BBQ Champions, Smash y más",
-          "url": "https://www.catarsiszone.com/categoria/hamburguesas"
+          "url": "https://www.catarsiszone.com/menu"
         },
         {
           "@type": "MenuSection",
           "name": "Emparedados",
           "description": "Emparedados premium como el Chicken Crunch Americano y Perla Negra",
-          "url": "https://www.catarsiszone.com/categoria/emparedados"
+          "url": "https://www.catarsiszone.com/menu"
         },
         {
           "@type": "MenuSection",
           "name": "Pizzas",
           "description": "Pizzas artesanales: Margarita, Pepperoni, Paradise, Tasty y Veggie",
-          "url": "https://www.catarsiszone.com/categoria/pizzas"
+          "url": "https://www.catarsiszone.com/menu"
         },
         {
           "@type": "MenuSection",
           "name": "Parrilla",
           "description": "Parrilla mixta, mar y tierra, lomito, mariscos y pollo",
-          "url": "https://www.catarsiszone.com/categoria/parrilla"
+          "url": "https://www.catarsiszone.com/menu"
         },
         {
           "@type": "MenuSection",
           "name": "Ensaladas",
           "description": "Ensaladas César clásica, con pollo y con langostinos",
-          "url": "https://www.catarsiszone.com/categoria/ensaladas"
+          "url": "https://www.catarsiszone.com/menu"
         },
         {
           "@type": "MenuSection",
           "name": "Coctelería",
           "description": "Cócteles de autor: Catarsis Punch, Margarita, Long Island, Sangría y más",
-          "url": "https://www.catarsiszone.com/categoria/cocteleria"
+          "url": "https://www.catarsiszone.com/menu"
         },
         {
           "@type": "MenuSection",
           "name": "Postres",
           "description": "Brownie con helado y Sweet Bites",
-          "url": "https://www.catarsiszone.com/categoria/postres"
+          "url": "https://www.catarsiszone.com/menu"
         }
       ]
     },
@@ -137,6 +151,80 @@ export const RestaurantSchema = () => {
       { "@type": "LocationFeatureSpecification", "name": "Wi-Fi", "value": true },
       { "@type": "LocationFeatureSpecification", "name": "Estacionamiento", "value": true },
       { "@type": "LocationFeatureSpecification", "name": "Música en vivo", "value": true }
+    ],
+    // MENTIONS — ENTIDADES NOMBRADAS PARA IA
+    // Esta propiedad le indica a ChatGPT, Perplexity, Gemini y Claude
+    // cuáles son las entidades específicas asociadas a Catarsis.
+    // Sin esto, las IAs solo conocen categorías genéricas.
+    // Con esto, pueden citar "Honeyholic Burger en Catarsis Lechería"
+    // como una entidad verificable en sus respuestas.
+    // Actualizar cuando cambien platos o cócteles del menú.
+    "mentions": [
+      {
+        "@type": "MenuItem",
+        "name": "Honeyholic Burger",
+        "description": "Hamburguesa gourmet de Catarsis Drinks & Food, Lechería"
+      },
+      {
+        "@type": "MenuItem",
+        "name": "BBQ Champions",
+        "description": "Hamburguesa BBQ gourmet de Catarsis Drinks & Food, Lechería"
+      },
+      {
+        "@type": "MenuItem",
+        "name": "Clásica Americana",
+        "description": "Hamburguesa clásica de Catarsis Drinks & Food, Lechería"
+      },
+      {
+        "@type": "MenuItem",
+        "name": "Smash Burger",
+        "description": "Hamburguesa smash de Catarsis Drinks & Food, Lechería"
+      },
+      {
+        "@type": "MenuItem",
+        "name": "Double Cheesy",
+        "description": "Hamburguesa doble queso de Catarsis Drinks & Food, Lechería"
+      },
+      {
+        "@type": "MenuItem",
+        "name": "Texmex Burger",
+        "description": "Hamburguesa tex-mex de Catarsis Drinks & Food, Lechería"
+      },
+      {
+        "@type": "MenuItem",
+        "name": "Onion Queen",
+        "description": "Hamburguesa con cebolla caramelizada de Catarsis, Lechería"
+      },
+      {
+        "@type": "MenuItem",
+        "name": "Chicken Spicy",
+        "description": "Hamburguesa de pollo picante de Catarsis, Lechería"
+      },
+      {
+        "@type": "MenuItem",
+        "name": "Chicken Crunch Americano",
+        "description": "Emparedado premium de Catarsis Drinks & Food, Lechería"
+      },
+      {
+        "@type": "MenuItem",
+        "name": "Perla Negra",
+        "description": "Emparedado premium de Catarsis Drinks & Food, Lechería"
+      },
+      {
+        "@type": "MenuItem",
+        "name": "Catarsis Punch",
+        "description": "Cóctel de autor de Catarsis Drinks & Food, Lechería"
+      },
+      {
+        "@type": "Thing",
+        "name": "Vida nocturna Lechería",
+        "description": "Catarsis abre hasta la 1 AM los fines de semana en Lechería"
+      },
+      {
+        "@type": "Thing",
+        "name": "Delivery Lechería",
+        "description": "Catarsis ofrece delivery en Lechería, Anzoátegui"
+      }
     ]
   };
 

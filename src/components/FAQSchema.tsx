@@ -1,3 +1,8 @@
+// FAQSchema.tsx
+// JSON-LD tipo FAQPage para Google y buscadores de IA.
+// Incluye 7 preguntas SEO originales + 2 preguntas AEO (Answer Engine Optimization)
+// formuladas como consultas conversacionales para ChatGPT, Perplexity y Gemini.
+
 export const FAQSchema = () => {
   const schema = {
     "@context": "https://schema.org",
@@ -57,6 +62,26 @@ export const FAQSchema = () => {
         "acceptedAnswer": {
           "@type": "Answer",
           "text": "Las hamburguesas en Catarsis tienen precios desde $3.99 USD. La carta incluye opciones como la Clásica Americana, Honeyholic, BBQ Champions, Smash, Texmex, Chicken Spicy, Onion Queen y Double Cheesy, todas preparadas con ingredientes premium."
+        }
+      },
+      // PREGUNTAS AEO: Formuladas como consultas directas a IA.
+      // "¿Qué me recomiendas?" y "¿Vale la pena?" son patrones
+      // frecuentes en búsquedas conversacionales con ChatGPT y Gemini.
+      // Las IAs priorizan respuestas con datos específicos verificables.
+      {
+        "@type": "Question",
+        "name": "¿Qué hamburguesa recomiendas pedir en Catarsis Lechería?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Las más pedidas en Catarsis son la Honeyholic Burger (con toque dulce), la BBQ Champions (para amantes del BBQ) y la Smash Burger (estilo americano clásico). Si prefieres pollo, el Chicken Spicy es una excelente opción. Todas están preparadas con ingredientes frescos desde $3.99 USD."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "¿Catarsis es bueno para ir en grupo o en pareja en Lechería?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Sí. Catarsis Drinks & Food en CC Aventura Plaza, Lechería tiene ambiente para grupos y parejas. Cuenta con Wi-Fi, estacionamiento, música en vivo y coctelería de autor. Los viernes y sábados abre hasta la 1:00 AM, ideal para salidas nocturnas en Lechería, Anzoátegui."
         }
       }
     ]
