@@ -1,37 +1,35 @@
 
 
-## Plan: Actualizar descripciones de hamburguesas, emparedados y parrilla
+## Plan: Actualizar logos y favicon con nueva identidad visual
 
-### Archivos con descripciones individuales de productos
+### Contexto
+El header y footer actualmente usan `src/assets/logo-catarsis.png` (el logo anterior). Existe `logo-catarsis-white.png` pero no se usa en ningún componente. El favicon es `public/favicon.png`.
 
-| Archivo | Productos afectados | Tipo de cambio |
-|---------|---------------------|----------------|
-| `src/pages/Menu.tsx` | 13 hamburguesas + 4 emparedados + 5 parrilla (líneas 42-104) | Reemplazar campo `description` de cada item |
-| `src/components/RestaurantSchema.tsx` | 13 hamburguesas + 4 emparedados en `mentions` (líneas 159-192) | Reemplazar texto de `description` manteniendo precio y "Catarsis Lechería" |
+### Archivos subidos
+- **Logo amarillo** (`Mesa_de_trabajo_2.png`) — para header (fondo oscuro) y favicon
+- **Logo blanco** (`Mesa_de_trabajo_6.png`) — para footer (fondo oscuro)
 
-### Archivos SIN descripciones individuales (no requieren cambios)
+### Cambios
 
-| Archivo | Razón |
-|---------|-------|
-| `public/llms.txt` | Solo lista nombres + precios, sin descripciones de platos |
-| `src/components/FAQSchema.tsx` | Solo menciona nombres y precios en texto corrido |
-| `src/components/LocalBusinessSchema.tsx` | No contiene platos individuales |
+| Archivo | Acción |
+|---------|--------|
+| `src/assets/logo-catarsis.png` | Reemplazar con logo amarillo |
+| `src/assets/logo-catarsis-white.png` | Reemplazar con logo blanco |
+| `public/favicon.png` | Reemplazar con logo amarillo (favicon) |
+| `src/components/Footer.tsx` | Cambiar import a `logo-catarsis-white.png` para usar logo blanco en footer |
+| `index.html` | Actualizar versión de caché del favicon (`?v=catarsis-20260325`) |
 
-### Detalle de cambios
+### Detalle
 
-**Menu.tsx — 22 descripciones**
-- Líneas 42-54: 13 hamburguesas — reemplazar cada `description` con el texto exacto del prompt
-- Líneas 61-64: 4 emparedados — reemplazar cada `description`
-- Líneas 99-103: 5 parrilla — reemplazar cada `description`
-- Solo cambia el campo `description`, no `name` ni `price`
+1. **Copiar logo amarillo** → `src/assets/logo-catarsis.png` (reemplaza el anterior) y `public/favicon.png`
+2. **Copiar logo blanco** → `src/assets/logo-catarsis-white.png`
+3. **Footer.tsx**: Cambiar `import logoCatarsis from '@/assets/logo-catarsis.png'` por `import logoCatarsis from '@/assets/logo-catarsis-white.png'`
+4. **index.html**: Actualizar query string del favicon para forzar refresco en navegadores
 
-**RestaurantSchema.tsx — 17 mentions con descripción actualizada**
-- Líneas 159-192: Actualizar las descriptions de los 13 mentions de hamburguesas y 4 de emparedados
-- Formato: descripción nueva resumida + precio USD + "Catarsis Lechería"
-- Parrilla: No tiene entries individuales en `mentions`, por lo que no se actualiza aquí
+### Nota sobre og-image
+El usuario indicó que tiene una imagen lista para redes sociales — se actualizará cuando la suba en un siguiente mensaje.
 
-### Notas
-- Ningún precio se modifica
-- Ningún nombre de plato se modifica
-- Las descripciones en RestaurantSchema se resumen para caber en el formato corto del schema (una línea con precio)
+### Sin cambios
+- MenuHeader.tsx sigue usando `logo-catarsis.png` (ahora será el amarillo nuevo)
+- Tamaños CSS no cambian (`h-10 md:h-14` header, `h-16 md:h-20` footer)
 
