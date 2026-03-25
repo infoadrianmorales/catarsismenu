@@ -444,14 +444,31 @@ Correo: ${formData.email.toLowerCase()}`;
 
       const orderNum = generatedOrderNumber || `#${newOrderId.slice(0, 8).toUpperCase()}`;
       
+      // SEGURIDAD [C3]: session_id se pasa al crear la orden (línea 431).
+      // Siempre usar el session_id existente de la sesión actual.
+      // Nunca generar uno nuevo en este punto — debe ser el mismo
+      // que identifica al cliente durante todo el flujo de compra.
+
       // Generate final WhatsApp message with real order number
       const whatsappMessage = generateWhatsAppMessage(orderNum);
       
-      // Update order with final whatsapp message (with real order number)
-      await supabase
-        .from('orders')
-        .update({ whatsapp_message: whatsappMessage })
-        .eq('id', newOrderId);
+      // SEGURIDAD [C6]: Se reemplazó .update() directo por RPC.
+      // La función valida session_id y restringe columnas editables.
+      // Ver: función update_order_whatsapp_message en la base de datos.
+      const { data: updateResult, error: updateError } = await supabase.rpc(
+        'update_order_whatsapp_message',
+        {
+          p_order_id: newOrderId,
+          p_message: whatsappMessage,
+          p_session_id: getSessionId(),
+        }
+      );
+
+      if (updateError) {
+        console.error('Error al actualizar mensaje WhatsApp:', updateError);
+      } else if (updateResult && !(updateResult as any).success) {
+        console.error('Error al actualizar mensaje WhatsApp:', (updateResult as any).error);
+      }
 
       // Create order items
       const orderItems = items.map(item => ({

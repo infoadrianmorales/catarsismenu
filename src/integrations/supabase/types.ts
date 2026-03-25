@@ -199,6 +199,7 @@ export type Database = {
           payment_method: string
           payment_reference: string | null
           phone: string
+          session_id: string | null
           status: string
           subtotal: number
           total: number
@@ -225,6 +226,7 @@ export type Database = {
           payment_method: string
           payment_reference?: string | null
           phone: string
+          session_id?: string | null
           status?: string
           subtotal: number
           total: number
@@ -251,6 +253,7 @@ export type Database = {
           payment_method?: string
           payment_reference?: string | null
           phone?: string
+          session_id?: string | null
           status?: string
           subtotal?: number
           total?: number
@@ -341,6 +344,7 @@ export type Database = {
           customer_first_name: string | null
           customer_last_name: string | null
           customer_phone: string | null
+          expires_at: string | null
           id: string
           session_id: string
           updated_at: string
@@ -352,6 +356,7 @@ export type Database = {
           customer_first_name?: string | null
           customer_last_name?: string | null
           customer_phone?: string | null
+          expires_at?: string | null
           id?: string
           session_id: string
           updated_at?: string
@@ -363,6 +368,7 @@ export type Database = {
           customer_first_name?: string | null
           customer_last_name?: string | null
           customer_phone?: string | null
+          expires_at?: string | null
           id?: string
           session_id?: string
           updated_at?: string
@@ -643,6 +649,10 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      update_order_whatsapp_message: {
+        Args: { p_message: string; p_order_id: string; p_session_id: string }
+        Returns: Json
+      }
       validate_order_exists: { Args: { p_order_id: string }; Returns: boolean }
     }
     Enums: {
