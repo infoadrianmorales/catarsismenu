@@ -21,6 +21,14 @@ export const MenuHeader = ({ currency, onCurrencyToggle, displayMode = 'ambas' }
   // Only show currency toggle if display mode is 'ambas'
   const showCurrencyToggle = displayMode === 'ambas';
 
+  {/* OPTIMIZACIÓN DE PERFORMANCE — MenuHeader
+      Cambios aplicados:
+      - loading="eager" en logo (visible al abrir la página)
+      - width y height para evitar saltos de layout (CLS)
+      - alt descriptivo para SEO y accesibilidad
+      CLS (Cumulative Layout Shift): cuando una imagen carga
+      tarde y empuja el contenido hacia abajo — afecta la
+      experiencia del usuario y el score de Google PageSpeed. */}
   return (
     <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md border-b border-border/50">
       <div className="container px-4 h-16 flex items-center justify-between">
@@ -28,9 +36,15 @@ export const MenuHeader = ({ currency, onCurrencyToggle, displayMode = 'ambas' }
         <div className="flex items-center">
           <img 
             src={logoCatarsis} 
-            alt="Catarsis" 
+            alt="Logo de Catarsis Drinks & Food"
+            loading="eager"
+            width="180"
+            height="60"
             className="h-10 md:h-14 w-auto"
           />
+          {/* EAGER: Esta imagen es visible al abrir la página.
+              Cargar inmediatamente evita que el usuario vea
+              un espacio vacío al llegar al sitio. */}
         </div>
         
         <div className="flex items-center gap-4">

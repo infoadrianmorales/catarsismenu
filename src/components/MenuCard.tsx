@@ -46,6 +46,13 @@ export const MenuCard = ({ item, currency, displayMode = 'ambas' }: MenuCardProp
     );
   };
 
+  /* OPTIMIZACIÓN DE PERFORMANCE — MenuCard
+     Cambios aplicados:
+     - width y height para evitar saltos de layout (CLS)
+     - alt descriptivo con marca para SEO
+     CLS (Cumulative Layout Shift): cuando una imagen carga
+     tarde y empuja el contenido hacia abajo — afecta la
+     experiencia del usuario y el score de Google PageSpeed. */
   return (
     <Card className="group overflow-hidden border-border/40 bg-card hover:border-primary/50 transition-all duration-200 hover:shadow-glow hover:-translate-y-1" data-meta-event="ViewContent" id={`product-card-${item.id}`} onMouseEnter={() => { const img = new Image(); img.src = item.imagen; }} onTouchStart={() => { const img = new Image(); img.src = item.imagen; }}>
       <CardContent className="p-0">
@@ -54,10 +61,14 @@ export const MenuCard = ({ item, currency, displayMode = 'ambas' }: MenuCardProp
           <div className="relative aspect-square overflow-hidden rounded-lg bg-white border border-foreground/10 shadow-md sm:transition-transform sm:duration-300 sm:ease-out sm:group-hover:scale-105">
             <img 
               src={item.imagen} 
-              alt={`Foto de ${item.nombre} sobre fondo blanco`}
+              alt={`${item.nombre} — Catarsis Drinks & Food, Lechería`}
               loading="lazy"
+              width="400"
+              height="400"
               className="h-full w-full object-cover p-1.5 sm:p-2"
             />
+            {/* LAZY: Esta imagen está fuera de la pantalla inicial.
+                Se carga solo cuando el usuario hace scroll hasta ella. */}
           </div>
         </div>
         

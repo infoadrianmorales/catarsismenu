@@ -111,10 +111,15 @@ const Cart = () => {
                   <CardContent className="p-4">
                     <div className="flex gap-4">
                       {/* Image */}
+                      {/* OPTIMIZACIÓN DE PERFORMANCE — Cart item image
+                          loading="lazy", width/height para CLS, alt con marca */}
                       <div className="w-20 h-20 md:w-24 md:h-24 rounded-xl bg-white overflow-hidden flex-shrink-0 shadow-md">
                         <img 
                           src={item.imagen} 
-                          alt={item.nombre}
+                          alt={`${item.nombre} — Catarsis Drinks & Food, Lechería`}
+                          loading="lazy"
+                          width="96"
+                          height="96"
                           className="w-full h-full object-cover"
                         />
                       </div>
