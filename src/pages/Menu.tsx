@@ -185,6 +185,142 @@ const Menu = () => {
         url="/menu"
       />
 
+      {/* SCHEMA.ORG MENU + MENUITEM
+          Indica a Google y las IAs los platos, descripciones
+          y precios exactos de Catarsis Drinks & Food.
+          Permite respuestas específicas en buscadores de IA:
+          "¿cuánto cuesta X en Catarsis Lechería?"
+          MANTENER ACTUALIZADO cuando cambien precios o platos.
+          Sincronizar con:
+          - src/components/RestaurantSchema.tsx (mentions)
+          - public/llms.txt (menu_highlights)
+          - public/sitemap.xml (lastmod) */}
+      <Helmet>
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Menu",
+            "name": "Menú Catarsis Drinks & Food",
+            "url": "https://www.catarsiszone.com/menu",
+            "inLanguage": "es",
+            "description": "Carta completa de Catarsis Drinks & Food en CC Aventura Plaza, Lechería, Anzoátegui. Hamburguesas desde $7.99 USD, pizzas desde $7.99, cócteles desde $4.99.",
+            "hasMenuSection": [
+              {
+                "@type": "MenuSection",
+                "name": "Entradas",
+                "description": "10 entradas desde $3.99 USD",
+                "hasMenuItem": [
+                  { "@type": "MenuItem", "name": "Aros de Cebolla", "description": "Aros de cebolla rebozados y fritos, perfectamente crocantes.", "offers": { "@type": "Offer", "price": "3.99", "priceCurrency": "USD" } },
+                  { "@type": "MenuItem", "name": "Ración de Papas", "description": "300g de papas fritas clásicas doradas y crujientes.", "offers": { "@type": "Offer", "price": "3.99", "priceCurrency": "USD" } },
+                  { "@type": "MenuItem", "name": "Tequeños", "description": "6 deditos de queso en masa artesanal frita.", "offers": { "@type": "Offer", "price": "5.99", "priceCurrency": "USD" } },
+                  { "@type": "MenuItem", "name": "Papas con Queso Fundido", "description": "Papas fritas con queso fundido y tocineta crujiente.", "offers": { "@type": "Offer", "price": "5.99", "priceCurrency": "USD" } },
+                  { "@type": "MenuItem", "name": "Animal Fries", "description": "Papas fritas con queso facilista, tocineta y cebolla caramelizada y salsa thousand.", "offers": { "@type": "Offer", "price": "7.50", "priceCurrency": "USD" } },
+                  { "@type": "MenuItem", "name": "Tenders de Pollo", "description": "6 piezas de pechuga empanizada sobre papas fritas.", "offers": { "@type": "Offer", "price": "7.50", "priceCurrency": "USD" } },
+                  { "@type": "MenuItem", "name": "Chili con Papas", "description": "Papas con chili de carne, jalapeños, cheddar y tocineta.", "offers": { "@type": "Offer", "price": "7.99", "priceCurrency": "USD" } },
+                  { "@type": "MenuItem", "name": "Alitas de Pollo", "description": "Alitas crujientes o en salsa BBQ con papas fritas.", "offers": { "@type": "Offer", "price": "8.99", "priceCurrency": "USD" } },
+                  { "@type": "MenuItem", "name": "Crispy Bites", "description": "Papas picantes con tenders de pollo, cheddar, tocineta y salsa BBQ.", "offers": { "@type": "Offer", "price": "8.99", "priceCurrency": "USD" } },
+                  { "@type": "MenuItem", "name": "Rebozados del Mar", "description": "Pescado blanco, calamares y langostinos rebozados con papas fritas.", "offers": { "@type": "Offer", "price": "11.99", "priceCurrency": "USD" } }
+                ]
+              },
+              {
+                "@type": "MenuSection",
+                "name": "Hamburguesas",
+                "description": "13 hamburguesas artesanales desde $7.99 USD",
+                "hasMenuItem": [
+                  { "@type": "MenuItem", "name": "Double Cheesy", "description": "Dos carnes smash de 80g, doble capa de queso, cebolla grillada y salsa relish.", "offers": { "@type": "Offer", "price": "7.99", "priceCurrency": "USD" } },
+                  { "@type": "MenuItem", "name": "Chicken Mayo", "description": "Pollo frito dorado, lechuga picada en trozos pequeños, mayonesa artesanal, queso facilista y tocineta crujiente.", "offers": { "@type": "Offer", "price": "7.99", "priceCurrency": "USD" } },
+                  { "@type": "MenuItem", "name": "Thousand Cheesy", "description": "Doble carne smash de 80g, lechuga fresca, queso facilista, pepinillos y salsa Thousand Island.", "offers": { "@type": "Offer", "price": "8.50", "priceCurrency": "USD" } },
+                  { "@type": "MenuItem", "name": "Chicken Crunch", "description": "Pollo ultra crujiente, tocineta ahumada, cheddar fundido, pepinillos y vegetales frescos con tártara artesanal.", "offers": { "@type": "Offer", "price": "8.99", "priceCurrency": "USD" } },
+                  { "@type": "MenuItem", "name": "Chicken Spicy", "description": "Pollo frito picante de la casa, cheddar fundido, tocineta ahumada, pepinillos y vegetales frescos: cebolla, tomate y lechuga.", "offers": { "@type": "Offer", "price": "8.99", "priceCurrency": "USD" } },
+                  { "@type": "MenuItem", "name": "Shrimp Crunch", "description": "Langostinos frescos con rebozado crocante, vegetales frescos, pepinillos y reducción de balsámico con tártara.", "offers": { "@type": "Offer", "price": "8.99", "priceCurrency": "USD" } },
+                  { "@type": "MenuItem", "name": "Clásica Americana", "description": "150g de solomo, cheddar fundido, tocineta crujiente, pepinillos, ketchup, mayonesa artesanal y vegetales frescos.", "offers": { "@type": "Offer", "price": "9.99", "priceCurrency": "USD" } },
+                  { "@type": "MenuItem", "name": "Honeyholic Burger", "description": "Pollo crispy con miel y Cholula, cheddar y manchego fundidos, tocineta crujiente y vegetales frescos.", "offers": { "@type": "Offer", "price": "9.99", "priceCurrency": "USD" } },
+                  { "@type": "MenuItem", "name": "Texmex", "description": "150g de solomo con jalapeños, cheddar fundido, cebolla caramelizada, tocineta, pimentón ahumado y vegetales frescos.", "offers": { "@type": "Offer", "price": "9.99", "priceCurrency": "USD" } },
+                  { "@type": "MenuItem", "name": "Onion Queen", "description": "150g de solomo con cebolla crunch, cheddar fundido, tocineta crujiente, vegetales frescos y tártara artesanal.", "offers": { "@type": "Offer", "price": "9.99", "priceCurrency": "USD" } },
+                  { "@type": "MenuItem", "name": "BBQ Champions", "description": "150g de solomo en salsa BBQ de la casa, salsa de queso azul con champiñones, tocineta crujiente y vegetales frescos.", "offers": { "@type": "Offer", "price": "10.50", "priceCurrency": "USD" } },
+                  { "@type": "MenuItem", "name": "Smash", "description": "Doble carne smash 300g con costra perfecta, doble cheddar fundido, tocineta, pepinillos y vegetales frescos: cebolla, tomate y lechuga.", "offers": { "@type": "Offer", "price": "13.99", "priceCurrency": "USD" } },
+                  { "@type": "MenuItem", "name": "Thousand Smash", "description": "Triple carne smash 300g, tres capas de cheddar una por cada carne, tocineta crujiente, pepinillos y salsa Thousand Island.", "offers": { "@type": "Offer", "price": "13.99", "priceCurrency": "USD" } }
+                ]
+              },
+              {
+                "@type": "MenuSection",
+                "name": "Emparedados",
+                "description": "4 emparedados premium desde $8.99 USD",
+                "hasMenuItem": [
+                  { "@type": "MenuItem", "name": "Chicken Crunch Americano", "description": "Pollo empanizado dorado, cheddar fundido, tocineta, pepinillos, tártara y vegetales frescos: cebolla, tomate y lechuga.", "offers": { "@type": "Offer", "price": "8.99", "priceCurrency": "USD" } },
+                  { "@type": "MenuItem", "name": "Perla Negra", "description": "Calamares con rebozado crocante, tártara, pepinillos y vegetales frescos: cebolla, tomate y lechuga.", "offers": { "@type": "Offer", "price": "8.99", "priceCurrency": "USD" } },
+                  { "@type": "MenuItem", "name": "Chicken Cesar", "description": "Pollo crispy dorado, lechuga romana, aderezo césar artesanal, manchego rallado y tocineta crujiente.", "offers": { "@type": "Offer", "price": "9.50", "priceCurrency": "USD" } },
+                  { "@type": "MenuItem", "name": "Fondue de Lomito", "description": "Lomito tierno en fondue de queso azul con champiñones, pepinillos y vegetales frescos: cebolla, tomate y lechuga.", "offers": { "@type": "Offer", "price": "11.99", "priceCurrency": "USD" } }
+                ]
+              },
+              {
+                "@type": "MenuSection",
+                "name": "Pizzas",
+                "description": "6 pizzas artesanales desde $7.99 USD",
+                "hasMenuItem": [
+                  { "@type": "MenuItem", "name": "Margarita", "description": "Salsa napoli, queso, jamón y maíz dulce.", "offers": { "@type": "Offer", "price": "7.99", "priceCurrency": "USD" } },
+                  { "@type": "MenuItem", "name": "Pepperoni", "description": "Pizza clásica con generosas rodajas de pepperoni sobre mezcla de quesos.", "offers": { "@type": "Offer", "price": "8.50", "priceCurrency": "USD" } },
+                  { "@type": "MenuItem", "name": "Paradise", "description": "Jamón ahumado, pepperoni, tocineta crujiente y maíz.", "offers": { "@type": "Offer", "price": "9.50", "priceCurrency": "USD" } },
+                  { "@type": "MenuItem", "name": "Hot Honey", "description": "Salsa napoli, mozzarella, jamón ahumado, pepperoni, cebolla caramelizada, manchego y miel picante.", "offers": { "@type": "Offer", "price": "9.50", "priceCurrency": "USD" } },
+                  { "@type": "MenuItem", "name": "Veggie", "description": "Cebolla morada, pimentón ahumado, champiñones, aceitunas, berenjenas y tomates secos con manchego.", "offers": { "@type": "Offer", "price": "9.99", "priceCurrency": "USD" } },
+                  { "@type": "MenuItem", "name": "Tasty", "description": "Jamón ahumado, tocineta, cebolla caramelizada, pimentón ahumado, tomates secos, manchego y pesto.", "offers": { "@type": "Offer", "price": "11.50", "priceCurrency": "USD" } }
+                ]
+              },
+              {
+                "@type": "MenuSection",
+                "name": "Parrilla",
+                "description": "5 opciones de parrilla desde $10.99 USD",
+                "hasMenuItem": [
+                  { "@type": "MenuItem", "name": "Parrilla Mixta", "description": "Variedad de cortes de carne de res y pollo asados al punto perfecto. Ideal para compartir.", "offers": { "@type": "Offer", "price": "10.99", "priceCurrency": "USD" } },
+                  { "@type": "MenuItem", "name": "Parrilla de Pollo", "description": "Pechuga de pollo marinada con especias de la casa, asada a la parrilla con sabor ahumado característico.", "offers": { "@type": "Offer", "price": "10.99", "priceCurrency": "USD" } },
+                  { "@type": "MenuItem", "name": "Parrilla de Lomito", "description": "Tierno corte de lomito de res asado a la parrilla al punto perfecto, conservando todos sus jugos.", "offers": { "@type": "Offer", "price": "11.99", "priceCurrency": "USD" } },
+                  { "@type": "MenuItem", "name": "Parrilla Mar y Tierra", "description": "Cortes de carne roja y mariscos frescos asados a la parrilla en un solo plato. Ideal para compartir.", "offers": { "@type": "Offer", "price": "15.50", "priceCurrency": "USD" } },
+                  { "@type": "MenuItem", "name": "Parrilla de Mariscos", "description": "Selección premium de frutos del mar frescos asados a la parrilla para resaltar su sabor natural.", "offers": { "@type": "Offer", "price": "15.50", "priceCurrency": "USD" } }
+                ]
+              },
+              {
+                "@type": "MenuSection",
+                "name": "Ensaladas",
+                "description": "3 ensaladas César desde $7.49 USD",
+                "hasMenuItem": [
+                  { "@type": "MenuItem", "name": "César Clásica", "description": "Lechuga fresca, aderezo César artesanal, crutones y queso parmesano.", "offers": { "@type": "Offer", "price": "7.49", "priceCurrency": "USD" } },
+                  { "@type": "MenuItem", "name": "César de Pollo", "description": "Ensalada César con pechuga de pollo grillada, crutones y parmesano.", "offers": { "@type": "Offer", "price": "8.99", "priceCurrency": "USD" } },
+                  { "@type": "MenuItem", "name": "César con Langostino", "description": "Ensalada César coronada con langostinos salteados, crutones y parmesano.", "offers": { "@type": "Offer", "price": "11.99", "priceCurrency": "USD" } }
+                ]
+              },
+              {
+                "@type": "MenuSection",
+                "name": "Coctelería",
+                "description": "12 cócteles de autor desde $4.99 USD",
+                "hasMenuItem": [
+                  { "@type": "MenuItem", "name": "Catarsis Punch", "description": "Ron añejo con parchita, naranja, limón y granadina.", "offers": { "@type": "Offer", "price": "4.99", "priceCurrency": "USD" } },
+                  { "@type": "MenuItem", "name": "Spicy Tamarindo", "description": "Vodka tamarindo con limón, ají dulce y cilantro.", "offers": { "@type": "Offer", "price": "4.99", "priceCurrency": "USD" } },
+                  { "@type": "MenuItem", "name": "Passion Fruit Mule", "description": "Vodka con parchita, limón y ginger beer.", "offers": { "@type": "Offer", "price": "4.99", "priceCurrency": "USD" } },
+                  { "@type": "MenuItem", "name": "Whipped", "description": "Vodka Whipped con jarabe de parchita y toque cítrico de limón.", "offers": { "@type": "Offer", "price": "4.99", "priceCurrency": "USD" } },
+                  { "@type": "MenuItem", "name": "Le Fraisier", "description": "Ginebra con óleo de fresa, limón, bitter y soda.", "offers": { "@type": "Offer", "price": "4.99", "priceCurrency": "USD" } },
+                  { "@type": "MenuItem", "name": "Flowers", "description": "Ginebra infusionada con Blue Butterfly, jarabe de flores, lima y soda.", "offers": { "@type": "Offer", "price": "4.99", "priceCurrency": "USD" } },
+                  { "@type": "MenuItem", "name": "Rum Old Fashioned Tonic", "description": "Ron Cacique con azúcar, amargo de angostura y agua tónica.", "offers": { "@type": "Offer", "price": "4.99", "priceCurrency": "USD" } },
+                  { "@type": "MenuItem", "name": "Sangría", "description": "Vino cabernet con licor de ponsigué y frutas cítricas con jarabe de fresa.", "offers": { "@type": "Offer", "price": "4.99", "priceCurrency": "USD" } },
+                  { "@type": "MenuItem", "name": "Long Island Tea", "description": "Vodka, ginebra, ron, tequila y Triple Sec con limón y Coca-Cola.", "offers": { "@type": "Offer", "price": "4.99", "priceCurrency": "USD" } },
+                  { "@type": "MenuItem", "name": "Margarita On the Rocks", "description": "Tequila y Triple Sec con limón y jarabe de fresa.", "offers": { "@type": "Offer", "price": "4.99", "priceCurrency": "USD" } },
+                  { "@type": "MenuItem", "name": "Green Gin", "description": "Ginebra con Blue Curaçao, jarabe de azúcar y jugo de parchita.", "offers": { "@type": "Offer", "price": "4.99", "priceCurrency": "USD" } },
+                  { "@type": "MenuItem", "name": "Southside Berry", "description": "Ginebra con limón, jarabe dulce y zumo de fresa.", "offers": { "@type": "Offer", "price": "4.99", "priceCurrency": "USD" } }
+                ]
+              },
+              {
+                "@type": "MenuSection",
+                "name": "Postres",
+                "description": "2 postres desde $5.99 USD",
+                "hasMenuItem": [
+                  { "@type": "MenuItem", "name": "Sweet Bites", "description": "Bocados dulces variados, el final perfecto para tu comida.", "offers": { "@type": "Offer", "price": "5.99", "priceCurrency": "USD" } },
+                  { "@type": "MenuItem", "name": "Brownie con Helado", "description": "Brownie de chocolate tibio y melcochudo con bola de helado cremoso.", "offers": { "@type": "Offer", "price": "6.99", "priceCurrency": "USD" } }
+                ]
+              }
+            ]
+          })}
+        </script>
+      </Helmet>
+
       {/* Navegación superior */}
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center gap-3">
