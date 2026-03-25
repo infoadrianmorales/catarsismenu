@@ -37,31 +37,79 @@ services:
   - Coctelería nocturna
   - Música en vivo
 
+# MENÚ ACTUALIZADO — precios en USD verificados marzo 2026
 menu_highlights:
+  entradas_desde: $3.99 USD
+  entradas:
+    - Aros de Cebolla $3.99
+    - Ración de Papas $3.99
+    - Tequeños $5.99
+    - Papas con Queso Fundido $5.99
+    - Animal Fries $7.50
+    - Tenders de Pollo $7.50
+    - Chili con Papas $7.99
+    - Alitas de Pollo $8.99
+    - Crispy Bites $8.99
+    - Rebozados del Mar $11.99
+  hamburguesas_desde: $7.99 USD
   hamburguesas:
-    - Honeyholic Burger
-    - BBQ Champions
-    - Clásica Americana
-    - Smash Burger
-    - Double Cheesy
-    - Texmex Burger
-    - Onion Queen
-    - Chicken Spicy
+    - Double Cheesy $7.99
+    - Chicken Mayo $7.99
+    - Thousand Cheesy $8.50
+    - Chicken Crunch $8.99
+    - Chicken Spicy $8.99
+    - Shrimp Crunch $8.99
+    - Clásica Americana $9.99
+    - Honeyholic Burger $9.99
+    - Texmex Burger $9.99
+    - Onion Queen $9.99
+    - BBQ Champions $10.50
+    - Smash Burger $13.99
+    - Thousand Smash $13.99
+  emparedados_desde: $8.99 USD
   emparedados:
-    - Chicken Crunch Americano
-    - Perla Negra
+    - Chicken Crunch Americano $8.99
+    - Perla Negra $8.99
+    - Chicken Cesar $9.50
+    - Fondue de Lomito $11.99
+  pizzas_desde: $7.99 USD
   pizzas:
-    - Margarita
-    - Pepperoni
-    - Paradise
-    - Tasty
-    - Veggie
+    - Margarita $7.99
+    - Pepperoni $8.50
+    - Paradise $9.50
+    - Hot Honey $9.50
+    - Veggie $9.99
+    - Tasty $11.50
+  parrilla_desde: $10.99 USD
+  parrilla:
+    - Parrilla Mixta $10.99
+    - Parrilla de Pollo $10.99
+    - Parrilla de Lomito $11.99
+    - Parrilla Mar y Tierra $15.50
+    - Parrilla de Mariscos $15.50
+  ensaladas_desde: $7.49 USD
+  ensaladas:
+    - César Clásica $7.49
+    - César de Pollo $8.99
+    - César con Langostino $11.99
+  cocteleria_desde: $4.99 USD
   cocteleria:
-    - Catarsis Punch
-    - Margarita
-    - Long Island Tea
-    - Sangría
-  precio_desde: $3.99 USD
+    - Catarsis Punch $4.99
+    - Spicy Tamarindo $4.99
+    - Passion Fruit Mule $4.99
+    - Whipped $4.99
+    - Le Fraisier $4.99
+    - Flowers $4.99
+    - Rum Old Fashioned Tonic $4.99
+    - Sangría $4.99
+    - Long Island Tea $4.99
+    - Margarita On the Rocks $4.99
+    - Green Gin $4.99
+    - Southside Berry $4.99
+  postres_desde: $5.99 USD
+  postres:
+    - Sweet Bites $5.99
+    - Brownie con Helado $6.99
 
 urls:
   website: https://www.catarsiszone.com/
