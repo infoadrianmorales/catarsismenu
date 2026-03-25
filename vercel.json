@@ -1,11 +1,5 @@
 {
-  "redirects": [
-    {
-      "source": "/menu",
-      "destination": "/",
-      "statusCode": 301
-    }
-  ],
+  "redirects": [],
   "rewrites": [
     { "source": "/best-seller", "destination": "/categoria/best-seller" },
     { "source": "/hamburguesas", "destination": "/categoria/hamburguesas" },

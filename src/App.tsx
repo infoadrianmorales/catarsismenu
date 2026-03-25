@@ -25,6 +25,8 @@ const OrderConfirmed = lazy(() => import("./pages/OrderConfirmed"));
 const CategoryPage = lazy(() => import("./pages/CategoryPage"));
 const ProductPage = lazy(() => import("./pages/ProductPage"));
 const MenuLocal = lazy(() => import("./pages/MenuLocal"));
+// Página de menú — URL independiente para SEO e indexación por IA
+const Menu = lazy(() => import("./pages/Menu"));
 
 // Configure QueryClient with optimized defaults
 const queryClient = new QueryClient({
@@ -60,7 +62,8 @@ const AppContent = () => {
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/menu" element={<Navigate to="/" replace />} />
+            {/* REGLA: /menu NO debe redirigir a /. Es una página independiente con SEO propio. */}
+            <Route path="/menu" element={<Menu />} />
             <Route path="/local" element={<MenuLocal />} />
           <Route path="/categoria/:slug" element={<CategoryPage />} />
           {/* Short category URLs for Meta Ads */}
