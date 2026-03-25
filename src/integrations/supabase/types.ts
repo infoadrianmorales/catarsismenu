@@ -640,6 +640,19 @@ export type Database = {
         }
         Returns: string
       }
+      get_active_payment_methods: {
+        Args: never
+        Returns: {
+          display_order: number
+          enabled: boolean
+          id: string
+          instructions_usd: string
+          instructions_ves: string
+          label: string
+          supports_usd: boolean
+          supports_ves: boolean
+        }[]
+      }
       get_client_session_id: { Args: never; Returns: string }
       has_role: {
         Args: {
