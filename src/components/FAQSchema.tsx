@@ -61,7 +61,10 @@ export const FAQSchema = () => {
         "name": "¿Cuánto cuestan las hamburguesas en Catarsis?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Las hamburguesas en Catarsis tienen precios desde $3.99 USD. La carta incluye opciones como la Clásica Americana, Honeyholic, BBQ Champions, Smash, Texmex, Chicken Spicy, Onion Queen y Double Cheesy, todas preparadas con ingredientes premium."
+          // PRECIO ACTUALIZADO: El mínimo real de hamburguesas es $7.99.
+          // $3.99 corresponde a entradas (Aros de Cebolla, Ración de Papas).
+          // Verificado con carta oficial de marzo 2026.
+          "text": "Las hamburguesas en Catarsis tienen precios desde $7.99 USD (Double Cheesy y Chicken Mayo). La carta incluye 13 opciones: Clásica Americana ($9.99), Honeyholic Burger ($9.99), BBQ Champions ($10.50), Smash ($13.99), Thousand Smash ($13.99), Texmex ($9.99), Chicken Spicy ($8.99), Onion Queen ($9.99), Chicken Crunch ($8.99), Shrimp Crunch ($8.99), Thousand Cheesy ($8.50), Double Cheesy ($7.99) y Chicken Mayo ($7.99). Todas preparadas con ingredientes frescos."
         }
       },
       // PREGUNTAS AEO: Formuladas como consultas directas a IA.
