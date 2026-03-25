@@ -18,6 +18,10 @@ import { RestaurantSchema } from '@/components/RestaurantSchema';
 import { FAQSchema } from '@/components/FAQSchema';
 import { LocalBusinessSchema } from '@/components/LocalBusinessSchema';
 import { SEO } from '@/components/SEO';
+// SEO SEMÁNTICO: Sección de texto para indexación por
+// Google e IAs. No mover ni eliminar — es la base del
+// posicionamiento local de Catarsis en Lechería.
+import { SemanticSEOSection } from '@/components/SemanticSEOSection';
 
 const Index = () => {
   const { currency, toggleCurrency, displayMode } = useCurrency();
@@ -124,6 +128,8 @@ const Index = () => {
         </div>
       )}
       
+      
+      <SemanticSEOSection />
       
       <Footer />
       
