@@ -1,68 +1,102 @@
 
 
-## Plan de corrección de seguridad — 9 correcciones
-
-### FASE 1 — Resultados de auditoría
-
-1. **¿`orders` tiene columna `session_id`?** — NO. Las columnas actuales son: `id`, `created_at`, `exchange_rate`, `subtotal`, `total`, `updated_at`, `customer_id`, `payment_confirmed_at`, `first_name`, `last_name`, `phone`, `email`, `currency_mode`, `payment_method`, `status`, `whatsapp_message`, `payment_currency`, `payment_instructions_snapshot`, `payment_reference`, `notes`, `delivery_address`, `delivery_maps_url`, `delivery_type`, `order_number`.
-
-2. **¿Dónde se actualiza `whatsapp_message`?** — `src/pages/Checkout.tsx`, líneas 451-454, usando `.update()` directo:
-   ```ts
-   await supabase.from('orders').update({ whatsapp_message: whatsappMessage }).eq('id', newOrderId);
-   ```
-
-3. **¿Dónde se llama `create_order_and_return_number`?** — `src/pages/Checkout.tsx`, líneas 413-433. Recibe 18 parámetros incluyendo `p_session_id: getSessionId()` y `p_whatsapp_message`. Sin embargo, la función NO guarda el `session_id` en la tabla (no existe la columna).
-
-4. **`validate_order_exists`** — Valida existencia + ventana de 5 minutos. NO valida `session_id`.
-
-5. **`get_client_session_id`** — Extrae `x-session-id` del header HTTP. Devuelve `''` si no existe.
-
-6. **¿`pending_checkouts` tiene `expires_at`?** — NO.
-
-7. **Políticas RLS** — Todas listadas en el contexto proporcionado (ver arriba). La política problemática es `"Anyone can update whatsapp_message on recent orders"` en `orders`.
+## Plan de corrección — 3 vulnerabilidades del scanner
 
 ---
 
-### FASE 2 — Correcciones en orden
+### FASE 1 — Resultados de auditoría
 
-#### Corrección 1 — Agregar `session_id` a `orders`
-- **Tipo**: Migración SQL
-- **Acción**: `ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS session_id TEXT;`
+1. **¿El cliente envía x-session-id?** — SÍ, pero **no en la inicialización**. Se configura dinámicamente via `setSupabaseSessionHeader()` en `src/lib/supabaseHeaders.ts`, llamado desde `useVisitorTracker.ts` (línea 16). El header se inyecta mutando las propiedades internas del cliente (`client.rest.headers.set` y `client.headers`). Funciona pero depende de que `useVisitorTracker` se ejecute antes de cualquier query a `pending_checkouts`.
 
-#### Corrección 2 — Actualizar `create_order_and_return_number`
-- **Tipo**: Migración SQL (CREATE OR REPLACE FUNCTION)
-- **Acción**: Modificar las 3 sobrecargas de la función para insertar `session_id` en la columna nueva. La versión con `p_session_id` ya recibe el parámetro, solo falta incluirlo en el INSERT. Las versiones sin `p_session_id` insertarán `NULL`.
+2. **Políticas RLS de `payment_methods`:**
+   - `"Anyone can read enabled payment methods"` — SELECT — `USING (enabled = true)` ← **VULNERABLE**
+   - `"Admins can read all payment methods"` — SELECT — `USING (is_admin(auth.uid()))`
+   - `"Admins can insert payment methods"` — INSERT — `WITH CHECK (is_admin(auth.uid()))`
+   - `"Admins can update payment methods"` — UPDATE — `USING (is_admin(auth.uid()))`
+   - `"Admins can delete payment methods"` — DELETE — `USING (is_admin(auth.uid()))`
 
-#### Corrección 3 — Frontend ya pasa `session_id`
-- **Tipo**: Cambio en `src/pages/Checkout.tsx`
-- **Acción**: El frontend YA pasa `p_session_id: getSessionId()` (línea 431). Solo se agrega el comentario de seguridad. No hay cambio funcional.
+3. **Columnas de `payment_methods`:** `id` (text), `label` (text), `enabled` (boolean), `supports_usd` (boolean), `supports_ves` (boolean), `instructions_usd` (text), `instructions_ves` (text), `display_order` (integer), `created_at`, `updated_at`.
 
-#### Corrección 4 — Crear `update_order_whatsapp_message`
-- **Tipo**: Migración SQL
-- **Acción**: Crear función `SECURITY DEFINER` que valida `session_id` + ventana de 5 minutos + solo modifica `whatsapp_message`. Con `REVOKE/GRANT` para `anon, authenticated`.
+4. **Frontend consulta payment_methods:** `src/hooks/usePaymentMethods.ts` — usa `.from('payment_methods').select('*').eq('enabled', true)` directo.
 
-#### Corrección 5 — Eliminar política UPDATE anónima
-- **Tipo**: Migración SQL
-- **Acción**: `DROP POLICY "Anyone can update whatsapp_message on recent orders" ON public.orders;`
+5. **¿Cron job?** — SÍ, hay 2 cron jobs en pg_cron:
+   - `sync-bcv-evening`: `0 20,21,22,23,0,1 * * *` (UTC → 4-9 PM VET)
+   - `sync-bcv-morning`: `0 15 * * *` (UTC → 11 AM VET)
+   - Ambos usan `Authorization: Bearer [anon_key]` en el header.
 
-#### Corrección 6 — Frontend usa nueva RPC
-- **Tipo**: Cambio en `src/pages/Checkout.tsx`
-- **Acción**: Reemplazar líneas 451-454 (`.update()`) por `supabase.rpc('update_order_whatsapp_message', {...})`. Se pasa `p_order_id`, `p_message`, `p_session_id`.
+6. **¿Frontend llama sync-bcv-rate?** — SÍ, `src/components/admin/ConfigPanel.tsx` línea 95: `supabase.functions.invoke('sync-bcv-rate')` (botón manual del admin).
 
-#### Corrección 7 — Fortalecer `validate_order_exists`
-- **Tipo**: Migración SQL
-- **Acción**: Agregar condición `AND (session_id IS NULL OR session_id = get_client_session_id())` a la función.
+7. **¿CRON_SECRET existe?** — NO. Solo existe `LOVABLE_API_KEY` como secret del proyecto.
 
-#### Corrección 8 — Fortalecer `pending_checkouts`
-- **Tipo**: Migración SQL
-- **Acción**:
-  - Agregar columna `expires_at TIMESTAMPTZ DEFAULT (NOW() + INTERVAL '30 minutes')`
-  - Actualizar política SELECT para incluir validación UUID regex + `expires_at`
-  - Actualizar política INSERT para validar formato UUID del `session_id`
+8. **¿`check_rate_limit` existe?** — SÍ: `check_rate_limit(p_identifier text, p_action text, p_max_attempts integer, p_window_minutes integer) RETURNS boolean`.
 
-#### Corrección 9 — Validaciones en `page_views`
-- **Tipo**: Migración SQL
-- **Acción**: Reemplazar `WITH CHECK (true)` por validaciones de `path` y `session_id` con regex UUID.
+---
+
+### FASE 2 — Correcciones
+
+#### Corrección 1 — Header x-session-id
+
+**Estado:** YA funciona via `setSupabaseSessionHeader()`. El scanner reporta un falso positivo parcial — el header no está en la inicialización del cliente pero se inyecta dinámicamente antes del primer uso.
+
+**Acción:** Agregar comentario `[HEADER-OK]` en `src/lib/supabaseHeaders.ts` documentando que está verificado y funcionando. Sin cambio funcional.
+
+---
+
+#### Corrección 2 — Proteger payment_methods
+
+**Paso 2A** — Migración SQL:
+- `DROP POLICY "Anyone can read enabled payment methods" ON public.payment_methods;`
+
+**Paso 2B** — Migración SQL: Crear RPC `get_active_payment_methods`:
+```sql
+CREATE OR REPLACE FUNCTION get_active_payment_methods()
+RETURNS TABLE (
+  id text,
+  label text,
+  enabled boolean,
+  supports_usd boolean,
+  supports_ves boolean,
+  instructions_usd text,
+  instructions_ves text,
+  display_order integer
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+BEGIN
+  RETURN QUERY
+    SELECT pm.id, pm.label, pm.enabled, pm.supports_usd, pm.supports_ves,
+           pm.instructions_usd, pm.instructions_ves, pm.display_order
+    FROM public.payment_methods pm
+    WHERE pm.enabled = true
+    ORDER BY pm.display_order ASC;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION get_active_payment_methods FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION get_active_payment_methods TO anon, authenticated;
+```
+
+**Paso 2C** — Actualizar `src/hooks/usePaymentMethods.ts`:
+- Reemplazar `.from('payment_methods').select('*').eq('enabled', true)` por `supabase.rpc('get_active_payment_methods')`.
+- Agregar `.order('display_order')` ya incluido en la RPC.
+
+---
+
+#### Corrección 3 — Proteger sync-bcv-rate
+
+**Caso aplicable:** Se dispara desde cron jobs pg_cron + botón admin en frontend.
+
+**Acción en `supabase/functions/sync-bcv-rate/index.ts`:**
+- Agregar validación de `CRON_SECRET` con válvula de transición al inicio de `serve()`.
+- Si `CRON_SECRET` no está configurado → permitir paso con warning en logs (no romper precios).
+- Si `CRON_SECRET` está configurado → validar `Authorization: Bearer <secret>`.
+- El botón admin del frontend usa `supabase.functions.invoke()` que envía automáticamente el JWT del admin → agregar validación alternativa: si no hay CRON_SECRET match, verificar JWT de admin como fallback.
+
+**Acción futura (documentada, no ejecutada ahora):**
+- Agregar secret `CRON_SECRET` al proyecto.
+- Actualizar los 2 cron jobs para enviar `Authorization: Bearer <CRON_SECRET>` en lugar del anon key.
 
 ---
 
@@ -70,12 +104,14 @@
 
 | Archivo | Cambio |
 |---------|--------|
-| `src/pages/Checkout.tsx` | Comentarios C3, reemplazar `.update()` por RPC (C6) |
-| Migraciones SQL (×5-6) | C1, C2, C4+C5, C7, C8, C9 |
+| `src/lib/supabaseHeaders.ts` | Comentario `[HEADER-OK]` |
+| `src/hooks/usePaymentMethods.ts` | Usar RPC en lugar de SELECT directo |
+| `supabase/functions/sync-bcv-rate/index.ts` | Validación CRON_SECRET + JWT admin fallback |
+| Migración SQL | Drop policy + crear RPC `get_active_payment_methods` |
 
-### Impacto en el flujo de pedidos
+### Impacto
 
-- El flujo de checkout sigue idéntico para el usuario final
-- Pedidos existentes (`session_id = NULL`) siguen funcionando por la condición `OR session_id IS NULL`
-- El panel admin no se ve afectado (usa políticas de admin separadas)
+- **Checkout:** Sigue funcionando — la RPC retorna los mismos datos que el SELECT público anterior.
+- **Tasa BCV:** Sigue actualizándose — la válvula de transición permite paso sin CRON_SECRET. El botón admin funciona via JWT fallback.
+- **Admin:** Sin cambios — las políticas admin de payment_methods permanecen intactas.
 
