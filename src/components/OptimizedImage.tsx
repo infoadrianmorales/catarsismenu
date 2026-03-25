@@ -102,6 +102,13 @@ const useIntersectionObserver = (options?: IntersectionObserverInit) => {
   return { ref, isIntersecting };
 };
 
+{/* OPTIMIZACIÓN DE PERFORMANCE — OptimizedImage
+    Cambios aplicados:
+    - width y height en todas las etiquetas <img> para evitar CLS
+    - Atributos loading y decoding ya existían
+    CLS (Cumulative Layout Shift): cuando una imagen carga
+    tarde y empuja el contenido hacia abajo — afecta la
+    experiencia del usuario y el score de Google PageSpeed. */}
 export const OptimizedImage = memo(({ 
   src, 
   alt, 
@@ -207,6 +214,8 @@ export const OptimizedImage = memo(({
               alt={alt}
               loading={loading}
               decoding="async"
+              width="400"
+              height="400"
               onLoad={handleLoad}
               onError={handleError}
               className={cn(
@@ -222,6 +231,8 @@ export const OptimizedImage = memo(({
             alt={alt}
             loading={loading}
             decoding="async"
+            width="400"
+            height="400"
             onLoad={handleLoad}
             onError={handleError}
             className={cn(

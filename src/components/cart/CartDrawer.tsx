@@ -181,10 +181,15 @@ export const CartDrawer = ({ variant = 'header' }: CartDrawerProps) => {
                       className="flex gap-3 p-3 rounded-lg bg-muted/50 animate-fade-in"
                     >
                       {/* Image */}
+                      {/* OPTIMIZACIÓN DE PERFORMANCE — CartDrawer item image
+                          loading="lazy", width/height para CLS, alt con marca */}
                       <div className="w-16 h-16 rounded-md bg-white overflow-hidden flex-shrink-0">
                         <img 
                           src={item.imagen} 
-                          alt={item.nombre}
+                          alt={`${item.nombre} — Catarsis Drinks & Food, Lechería`}
+                          loading="lazy"
+                          width="64"
+                          height="64"
                           className="w-full h-full object-cover"
                         />
                       </div>

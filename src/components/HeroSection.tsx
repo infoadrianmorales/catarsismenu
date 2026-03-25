@@ -98,6 +98,14 @@ export const HeroSection = ({ mode = 'delivery' }: HeroSectionProps) => {
     );
   }
 
+  {/* OPTIMIZACIÓN DE PERFORMANCE — HeroSection
+      Cambios aplicados:
+      - loading="eager" en slide 0 (ya existía), lazy en el resto
+      - width y height para evitar saltos de layout (CLS)
+      - alt descriptivo mejorado para SEO
+      CLS (Cumulative Layout Shift): cuando una imagen carga
+      tarde y empuja el contenido hacia abajo — afecta la
+      experiencia del usuario y el score de Google PageSpeed. */}
   return (
     <section className="relative flex flex-col md:block md:min-h-[70vh] overflow-hidden">
       {/* Image Zone */}
@@ -117,10 +125,15 @@ export const HeroSection = ({ mode = 'delivery' }: HeroSectionProps) => {
             >
               <img 
                 src={slide} 
-                alt={`Catarsis Banner ${index + 1}`}
+                alt={index === 0 ? 'Catarsis Drinks & Food — Restaurante en CC Aventura Plaza, Lechería' : `Catarsis Drinks & Food Banner ${index + 1}`}
                 className="w-full h-full object-cover"
                 loading={index === 0 ? 'eager' : 'lazy'}
+                width="1200"
+                height="600"
               />
+              {/* WIDTH/HEIGHT: Reservan el espacio en el layout antes
+                  de que la imagen cargue. Sin esto el contenido salta
+                  cuando la imagen aparece (CLS). */}
             </div>
           ))}
           {/* Mobile: short gradient fade. Desktop: full gradient */}
