@@ -207,6 +207,77 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // SEGURIDAD [BCV-1]: Validación de token secreto.
+  // Previene que cualquier persona llame esta función y
+  // dispare sincronizaciones no autorizadas de la tasa BCV.
+  //
+  // VÁLVULA DE TRANSICIÓN: Si CRON_SECRET no está configurado
+  // aún, la función continúa operando normalmente con una
+  // advertencia en los logs. Esto evita que los precios en
+  // bolívares queden congelados durante la implementación.
+  //
+  // PASOS PARA ACTIVAR LA PROTECCIÓN COMPLETA:
+  // 1. Agregar secret CRON_SECRET en el proyecto (32+ chars)
+  // 2. Actualizar los 2 cron jobs en pg_cron para enviar:
+  //    Authorization: Bearer [valor del CRON_SECRET]
+  // 3. Verificar que la tasa sigue actualizándose
+  // 4. La protección queda activa automáticamente
+  //
+  // FALLBACK JWT: Si el header Authorization contiene un JWT
+  // válido de un admin (botón manual en ConfigPanel), se permite
+  // el acceso sin CRON_SECRET. Esto mantiene el botón admin
+  // funcionando sin exponer un secret en el frontend.
+  //
+  // IMPORTANTE: No afecta el modo manual (rate_source = 'manual')
+  // ni las 4 fuentes externas de la tasa BCV.
+  const authHeader = req.headers.get('Authorization');
+  const cronSecret = Deno.env.get('CRON_SECRET');
+
+  if (cronSecret) {
+    // Secret configurado: validar que el header coincida
+    if (authHeader !== `Bearer ${cronSecret}`) {
+      // FALLBACK: verificar si es un JWT de admin autenticado
+      // (el botón del panel admin envía el JWT del usuario)
+      let isAdmin = false;
+      if (authHeader?.startsWith('Bearer ')) {
+        try {
+          const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+          const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+          const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
+          const adminClient = createClient(supabaseUrl, supabaseServiceKey);
+          const token = authHeader.replace('Bearer ', '');
+          const { data: claims, error: claimsErr } = await adminClient.auth.getClaims(token);
+          if (!claimsErr && claims?.claims?.sub) {
+            const { data: roleCheck } = await adminClient
+              .rpc('is_admin', { _user_id: claims.claims.sub });
+            isAdmin = roleCheck === true;
+          }
+        } catch (e) {
+          console.error('sync-bcv-rate: Error verificando JWT admin:', e);
+        }
+      }
+
+      if (!isAdmin) {
+        console.error('sync-bcv-rate: Intento de acceso no autorizado bloqueado');
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      console.log('sync-bcv-rate: Acceso permitido via JWT admin');
+    } else {
+      console.log('sync-bcv-rate: Autenticación correcta via CRON_SECRET');
+    }
+  } else {
+    // Secret no configurado aún: permitir paso con advertencia
+    // REMOVER esta rama después de configurar CRON_SECRET
+    console.warn(
+      'sync-bcv-rate ADVERTENCIA: CRON_SECRET no configurado. ' +
+      'La función es accesible públicamente. ' +
+      'Configurar CRON_SECRET para activar la protección completa.'
+    );
+  }
+
   try {
     console.log('Starting BCV rate sync (parallel mode)...');
     
