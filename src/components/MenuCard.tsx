@@ -46,14 +46,14 @@ export const MenuCard = ({ item, currency, displayMode = 'ambas' }: MenuCardProp
     );
   };
 
+  /* OPTIMIZACIÓN DE PERFORMANCE — MenuCard
+     Cambios aplicados:
+     - width y height para evitar saltos de layout (CLS)
+     - alt descriptivo con marca para SEO
+     CLS (Cumulative Layout Shift): cuando una imagen carga
+     tarde y empuja el contenido hacia abajo — afecta la
+     experiencia del usuario y el score de Google PageSpeed. */
   return (
-    {/* OPTIMIZACIÓN DE PERFORMANCE — MenuCard
-        Cambios aplicados:
-        - width y height para evitar saltos de layout (CLS)
-        - alt descriptivo con marca para SEO
-        CLS (Cumulative Layout Shift): cuando una imagen carga
-        tarde y empuja el contenido hacia abajo — afecta la
-        experiencia del usuario y el score de Google PageSpeed. */}
     <Card className="group overflow-hidden border-border/40 bg-card hover:border-primary/50 transition-all duration-200 hover:shadow-glow hover:-translate-y-1" data-meta-event="ViewContent" id={`product-card-${item.id}`} onMouseEnter={() => { const img = new Image(); img.src = item.imagen; }} onTouchStart={() => { const img = new Image(); img.src = item.imagen; }}>
       <CardContent className="p-0">
         {/* White-background image container - zoom only on desktop */}
