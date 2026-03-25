@@ -277,6 +277,9 @@ serve(async (req) => {
       'Configurar CRON_SECRET para activar la protección completa.'
     );
   }
+
+  try {
+    console.log('Starting BCV rate sync (parallel mode)...');
     
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
