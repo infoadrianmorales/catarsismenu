@@ -8,7 +8,8 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "_info_scripts": "build=genera /dist para producción en Vercel, preview=sirve el build localmente para pruebas antes del deploy"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
