@@ -1,32 +1,50 @@
 
 
-## Plan: Corregir precios y actualizar carta completa
+## Plan: Crear página /menu independiente con SEO propio
 
-### 4 correcciones en 3 archivos
+### Archivos modificados
 
 | Archivo | Cambio |
 |---------|--------|
-| `src/components/FAQSchema.tsx` | C1: Actualizar precio hamburguesas de $3.99 → $7.99 en la pregunta "¿Cuánto cuestan..." (línea 64) |
-| `src/components/RestaurantSchema.tsx` | C2: Reemplazar array `mentions` (líneas 162-237) con 25 entidades con precios reales. C4: Actualizar descripciones de las 8 MenuSections (líneas 83-132) con platos y precios reales |
-| `public/llms.txt` | C3: Reemplazar sección `menu_highlights` (líneas 40-64) con carta completa de 8 categorías, todos los platos y precios |
+| `src/pages/Menu.tsx` | **CREAR** — Página completa con meta tags SEO, 8 secciones de categoría, precios verificados, diseño brandbook |
+| `src/App.tsx` | Reemplazar redirect por lazy import de Menu.tsx |
+| `vercel.json` | Eliminar redirect `/menu` → `/` (línea 3-6) para que Vercel no intercepte la ruta |
 
-### Detalle
+### Detalle técnico
 
-**C1 — FAQSchema precio hamburguesas**
-- Línea 64: texto actual dice "$3.99 USD" → reemplazar con texto completo que lista las 13 hamburguesas con precios reales desde $7.99
+**1. `src/pages/Menu.tsx` (nuevo)**
+- Usa el componente `<SEO>` existente con props: `title="Menú Completo"`, `description` con precios reales, `url="/menu"`
+- Contenido estático HTML semántico (no depende de la DB — es para SEO/IA)
+- H1 único: "Menú de Catarsis Drinks & Food — CC Aventura Plaza, Lechería"
+- 8 secciones con H2 por categoría, cada plato con H3 + descripción + precio
+- Sección final de contacto/métodos de pago
+- Botón "Volver al inicio" con Link to="/"
+- Colores: fondo `#010C23`, títulos categoría `#DB1F51`, precios `#F2B60F`, texto blanco/gris
+- Font Phudu para headings, DM Sans para body (ya configurados en el proyecto)
+- Layout responsive: 1 columna móvil, 2 columnas tablet+
+- Exportado como default para lazy loading
 
-**C2 — RestaurantSchema mentions**
-- Reemplazar las 13 entidades actuales (sin precios) por 25 entidades con precios USD verificados
-- Incluye: 13 hamburguesas, 4 emparedados, 1 pizza (Hot Honey), 5 cócteles, 2 Things (Delivery/Vida nocturna)
+**2. `src/App.tsx`**
+- Línea 27: agregar `const Menu = lazy(() => import("./pages/Menu"));`
+- Línea 63: reemplazar `<Navigate to="/" replace />` por `<Menu />`
+- Agregar comentario explicando que /menu no debe redirigir
 
-**C3 — llms.txt menu_highlights**
-- Reemplazar líneas 40-64 con carta completa: 8 categorías, ~55 platos con precios individuales y precios "desde" por categoría
+**3. `vercel.json`**
+- Eliminar el redirect `{ "source": "/menu", "destination": "/", "statusCode": 301 }` para que la SPA sirva la página real en producción
 
-**C4 — RestaurantSchema MenuSections**
-- Actualizar descripciones de las 8 secciones (líneas 83-132) con conteo de platos, precios desde y nombres reales
+### Precios en la página
+Exactamente los del prompt — no se inventa ningún dato:
+- Entradas: 10 platos desde $3.99
+- Hamburguesas: 13 platos desde $7.99
+- Emparedados: 4 platos desde $8.99
+- Pizzas: 6 platos desde $7.99
+- Parrilla: 5 platos desde $10.99
+- Ensaladas: 3 platos desde $7.49
+- Coctelería: 12 cócteles todos a $4.99
+- Postres: 2 platos desde $5.99
 
 ### Sin cambios
-- No se eliminan campos existentes fuera de lo indicado
-- Estructura JSON-LD se mantiene válida
-- FAQSchema AEO questions no se tocan (ya tienen precio correcto de $3.99 referido a entradas)
+- `src/pages/MenuLocal.tsx` y ruta `/local` intactos
+- Home `/` sin cambios
+- Schemas y llms.txt sin cambios (ya actualizados previamente)
 
