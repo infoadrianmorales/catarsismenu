@@ -2,15 +2,15 @@ import { Instagram, MapPin, Facebook, Youtube } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import logoCatarsis from '@/assets/logo-catarsis-white.png';
 
+/* OPTIMIZACIÓN DE PERFORMANCE — Footer
+   Cambios aplicados:
+   - loading="lazy" en logo (fuera de pantalla inicial)
+   - width y height para evitar saltos de layout (CLS)
+   - alt descriptivo ya correcto
+   CLS (Cumulative Layout Shift): cuando una imagen carga
+   tarde y empuja el contenido hacia abajo — afecta la
+   experiencia del usuario y el score de Google PageSpeed. */
 export const Footer = () => {
-  {/* OPTIMIZACIÓN DE PERFORMANCE — Footer
-      Cambios aplicados:
-      - loading="lazy" en logo (fuera de pantalla inicial)
-      - width y height para evitar saltos de layout (CLS)
-      - alt descriptivo ya correcto
-      CLS (Cumulative Layout Shift): cuando una imagen carga
-      tarde y empuja el contenido hacia abajo — afecta la
-      experiencia del usuario y el score de Google PageSpeed. */}
   return (
     <footer className="bg-card border-t border-border/50 pb-20 md:pb-8">
       {/* Tape Divider */}
