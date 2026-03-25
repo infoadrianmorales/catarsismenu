@@ -1,3 +1,9 @@
+// LocalBusinessSchema.tsx
+// JSON-LD tipo FoodEstablishment para Google y buscadores de IA.
+// COORDENADAS: Unificadas con index.html (CC Aventura Plaza).
+// SPEAKABLE: Indica a Google Assistant, Siri, Alexa y modelos de IA
+// qué secciones del contenido son prioritarias para ser leídas en voz alta.
+
 export const LocalBusinessSchema = () => {
   const schema = {
     "@context": "https://schema.org",
@@ -17,10 +23,13 @@ export const LocalBusinessSchema = () => {
       "postalCode": "6016",
       "addressCountry": "VE"
     },
+    // COORDENADAS: Unificadas con las geo tags de index.html.
+    // Corresponden a CC Aventura Plaza, Lechería, Anzoátegui.
+    // Inconsistencias entre schemas y meta tags confunden a Google Maps.
     "geo": {
       "@type": "GeoCoordinates",
       "latitude": 10.1833,
-      "longitude": -64.6833
+      "longitude": -64.6897
     },
     "areaServed": {
       "@type": "City",
@@ -35,6 +44,20 @@ export const LocalBusinessSchema = () => {
       }
     },
     "slogan": "Sabores que liberan, momentos que conectan",
+    // SPEAKABLE: Indica a Google Assistant, Siri, Alexa y modelos
+    // de IA qué secciones del contenido son prioritarias para
+    // ser leídas en voz alta o citadas en respuestas de búsqueda.
+    // cssSelector apunta a los elementos HTML más relevantes del sitio.
+    "speakable": {
+      "@type": "SpeakableSpecification",
+      "cssSelector": [
+        "h1",
+        "h2",
+        ".restaurant-description",
+        ".opening-hours",
+        ".location-info"
+      ]
+    },
     "knowsAbout": [
       "Hamburguesas gourmet",
       "Pizzas artesanales",
