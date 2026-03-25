@@ -646,6 +646,10 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      update_order_whatsapp_message: {
+        Args: { p_message: string; p_order_id: string; p_session_id: string }
+        Returns: Json
+      }
       validate_order_exists: { Args: { p_order_id: string }; Returns: boolean }
     }
     Enums: {
