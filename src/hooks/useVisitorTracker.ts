@@ -1,15 +1,19 @@
 import { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { setSupabaseSessionHeader } from '@/lib/supabaseHeaders';
 
 const EXCLUDED_PATHS = ['/admin', '/auth'];
 
+// SEGURIDAD [C9]: session_id para analytics debe ser UUID v4 válido.
+// Se configura también el header x-session-id para consistencia con RLS.
 const getSessionId = (): string => {
   let sessionId = sessionStorage.getItem('visitor_session_id');
   if (!sessionId) {
     sessionId = crypto.randomUUID();
     sessionStorage.setItem('visitor_session_id', sessionId);
   }
+  setSupabaseSessionHeader(sessionId);
   return sessionId;
 };
 
