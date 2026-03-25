@@ -19,7 +19,7 @@ export const RestaurantSchema = () => {
     ],
     "address": {
       "@type": "PostalAddress",
-      "streetAddress": "CC Costa Mar, Local 7",
+      "streetAddress": "CC Aventura Plaza",
       "addressLocality": "Lechería",
       "addressRegion": "Anzoátegui",
       "postalCode": "6016",
