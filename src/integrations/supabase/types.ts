@@ -344,6 +344,7 @@ export type Database = {
           customer_first_name: string | null
           customer_last_name: string | null
           customer_phone: string | null
+          expires_at: string | null
           id: string
           session_id: string
           updated_at: string
@@ -355,6 +356,7 @@ export type Database = {
           customer_first_name?: string | null
           customer_last_name?: string | null
           customer_phone?: string | null
+          expires_at?: string | null
           id?: string
           session_id: string
           updated_at?: string
@@ -366,6 +368,7 @@ export type Database = {
           customer_first_name?: string | null
           customer_last_name?: string | null
           customer_phone?: string | null
+          expires_at?: string | null
           id?: string
           session_id?: string
           updated_at?: string
