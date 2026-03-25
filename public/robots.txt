@@ -1,34 +1,45 @@
-User-agent: Googlebot
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
-
-User-agent: GPTBot
-Allow: /
-
-User-agent: Google-Extended
-Allow: /
-
-User-agent: ClaudeBot
-Allow: /
-
-User-agent: PerplexityBot
-Allow: /
-
-User-agent: ChatGPT-User
-Allow: /
-
-User-agent: Bytespider
-Allow: /
+# ================================================
+# ROBOTS.TXT — CATARSIS DRINKS & FOOD
+# ================================================
+# Permite acceso total a motores de búsqueda y
+# modelos de inteligencia artificial.
+# User-agent * incluye Googlebot, Bingbot,
+# GPTBot (ChatGPT), PerplexityBot, ClaudeBot,
+# Gemini y otros rastreadores de IA.
+# ================================================
 
 User-agent: *
 Allow: /
 
+# Sitemap: ubicación del mapa del sitio para Google
+# y otros buscadores. Registrar también manualmente
+# en Google Search Console.
 Sitemap: https://www.catarsiszone.com/sitemap.xml
+
+# ================================================
+# RASTREADORES DE IA — ACCESO EXPLÍCITO
+# Algunos modelos de IA respetan instrucciones
+# específicas por user-agent. Permitir acceso
+# explícito mejora la probabilidad de que
+# Catarsis sea citado en respuestas de IA.
+# ================================================
+
+# OpenAI / ChatGPT
+User-agent: GPTBot
+Allow: /
+
+# Perplexity
+User-agent: PerplexityBot
+Allow: /
+
+# Google Gemini / Bard
+User-agent: Google-Extended
+Allow: /
+
+# Anthropic / Claude
+User-agent: ClaudeBot
+Allow: /
+
+# Common Crawl (base de datos usada por múltiples IAs)
+User-agent: CCBot
+Allow: /
