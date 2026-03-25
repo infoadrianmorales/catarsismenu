@@ -199,6 +199,7 @@ export type Database = {
           payment_method: string
           payment_reference: string | null
           phone: string
+          session_id: string | null
           status: string
           subtotal: number
           total: number
@@ -225,6 +226,7 @@ export type Database = {
           payment_method: string
           payment_reference?: string | null
           phone: string
+          session_id?: string | null
           status?: string
           subtotal: number
           total: number
@@ -251,6 +253,7 @@ export type Database = {
           payment_method?: string
           payment_reference?: string | null
           phone?: string
+          session_id?: string | null
           status?: string
           subtotal?: number
           total?: number
