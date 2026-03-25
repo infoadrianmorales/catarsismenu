@@ -1,6 +1,6 @@
 import { Instagram, MapPin, Facebook, Youtube } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import logoCatarsis from '@/assets/logo-catarsis.png';
+import logoCatarsis from '@/assets/logo-catarsis-white.png';
 
 export const Footer = () => {
   return (
