@@ -1,34 +1,27 @@
 
 
-## Plan: Eliminar texto descriptivo duplicado del Footer
+## Auditoría (Fase 1)
 
-### Problema
-El Footer contiene un bloque de texto SEO (líneas 23-45) con contenido redundante respecto a `SemanticSEOSection.tsx` que aparece justo antes. El usuario ve el mismo contenido dos veces.
+| Elemento | Clases/estilos actuales |
+|----------|----------------------|
+| `<h2>` (L41) | `font-display text-2xl md:text-3xl font-bold`, color `#F2B60F` |
+| `<p>` (L47 wrapper) | `text-gray-300 leading-relaxed` (sin tamaño explícito = `text-base` por defecto) |
+| Badges (L89) | `text-sm`, `px-4 py-2` |
+
+## Plan: Reducir tipografía en SemanticSEOSection.tsx
 
 ### Archivo a modificar
-`src/components/Footer.tsx` — único cambio
+`src/components/SemanticSEOSection.tsx` — único cambio
 
-### Qué se hace
-- **Eliminar** líneas 23-45 (el `div` con clase `container px-4 mb-8` que contiene los 3 párrafos descriptivos)
-- **Reemplazar** con el comentario indicado:
-```tsx
-{/* TEXTO DESCRIPTIVO ELIMINADO: Reemplazado por SemanticSEOSection
-    que contiene el mismo contenido optimizado para SEO e IA.
-    Ver src/components/SemanticSEOSection.tsx */}
-```
+### Cambios
+
+1. **H2 (L41)**: `text-2xl md:text-3xl font-bold` → `text-xl md:text-2xl font-semibold`
+2. **Wrapper de párrafos (L47)**: agregar `text-sm md:text-base` al div (mantiene `text-gray-300 leading-relaxed`)
+3. **Badges (L89)**: `text-sm` → `text-xs md:text-sm`, `px-4 py-2` → `px-3 py-1.5`
+4. **Comentario**: Agregar bloque explicativo sobre tipografía reducida después del comentario de badges (L82)
 
 ### Sin cambios
-- Banner "TU SPOT PARA DESCONECTAR" (líneas 16-21) se mantiene
-- Logo, info, redes sociales y copyright se mantienen
-- `SemanticSEOSection.tsx` no se toca
-- `Index.tsx` no se toca
-
-### Verificación
-| # | Check |
-|---|-------|
-| 1 | Texto descriptivo aparece una sola vez (en SemanticSEOSection) |
-| 2 | SemanticSEOSection con H2 y badges sigue visible |
-| 3 | Banner "TU SPOT PARA DESCONECTAR" intacto |
-| 4 | Ningún otro componente eliminado |
-| 5 | Home carga sin errores |
+- Contenido de texto idéntico
+- Colores, fondo, iconos intactos
+- Sección sigue visible
 
