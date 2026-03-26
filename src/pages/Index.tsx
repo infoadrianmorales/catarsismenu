@@ -22,6 +22,7 @@ import { SEO } from '@/components/SEO';
 // Google e IAs. No mover ni eliminar — es la base del
 // posicionamiento local de Catarsis en Lechería.
 import { SemanticSEOSection } from '@/components/SemanticSEOSection';
+import { TapeDivider } from '@/components/Footer';
 
 const Index = () => {
   const { currency, toggleCurrency, displayMode } = useCurrency();
@@ -129,8 +130,12 @@ const Index = () => {
       )}
       
       
+      {/* ORDEN FINAL — no modificar esta secuencia:
+          1. Franja de marca — elemento visual de separación
+          2. SemanticSEOSection — texto SEO para Google e IAs
+          3. Footer — contacto, horario y ubicación */}
+      <TapeDivider />
       <SemanticSEOSection />
-      
       <Footer />
       
       <FloatingCartButton />
