@@ -149,10 +149,14 @@ const Index = () => {
           1. Franja de marca — elemento visual de separación
           2. SemanticSEOSection — texto SEO para Google e IAs
           3. Footer — contacto, horario y ubicación */}
-      <TapeDivider />
+      <Suspense fallback={null}>
+        <LazyTapeDivider />
+      </Suspense>
       <SemanticSEOSection />
       </main>
-      <Footer />
+      <Suspense fallback={null}>
+        <LazyFooter />
+      </Suspense>
       
       <FloatingCartButton />
       
