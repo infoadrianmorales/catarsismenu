@@ -68,7 +68,7 @@ export const Footer = () => {
               </a>
             </address>
             <a 
-              href="https://wa.me/584249056438"
+              href="https://api.whatsapp.com/send?phone=584249056438"
               target="_blank"
               rel="noopener noreferrer"
               className="block hover:text-primary transition-colors"
