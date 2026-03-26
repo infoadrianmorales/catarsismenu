@@ -37,21 +37,39 @@ const isValidUUID = (id: string): boolean => {
 };
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // CORRECCIÓN CRÍTICA [CART-STORAGE]: Lectura de localStorage envuelta en
+  // try/catch. Sin esta protección, si 'catarsis_cart' contiene JSON inválido
+  // o corrupto, React falla antes del primer render y la página queda en blanco.
   const [items, setItems] = useState<CartItem[]>(() => {
-    if (typeof window !== 'undefined') {
+    try {
+      if (typeof window === 'undefined') return [];
       const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored) as CartItem[];
-        // Filter out items with invalid IDs (non-UUID format)
-        return parsed.filter(item => isValidUUID(item.id));
+      if (!stored) return [];
+      const parsed = JSON.parse(stored);
+      // Validar que sea un array antes de usarlo
+      if (!Array.isArray(parsed)) {
+        console.warn('CartContext: catarsis_cart no es un array, limpiando storage');
+        localStorage.removeItem(STORAGE_KEY);
+        return [];
       }
+      // Filter out items with invalid IDs (non-UUID format)
+      return parsed.filter(item => isValidUUID(item.id));
+    } catch (error) {
+      // Si el JSON está corrupto, limpiar y arrancar con carrito vacío
+      console.warn('CartContext: Error al leer catarsis_cart, limpiando storage:', error);
+      localStorage.removeItem(STORAGE_KEY);
+      return [];
     }
-    return [];
   });
 
-  // Persist cart to localStorage
+  // CORRECCIÓN [CART-PERSIST]: setItem envuelto en try/catch.
+  // Si falla el guardado (storage lleno o bloqueado), la UI sigue funcionando.
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    } catch (error) {
+      console.warn('CartContext: No se pudo guardar el carrito:', error);
+    }
   }, [items]);
 
   const isProductOrderable = useCallback((product: MenuItem): boolean => {
