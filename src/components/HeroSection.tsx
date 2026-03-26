@@ -127,11 +127,17 @@ export const HeroSection = ({ mode = 'delivery' }: HeroSectionProps) => {
                 index === currentIndex ? 'opacity-100' : 'opacity-0'
               }`}
             >
+              {/* PERFORMANCE [LCP]: fetchpriority="high" en slide 0
+                  le indica al navegador que esta imagen es la más
+                  importante de la página. La descarga antes que
+                  cualquier otro recurso no crítico.
+                  Solo el primer slide — el resto lazy load. */}
               <img 
                 src={slide} 
                 alt={index === 0 ? 'Catarsis Drinks & Food — Restaurante en CC Aventura Plaza, Lechería' : `Catarsis Drinks & Food Banner ${index + 1}`}
                 className="w-full h-full object-cover"
                 loading={index === 0 ? 'eager' : 'lazy'}
+                fetchPriority={index === 0 ? 'high' : undefined}
                 width="1200"
                 height="600"
               />

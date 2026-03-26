@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, lazy, Suspense } from 'react';
 import { Link } from 'react-router-dom';
 import { MenuHeader } from '@/components/MenuHeader';
 import { HeroSection } from '@/components/HeroSection';
@@ -6,7 +6,6 @@ import { FeaturedProducts } from '@/components/FeaturedProducts';
 import { CategorySection } from '@/components/CategorySection';
 import { SearchAndFilter } from '@/components/SearchAndFilter';
 import { FilteredProductsGrid } from '@/components/FilteredProductsGrid';
-import { Footer } from '@/components/Footer';
 import { StickyActionBar } from '@/components/StickyActionBar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCurrency } from '@/hooks/useCurrency';
@@ -22,7 +21,19 @@ import { SEO } from '@/components/SEO';
 // Google e IAs. No mover ni eliminar — es la base del
 // posicionamiento local de Catarsis en Lechería.
 import { SemanticSEOSection } from '@/components/SemanticSEOSection';
-import { TapeDivider } from '@/components/Footer';
+
+/**
+ * PERFORMANCE [LAZY LOAD]: Footer y TapeDivider están below the fold
+ * — no son visibles en la pantalla inicial. Cargarlos de forma diferida
+ * reduce el bundle inicial y mejora FCP/LCP.
+ * NOTA: NO aplicar lazy a schemas ni SemanticSEOSection — son SEO críticos.
+ */
+const LazyFooter = lazy(() =>
+  import('@/components/Footer').then(m => ({ default: m.Footer }))
+);
+const LazyTapeDivider = lazy(() =>
+  import('@/components/Footer').then(m => ({ default: m.TapeDivider }))
+);
 
 const Index = () => {
   const { currency, toggleCurrency, displayMode } = useCurrency();
@@ -138,10 +149,14 @@ const Index = () => {
           1. Franja de marca — elemento visual de separación
           2. SemanticSEOSection — texto SEO para Google e IAs
           3. Footer — contacto, horario y ubicación */}
-      <TapeDivider />
+      <Suspense fallback={null}>
+        <LazyTapeDivider />
+      </Suspense>
       <SemanticSEOSection />
       </main>
-      <Footer />
+      <Suspense fallback={null}>
+        <LazyFooter />
+      </Suspense>
       
       <FloatingCartButton />
       
