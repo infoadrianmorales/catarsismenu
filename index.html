@@ -38,10 +38,21 @@
     <meta name="geo.position" content="10.1833;-64.6897" />
     <meta name="ICBM" content="10.1833, -64.6897" />
 
-    <!-- Google Fonts -->
+    <!-- PERFORMANCE [FUENTES]: preconnect establece la conexión
+         anticipadamente con Google Fonts. media="print" + onload
+         carga la fuente sin bloquear el render inicial.
+         display=swap evita texto invisible mientras carga.
+         Mejora FCP en móvil. -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Phudu:wght@400;700;900&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Phudu:wght@400;700;900&family=DM+Sans:wght@400;500;700&display=swap"
+      media="print"
+      onload="this.media='all'">
+    <noscript>
+      <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Phudu:wght@400;700;900&family=DM+Sans:wght@400;500;700&display=swap">
+    </noscript>
 
     <!-- ================================================
          OPEN GRAPH
@@ -85,10 +96,24 @@
          ================================================ -->
     <meta name="theme-color" content="#010C23" />
 
-    <!-- ================================================
-         FACEBOOK PIXEL
-         No modificar — tracking activo para campañas en Meta.
-         ================================================ -->
+    <!-- PERFORMANCE [PRELOAD HERO]: No se aplica preload estático
+         porque la imagen hero viene de la DB (URLs dinámicas vía
+         useHeroSlides) y el fallback es un asset de Vite con hash
+         dinámico. Un <link rel="preload"> con ruta fija no funcionaría. -->
+
+    <!-- Metricool Tracking Code is loaded dynamically by MetricoolProvider -->
+  </head>
+
+  <body>
+    <!-- Meta Pixel noscript fallback -->
+    <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=1428549534945171&ev=PageView&noscript=1" /></noscript>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+
+    <!-- FACEBOOK PIXEL: Movido al final del body para no bloquear
+         el render inicial. No usar defer — puede perder eventos
+         si el usuario navega antes de que cargue.
+         No modificar — tracking activo para campañas en Meta. -->
     <script>
       !function(f,b,e,v,n,t,s)
       {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
@@ -99,15 +124,5 @@
       s.parentNode.insertBefore(t,s)}(window, document,'script',
       'https://connect.facebook.net/en_US/fbevents.js');
     </script>
-    <!-- End Meta Pixel Code -->
-
-    <!-- Metricool Tracking Code is loaded dynamically by MetricoolProvider -->
-  </head>
-
-  <body>
-    <!-- Meta Pixel noscript fallback -->
-    <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=1428549534945171&ev=PageView&noscript=1" /></noscript>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
