@@ -1,27 +1,34 @@
 
 
-## Plan: Agregar Schema Menu JSON-LD en /menu
+## Plan: Eliminar texto descriptivo duplicado del Footer
+
+### Problema
+El Footer contiene un bloque de texto SEO (líneas 23-45) con contenido redundante respecto a `SemanticSEOSection.tsx` que aparece justo antes. El usuario ve el mismo contenido dos veces.
 
 ### Archivo a modificar
-`src/pages/Menu.tsx` — único cambio
+`src/components/Footer.tsx` — único cambio
 
 ### Qué se hace
-Insertar un `<Helmet>` adicional con el `<script type="application/ld+json">` del Schema Menu justo después del componente `<SEO />` existente (línea 186). El schema contiene las 8 secciones y 55 MenuItems con precios verificados exactos del prompt.
+- **Eliminar** líneas 23-45 (el `div` con clase `container px-4 mb-8` que contiene los 3 párrafos descriptivos)
+- **Reemplazar** con el comentario indicado:
+```tsx
+{/* TEXTO DESCRIPTIVO ELIMINADO: Reemplazado por SemanticSEOSection
+    que contiene el mismo contenido optimizado para SEO e IA.
+    Ver src/components/SemanticSEOSection.tsx */}
+```
 
-### Detalle técnico
-- Se agrega un bloque `<Helmet>` independiente (react-helmet-async permite múltiples instancias) con el JSON-LD completo
-- Se inserta entre la línea 186 (`/>` del SEO) y la línea 188 (`{/* Navegación superior */}`)
-- Incluye comentario explicativo antes del Helmet
-- No se modifica ningún otro archivo ni componente
-- El JSON-LD usa exactamente los 55 items, descripciones y precios proporcionados en el prompt
+### Sin cambios
+- Banner "TU SPOT PARA DESCONECTAR" (líneas 16-21) se mantiene
+- Logo, info, redes sociales y copyright se mantienen
+- `SemanticSEOSection.tsx` no se toca
+- `Index.tsx` no se toca
 
 ### Verificación
-| # | Check | |
-|---|-------|--|
-| 1 | Script dentro de Helmet en Menu.tsx | ✅ |
-| 2 | 8 secciones: Entradas, Hamburguesas, Emparedados, Pizzas, Parrilla, Ensaladas, Coctelería, Postres | ✅ |
-| 3 | 55 MenuItems (10+13+4+6+5+3+12+2) | ✅ |
-| 4 | Precios idénticos a carta marzo 2026 | ✅ |
-| 5 | JSON válido | ✅ |
-| 6 | Página /menu sigue cargando | ✅ |
+| # | Check |
+|---|-------|
+| 1 | Texto descriptivo aparece una sola vez (en SemanticSEOSection) |
+| 2 | SemanticSEOSection con H2 y badges sigue visible |
+| 3 | Banner "TU SPOT PARA DESCONECTAR" intacto |
+| 4 | Ningún otro componente eliminado |
+| 5 | Home carga sin errores |
 
