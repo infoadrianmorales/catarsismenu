@@ -36,7 +36,7 @@ export const FloatingCartButton = () => {
         )}
         data-meta-event="ViewCart"
         id="floating-cart-btn"
-        {/* ACCESIBILIDAD [ARIA]: aria-label para lectores de pantalla */}
+        // ACCESIBILIDAD [ARIA]: aria-label para lectores de pantalla
         aria-label="Abrir carrito"
       >
         <div className="flex items-center gap-3">
