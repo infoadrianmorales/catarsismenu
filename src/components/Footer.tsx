@@ -1,4 +1,4 @@
-import { Instagram, MapPin, Facebook, Youtube } from 'lucide-react';
+import { Instagram, MapPin, Facebook, Youtube, Clock, Phone } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import logoCatarsis from '@/assets/logo-catarsis-white.png';
 
@@ -46,33 +46,43 @@ export const Footer = () => {
             </p>
           </div>
           
-          {/* Info */}
-          <div className="space-y-2 text-sm text-muted-foreground">
-            <p>Horario: Lun-Dom 12:00pm - 1:00am</p>
-            <address className="not-italic">
-              <a 
-                href="https://maps.google.com/?q=Catarsis+Lecheria"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center md:justify-start gap-1 hover:text-primary transition-colors"
-              >
-                <MapPin className="h-4 w-4" />
-                {/* UBICACIÓN ACTUALIZADA: CC Aventura Plaza, Lechería.
-                    Mantener sincronizado con:
-                    - meta name="description" en index.html
-                    - og:description en index.html
-                    - Schema.org streetAddress (LocalBusinessSchema, RestaurantSchema)
-                    - llms.txt location
-                    - FAQ Schema */}
-                CC Aventura Plaza, Lechería, Anzoátegui
-              </a>
-            </address>
-            <a 
+          {/* BADGES DE CONTACTO: Estilo visual consistente con
+              SemanticSEOSection. Fondo Raspberry al 8% de opacidad,
+              ícono en #DB1F51, texto gris claro.
+              MANTENER hrefs intactos:
+              - Ubicación → Google Maps
+              - Teléfono → WhatsApp directo */}
+          <div className="flex flex-wrap gap-2">
+            {/* BADGE HORARIO — texto plano sin enlace */}
+            <span
+              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs text-gray-300"
+              style={{ backgroundColor: 'rgba(219, 31, 81, 0.08)' }}
+            >
+              <Clock className="h-3 w-3 shrink-0" style={{ color: '#DB1F51' }} />
+              Lun-Dom · 12:00 PM – 1:00 AM
+            </span>
+
+            {/* BADGE UBICACIÓN — mantiene href a Google Maps */}
+            <a
+              href="https://maps.google.com/?q=Catarsis+Lecheria"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs text-gray-300 transition-colors hover:text-white"
+              style={{ backgroundColor: 'rgba(219, 31, 81, 0.08)' }}
+            >
+              <MapPin className="h-3 w-3 shrink-0" style={{ color: '#DB1F51' }} />
+              CC Aventura Plaza, Lechería, Anzoátegui
+            </a>
+
+            {/* BADGE TELÉFONO — mantiene href a WhatsApp */}
+            <a
               href="https://api.whatsapp.com/send?phone=584249056438"
               target="_blank"
               rel="noopener noreferrer"
-              className="block hover:text-primary transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs text-gray-300 transition-colors hover:text-white"
+              style={{ backgroundColor: 'rgba(219, 31, 81, 0.08)' }}
             >
+              <Phone className="h-3 w-3 shrink-0" style={{ color: '#DB1F51' }} />
               +58 424-905-6438
             </a>
           </div>
