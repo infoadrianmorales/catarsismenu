@@ -53,7 +53,7 @@ export const AddToCartButton = ({ product, variant = 'default' }: AddToCartButto
   if (quantity === 0) {
     if (variant === 'icon') {
       return (
-        {/* ACCESIBILIDAD [ARIA]: aria-label describe la acción para lectores de pantalla. */}
+        // ACCESIBILIDAD [ARIA]: aria-label describe la acción para lectores de pantalla
         <Button
           size="icon"
           onClick={handleAdd}

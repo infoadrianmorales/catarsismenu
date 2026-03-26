@@ -53,8 +53,7 @@ export const ExpandableText = memo(({ text, maxLines = 2, className }: Expandabl
             e.stopPropagation();
             setIsExpanded(!isExpanded);
           }}
-          {/* ACCESIBILIDAD [CONTRASTE]: text-primary (#DB1F54) no pasa WCAG AA sobre fondos oscuros (ratio 3.82:1).
-              Se usa #FF4D7A (ratio ~5.2:1) para cumplir el mínimo de 4.5:1. */}
+          // ACCESIBILIDAD [CONTRASTE]: #FF4D7A (ratio ~5.2:1) reemplaza text-primary (#DB1F54, ratio 3.82:1)
           className="text-xs text-[#FF4D7A] hover:text-[#FF4D7A]/80 font-medium transition-colors"
         >
           {isExpanded ? 'Ver menos' : 'Ver más'}
