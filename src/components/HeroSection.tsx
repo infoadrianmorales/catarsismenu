@@ -106,6 +106,10 @@ export const HeroSection = ({ mode = 'delivery' }: HeroSectionProps) => {
       CLS (Cumulative Layout Shift): cuando una imagen carga
       tarde y empuja el contenido hacia abajo — afecta la
       experiencia del usuario y el score de Google PageSpeed. */}
+  {/* PERFORMANCE [CLS]: min-h-[45vh] y md:min-h-[70vh] reservan
+      el espacio del hero antes de que cargue la imagen.
+      Sin esto el contenido de abajo salta cuando aparece
+      el hero — genera CLS alto. No duplicar ni eliminar. */}
   return (
     <section className="relative flex flex-col md:block md:min-h-[70vh] overflow-hidden">
       {/* Image Zone */}
