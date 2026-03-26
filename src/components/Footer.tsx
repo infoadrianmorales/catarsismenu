@@ -10,15 +10,17 @@ import logoCatarsis from '@/assets/logo-catarsis-white.png';
    CLS (Cumulative Layout Shift): cuando una imagen carga
    tarde y empuja el contenido hacia abajo — afecta la
    experiencia del usuario y el score de Google PageSpeed. */
+export const TapeDivider = () => (
+  <div className="tape-divider overflow-hidden">
+    <div className="tape-text whitespace-nowrap">
+      CATARSIS • TU SPOT PARA DESCONECTAR • CATARSIS • TU SPOT PARA DESCONECTAR • CATARSIS • TU SPOT PARA DESCONECTAR •
+    </div>
+  </div>
+);
+
 export const Footer = () => {
   return (
-    <footer className="bg-card border-t border-border/50 pb-20 md:pb-8">
-      {/* Tape Divider */}
-      <div className="tape-divider overflow-hidden mb-8">
-        <div className="tape-text whitespace-nowrap">
-          CATARSIS • TU SPOT PARA DESCONECTAR • CATARSIS • TU SPOT PARA DESCONECTAR • CATARSIS • TU SPOT PARA DESCONECTAR •
-        </div>
-      </div>
+    <footer className="bg-card border-t border-border/50 pb-20 md:pb-8 pt-8">
       
       {/* TEXTO DESCRIPTIVO ELIMINADO: Reemplazado por SemanticSEOSection
           que contiene el mismo contenido optimizado para SEO e IA.
