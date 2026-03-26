@@ -137,7 +137,7 @@ export const HeroSection = ({ mode = 'delivery' }: HeroSectionProps) => {
                 alt={index === 0 ? 'Catarsis Drinks & Food — Restaurante en CC Aventura Plaza, Lechería' : `Catarsis Drinks & Food Banner ${index + 1}`}
                 className="w-full h-full object-cover"
                 loading={index === 0 ? 'eager' : 'lazy'}
-                fetchPriority={index === 0 ? 'high' : undefined}
+                {...(index === 0 ? { fetchpriority: 'high' } : {})}
                 width="1200"
                 height="600"
               />
