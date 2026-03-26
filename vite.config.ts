@@ -77,5 +77,11 @@ export default defineConfig(({ mode }) => ({
     // Un chunk muy grande indica que algo no se está
     // dividiendo correctamente.
     chunkSizeWarningLimit: 400,
+    // SOURCE MAPS: Desactivados intencionalmente en producción.
+    // Exponen el código fuente sin beneficio para los usuarios.
+    // Lighthouse reporta "Missing source maps" pero es decisión
+    // aceptada — activar solo en desarrollo local si se necesita
+    // depurar errores específicos.
+    // sourcemap: false  // default en producción
   },
 }));

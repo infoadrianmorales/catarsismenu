@@ -36,12 +36,14 @@ export const SearchBar = ({ value, onChange, placeholder = '🔍 Buscar por nomb
           <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
             {value && (
               <>
+                {/* ACCESIBILIDAD [ARIA]: aria-labels en botones de búsqueda */}
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon"
                   onClick={() => onChange('')}
                   className="h-9 w-9 text-muted-foreground hover:text-foreground hover:bg-primary/10 rounded-full"
+                  aria-label="Limpiar búsqueda"
                 >
                   <X className="h-5 w-5" />
                 </Button>
@@ -51,6 +53,7 @@ export const SearchBar = ({ value, onChange, placeholder = '🔍 Buscar por nomb
                   type="submit"
                   size="icon"
                   className="h-9 w-9 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
+                  aria-label="Buscar productos"
                 >
                   <Search className="h-5 w-5" />
                 </Button>

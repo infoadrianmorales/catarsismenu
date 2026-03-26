@@ -22,7 +22,10 @@ export const SemanticSEOSection = () => {
         </h2>
         {/* Párrafos semánticos: Google e IAs leen este texto.
             No eliminar. Actualizar si cambia la carta o el horario. */}
-        <div className="space-y-2 text-xs md:text-sm text-gray-400 leading-relaxed">
+        {/* ACCESIBILIDAD [CONTRASTE]: text-gray-400 → text-gray-300
+            para cumplir WCAG AA (ratio 4.5:1) sobre fondo #010C23.
+            Color del brandbook mantenido, solo mayor luminosidad. */}
+        <div className="space-y-2 text-xs md:text-sm text-gray-300 leading-relaxed">
           <p>
             Catarsis Drinks &amp; Food es un restaurante en CC Aventura 
             Plaza, Lechería, Anzoátegui, reconocido por la calidad de 
