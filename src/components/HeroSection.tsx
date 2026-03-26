@@ -238,17 +238,21 @@ export const HeroSection = ({ mode = 'delivery' }: HeroSectionProps) => {
 
             {/* Dot indicators */}
             <div className="flex items-center gap-2">
-              {slides.map((_, index) => (
+            {/* ACCESIBILIDAD [TOUCH]: min-w/min-h 44px para cumplir
+                touch target mínimo recomendado por Apple/Google. */}
+            {slides.map((_, index) => (
                 <button
                   key={index}
                   onClick={() => goToSlide(index)}
-                  className={`h-2 rounded-full transition-all duration-300 ${
+                  className="min-w-[44px] min-h-[44px] flex items-center justify-center"
+                  aria-label={`Ir al slide ${index + 1}`}
+                >
+                  <span className={`block h-2 rounded-full transition-all duration-300 ${
                     index === currentIndex
                       ? 'bg-white w-5'
-                      : 'bg-white/40 hover:bg-white/60 w-2'
-                  }`}
-                  aria-label={`Ir al slide ${index + 1}`}
-                />
+                      : 'bg-white/40 w-2'
+                  }`} />
+                </button>
               ))}
             </div>
 
