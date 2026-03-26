@@ -40,7 +40,8 @@ export const CategorySection = ({
           
           <Link 
             to={`/categoria/${slug}`}
-            className="text-sm font-medium text-primary hover:text-primary/80 hover:underline transition-colors"
+            // ACCESIBILIDAD [CONTRASTE]: #FF4D7A (ratio ~5.2:1) reemplaza text-primary (#DB1F54, ratio 3.93:1)
+            className="text-sm font-medium text-[#FF4D7A] hover:text-[#FF4D7A]/80 hover:underline transition-colors"
           >
             Ver todo
           </Link>

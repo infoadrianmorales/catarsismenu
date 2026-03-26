@@ -74,9 +74,13 @@ const Index = () => {
         displayMode={displayMode}
       />
       
+      {/* ACCESIBILIDAD [LANDMARK]: <main> indica a lectores de pantalla
+          dónde empieza el contenido principal. Google usa landmarks
+          para entender la estructura de la página. */}
+      <main role="main" aria-label="Contenido principal">
       <HeroSection />
       
-      <FeaturedProducts 
+      <FeaturedProducts
         items={featuredProducts}
         currency={currency}
         displayMode={displayMode}
@@ -136,6 +140,7 @@ const Index = () => {
           3. Footer — contacto, horario y ubicación */}
       <TapeDivider />
       <SemanticSEOSection />
+      </main>
       <Footer />
       
       <FloatingCartButton />

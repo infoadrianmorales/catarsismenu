@@ -88,6 +88,7 @@ export const StickyActionBar = ({ currency, onCurrencyToggle, displayMode = 'amb
           
           {/* Action Buttons */}
           <div className="flex items-center gap-2">
+            {/* ACCESIBILIDAD [ARIA]: aria-label en botón de compartir para lectores de pantalla. */}
             <Button
               size="sm"
               variant="ghost"
@@ -95,6 +96,7 @@ export const StickyActionBar = ({ currency, onCurrencyToggle, displayMode = 'amb
               className="h-9 w-9 p-0"
               data-meta-event="Share"
               id="sticky-share-btn"
+              aria-label="Compartir menú"
             >
               <Share2 className="h-5 w-5" />
             </Button>
