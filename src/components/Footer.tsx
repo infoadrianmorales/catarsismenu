@@ -52,7 +52,7 @@ export const Footer = () => {
               MANTENER hrefs intactos:
               - Ubicación → Google Maps
               - Teléfono → WhatsApp directo */}
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-col items-center gap-2">
             {/* BADGE HORARIO — texto plano sin enlace */}
             <span
               className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs text-gray-300"
