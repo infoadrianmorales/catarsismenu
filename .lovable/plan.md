@@ -1,20 +1,26 @@
 
 
-## Plan: Cambiar enlace de teléfono a WhatsApp nativo
+## Plan: Aplicar estilo badge al bloque de contacto en Footer.tsx
 
-### Problema
-El enlace `https://wa.me/584249056438` en el Footer puede abrir WhatsApp Web en escritorio en lugar de la app nativa.
+### Cambios
 
-### Cambio
-**`src/components/Footer.tsx`** — Cambiar el `href` del número de teléfono:
+**`src/components/Footer.tsx`**
 
-```
-// Antes
-href="https://wa.me/584249056438"
+1. **Línea 1** — Agregar `Clock` y `Phone` a los imports de lucide-react:
+   ```
+   import { Instagram, MapPin, Facebook, Youtube, Clock, Phone } from 'lucide-react';
+   ```
 
-// Después  
-href="https://api.whatsapp.com/send?phone=584249056438"
-```
+2. **Líneas 49-78** — Reemplazar el bloque `{/* Info */}` completo con los 3 badges en formato pill, manteniendo los hrefs intactos:
+   - Badge horario: `<span>` con `Clock` icon, texto plano
+   - Badge ubicación: `<a href="https://maps.google.com/?q=Catarsis+Lecheria">` con `MapPin` icon
+   - Badge teléfono: `<a href="https://api.whatsapp.com/send?phone=584249056438">` con `Phone` icon
+   - Todos con: `rounded-full px-3 py-1 text-xs text-gray-300`, fondo `rgba(219, 31, 81, 0.08)`, iconos `#DB1F51`
 
-El dominio `api.whatsapp.com` prioriza abrir la app nativa de WhatsApp en móvil y escritorio. Un solo cambio de línea.
+3. **Comentario** agregado sobre el bloque explicando el estilo y la regla de mantener hrefs.
+
+### Sin cambios
+- TapeDivider, logo, redes sociales, copyright — intactos
+- Contenido de texto idéntico
+- hrefs de ubicación y teléfono preservados exactamente
 
