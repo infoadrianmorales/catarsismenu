@@ -2,44 +2,62 @@
 
 ## Auditoría (Fase 1)
 
-| # | Pregunta | Resultado |
-|---|----------|-----------|
-| 1 | Fuentes externas | Google Fonts en `index.html` L41-44 con `<link rel="stylesheet">` síncrono. Ya tiene `preconnect` y `display=swap`, pero **bloquea el render** porque es un `<link rel="stylesheet">` normal |
-| 2 | Scripts sin defer/async | El Facebook Pixel (L92-101) es inline `<script>` sin defer. Ya carga `fbevents.js` con `t.async=!0` internamente |
-| 3 | Facebook Pixel defer | No tiene defer. El script inline está en `<head>`. Internamente usa `async=true` para el JS externo |
-| 4 | Imagen hero principal | `src/assets/banner-hero.png` — importada como módulo en HeroSection. En producción Vite la hashea, así que no se puede hacer preload estático con ruta fija. Las imágenes reales vienen de la DB (`useHeroSlides`) |
-| 5 | Min-height en hero | Ya tiene: `min-h-[45vh] md:min-h-[70vh]` en el contenedor de imagen, y `md:min-h-[70vh]` en la section |
-| 6 | Navigate /menu | No existe. `/menu` renderiza `<Menu />` directamente (L66) |
+### 1. Contraste insuficiente
+Lighthouse reporta contraste insuficiente en:
+- **"Ver más" / "Ver menos"** buttons en `ExpandableText.tsx` (L56): `text-primary` (#DB1F54) sobre fondo card (#111222) — ratio 3.82:1, necesita 4.5:1
+- **"Ver todo"** links en `CategorySection.tsx` (L43): `text-primary` (#DB1F54) sobre fondo background (#0E0F1B) — ratio 3.93:1
+
+Estos son los dos patrones que causan ~60+ fallos de contraste. El color `text-primary` (#DB1F54) no tiene suficiente contraste sobre los fondos oscuros del tema.
+
+### 2. Botones sin nombre accesible
+- **AddToCartButton** (variant `icon`, L56-64): botón con solo `<Plus>`, sin `aria-label`
+- **AddToCartButton** (botones +/-, L84-100): sin `aria-label`
+- **StickyActionBar** share button (L96-103): `sticky-share-btn` sin `aria-label`
+
+### 3. `<main>` landmark
+No existe `<main>` en `Index.tsx` ni en `App.tsx`.
+
+### 4. Touch targets insuficientes
+- **Hero dot indicators** (`HeroSection.tsx` L242-251): `h-2 w-2` / `h-2 w-5` = 8x8px y 20x8px
+- Los dots del carousel son los únicos reportados por Lighthouse como target-size failures
 
 ---
 
 ## Plan de Correcciones (Fase 2)
 
-### Corrección 1 — Fuentes no bloqueantes
-**`index.html` L41-44** — Reemplazar el `<link rel="stylesheet">` síncrono de Google Fonts con carga no bloqueante usando `media="print" onload="this.media='all'"` + `<noscript>` fallback. Mantener los `preconnect` existentes. Agregar comentario de performance.
+### Corrección 1 — Contraste de texto
+**`src/components/ExpandableText.tsx` L56** — Cambiar `text-primary` a `text-primary/90` con un color más claro. Dado que #DB1F54 no pasa AA sobre fondos oscuros, usar `text-[#FF4D7A]` (versión más clara del Raspberry, ratio ~5.2:1 sobre #111222).
 
-### Corrección 2 — Facebook Pixel al final del body
-**`index.html` L92-101** — Mover el bloque inline del Facebook Pixel desde `<head>` al final de `<body>` (antes de `</body>`), justo después de `<script type="module" src="/src/main.tsx">`. No agregar defer al script inline (no aplica). Agregar comentario explicativo.
+**`src/components/CategorySection.tsx` L43** — Mismo cambio en el link "Ver todo": `text-primary` → `text-[#FF4D7A]`.
 
-### Corrección 3 — Preload de imagen hero
-**`index.html`** — No aplicar. La imagen hero viene de la DB (URLs dinámicas de Supabase Storage vía `useHeroSlides`), y el fallback es un asset de Vite con hash dinámico. Un `<link rel="preload">` con ruta estática no funcionaría. **Documentar con comentario** en `index.html` explicando por qué no se aplica preload estático.
+### Corrección 2 — Botones sin aria-label
+**`src/components/cart/AddToCartButton.tsx`**:
+- L56 (icon variant): agregar `aria-label={`Agregar ${product.nombre} al carrito`}`
+- L84-90 (decrease): agregar `aria-label="Disminuir cantidad"`
+- L93-99 (increase): agregar `aria-label="Aumentar cantidad"`
 
-### Corrección 4 — Min-height hero (ya existe)
-Sin cambios. HeroSection ya tiene `min-h-[45vh] md:min-h-[70vh]`. Agregar un comentario de performance en `HeroSection.tsx` documentando que el min-height ya previene CLS.
+**`src/components/StickyActionBar.tsx`**:
+- L96 share button: agregar `aria-label="Compartir menú"`
 
-### Corrección 5 — Redirect /menu (ya correcto)
-Sin cambios. No existe `<Navigate>` de `/menu` a `/`. Ya tiene comentario en App.tsx confirmándolo.
+### Corrección 3 — Agregar `<main>`
+**`src/pages/Index.tsx`** — Envolver el contenido entre `<MenuHeader>` y `<Footer>` con `<main>`. No incluir el header ni los componentes flotantes/sticky.
+
+### Corrección 4 — Touch targets del carousel
+**`src/components/HeroSection.tsx` L242-251** — Aumentar el área táctil de los dot indicators usando padding invisible: `min-w-[44px] min-h-[44px] flex items-center justify-center` como wrapper, manteniendo el dot visual pequeño con un pseudo-element o inner span.
 
 ### Resumen de archivos
 
 | Archivo | Cambio |
 |---------|--------|
-| `index.html` | Fuentes no bloqueantes (media=print+onload), mover Pixel al body, comentario sobre preload no aplicable |
-| `src/components/HeroSection.tsx` | Solo comentario documentando min-height existente |
+| `src/components/ExpandableText.tsx` | Color contraste "Ver más" |
+| `src/components/CategorySection.tsx` | Color contraste "Ver todo" |
+| `src/components/cart/AddToCartButton.tsx` | aria-labels en 3 botones |
+| `src/components/StickyActionBar.tsx` | aria-label en share |
+| `src/pages/Index.tsx` | Agregar `<main>` landmark |
+| `src/components/HeroSection.tsx` | Touch target dots carousel |
 
 ### Lo que NO se toca
-- Schemas (RestaurantSchema, LocalBusinessSchema, FAQSchema)
-- SemanticSEOSection
-- Contenido existente
-- App.tsx (ya correcto)
+- Schemas (RestaurantSchema, LocalBusinessSchema, FAQSchema, SemanticSEOSection)
+- Colores del brandbook en elementos que ya pasan contraste
+- Footer, funcionalidad de botones, hrefs
 
