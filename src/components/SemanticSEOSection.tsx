@@ -38,13 +38,13 @@ export const SemanticSEOSection = () => {
             "restaurante favorito de Lechería" es una keyword
             de intención local de alto valor. */}
         <h2
-          className="font-display text-2xl md:text-3xl font-bold"
+          className="font-display text-xl md:text-2xl font-semibold"
           style={{ color: '#F2B60F' }}
         >
           ¿Por qué Catarsis es el restaurante favorito de Lechería?
         </h2>
 
-        <div className="space-y-4 text-gray-300 leading-relaxed">
+        <div className="space-y-4 text-sm md:text-base text-gray-300 leading-relaxed">
           <p>
             Catarsis Drinks &amp; Food nació en Lechería, Anzoátegui, con una
             misión clara: ofrecer las mejores hamburguesas de la ciudad sin
@@ -79,6 +79,12 @@ export const SemanticSEOSection = () => {
           </p>
         </div>
 
+        {/* TIPOGRAFÍA: Tamaños reducidos intencionalmente.
+            Esta sección es semántica para SEO e IA — debe
+            ser legible pero no dominar visualmente la página.
+            El contenido importa para Google, el diseño
+            no debe competir con el menú principal. */}
+
         {/* BADGES: Datos clave visibles de un vistazo.
             Refuerzan la información semántica del texto
             y mejoran la experiencia del usuario móvil. */}
@@ -86,7 +92,7 @@ export const SemanticSEOSection = () => {
           {badges.map(({ icon: Icon, text }) => (
             <span
               key={text}
-              className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm text-foreground"
+              className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs md:text-sm text-foreground"
               style={{ backgroundColor: 'rgba(219, 31, 81, 0.1)' }}
             >
               <Icon className="h-4 w-4 shrink-0" style={{ color: '#DB1F51' }} />
