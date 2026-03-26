@@ -33,12 +33,18 @@ const fetchCurrencyConfig = async () => {
 };
 
 export const useCurrency = () => {
+  // CORRECCIÓN [CURRENCY-STORAGE]: try/catch evita crash si localStorage
+  // está bloqueado (modo privado) o corrupto. Sin esto, la app puede
+  // quedar en blanco antes de que el ErrorBoundary pueda capturarlo.
   const [currency, setCurrency] = useState<Currency>(() => {
-    if (typeof window !== 'undefined') {
+    try {
+      if (typeof window === 'undefined') return 'USD';
       const stored = localStorage.getItem(STORAGE_KEY);
       return (stored === 'VES' || stored === 'USD') ? stored : 'USD';
+    } catch (error) {
+      console.warn('useCurrency: no se pudo leer moneda_activa:', error);
+      return 'USD';
     }
-    return 'USD';
   });
 
   // Use React Query for caching - only fetches once and caches for 5 minutes
@@ -54,8 +60,13 @@ export const useCurrency = () => {
   const exchangeRate = configData?.exchangeRate ?? 50;
   const displayMode = configData?.displayMode ?? 'ambas';
 
+  // CORRECCIÓN [CURRENCY-PERSIST]: try/catch para storage lleno o bloqueado
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, currency);
+    try {
+      localStorage.setItem(STORAGE_KEY, currency);
+    } catch (error) {
+      console.warn('useCurrency: no se pudo guardar moneda_activa:', error);
+    }
   }, [currency]);
 
   const toggleCurrency = useCallback(() => {
