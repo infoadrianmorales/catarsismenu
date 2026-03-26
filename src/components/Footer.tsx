@@ -68,7 +68,9 @@ export const Footer = () => {
               </a>
             </address>
             <a 
-              href="tel:+584249056438"
+              href="https://wa.me/584249056438"
+              target="_blank"
+              rel="noopener noreferrer"
               className="block hover:text-primary transition-colors"
             >
               +58 424-905-6438
