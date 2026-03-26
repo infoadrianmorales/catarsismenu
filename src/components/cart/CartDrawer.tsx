@@ -198,11 +198,13 @@ export const CartDrawer = ({ variant = 'header' }: CartDrawerProps) => {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
                           <h4 className="font-medium text-sm truncate">{item.nombre}</h4>
+                          {/* ACCESIBILIDAD [ARIA]: aria-label en botón eliminar */}
                           <Button
                             variant="ghost"
                             size="icon"
                             className="h-6 w-6 text-muted-foreground hover:text-destructive flex-shrink-0"
                             onClick={() => removeFromCart(item.id)}
+                            aria-label="Eliminar producto del carrito"
                           >
                             <X className="h-3 w-3" />
                           </Button>
@@ -215,11 +217,13 @@ export const CartDrawer = ({ variant = 'header' }: CartDrawerProps) => {
                         <div className="flex items-center justify-between mt-2">
                           {/* Quantity controls */}
                           <div className="flex items-center gap-2 bg-background rounded-full border border-border">
+                            {/* ACCESIBILIDAD [ARIA]: aria-labels en botones +/- del carrito */}
                             <Button
                               variant="ghost"
                               size="icon"
                               className="h-6 w-6 rounded-full"
                               onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                              aria-label="Disminuir cantidad"
                             >
                               <span className="text-lg leading-none">−</span>
                             </Button>
@@ -231,6 +235,7 @@ export const CartDrawer = ({ variant = 'header' }: CartDrawerProps) => {
                               size="icon"
                               className="h-6 w-6 rounded-full"
                               onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                              aria-label="Aumentar cantidad"
                             >
                               <span className="text-lg leading-none">+</span>
                             </Button>
