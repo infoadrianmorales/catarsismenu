@@ -497,7 +497,7 @@ Correo: ${formData.email.toLowerCase()}`;
           unit_price_snapshot: item.precio_usd,
           quantity: item.quantity,
           line_total: (item.precio_usd + extrasTotal) * item.quantity,
-          extras_snapshot: item.extras && item.extras.length > 0 ? item.extras : null,
+          extras_snapshot: item.extras && item.extras.length > 0 ? JSON.parse(JSON.stringify(item.extras)) : null,
         };
       });
 
