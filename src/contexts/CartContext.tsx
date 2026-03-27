@@ -1,5 +1,21 @@
+// FEATURE [EXTRAS]: CartContext extendido con soporte de extras/add-ons.
+// Cada CartItem puede tener un array de extras seleccionados que se
+// suman automáticamente al subtotal. Las funciones addExtra/removeExtra
+// permiten gestionar extras por producto sin afectar la lógica base.
+//
+// CORRECCIÓN CRÍTICA [CART-STORAGE]: Lectura de localStorage envuelta en
+// try/catch. Sin esta protección, si 'catarsis_cart' contiene JSON inválido
+// o corrupto, React falla antes del primer render y la página queda en blanco.
+
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { MenuItem } from '@/types/menu';
+
+// FEATURE [EXTRAS]: Tipo para extras seleccionados en el carrito
+export interface CartItemExtra {
+  extraId: string;
+  nombre: string;
+  precio_usd: number;
+}
 
 export interface CartItem {
   id: string;
@@ -9,6 +25,8 @@ export interface CartItem {
   quantity: number;
   categoria: string;
   notes?: string;
+  // FEATURE [EXTRAS]: extras seleccionados para este producto
+  extras?: CartItemExtra[];
 }
 
 interface CartContextType {
@@ -22,6 +40,10 @@ interface CartContextType {
   totalItems: number;
   subtotal: number;
   isProductOrderable: (product: MenuItem) => boolean;
+  // FEATURE [EXTRAS]: funciones para gestionar extras
+  addExtra: (productId: string, extra: CartItemExtra) => void;
+  removeExtra: (productId: string, extraId: string) => void;
+  getItemExtras: (productId: string) => CartItemExtra[];
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -37,25 +59,19 @@ const isValidUUID = (id: string): boolean => {
 };
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // CORRECCIÓN CRÍTICA [CART-STORAGE]: Lectura de localStorage envuelta en
-  // try/catch. Sin esta protección, si 'catarsis_cart' contiene JSON inválido
-  // o corrupto, React falla antes del primer render y la página queda en blanco.
   const [items, setItems] = useState<CartItem[]>(() => {
     try {
       if (typeof window === 'undefined') return [];
       const stored = localStorage.getItem(STORAGE_KEY);
       if (!stored) return [];
       const parsed = JSON.parse(stored);
-      // Validar que sea un array antes de usarlo
       if (!Array.isArray(parsed)) {
         console.warn('CartContext: catarsis_cart no es un array, limpiando storage');
         localStorage.removeItem(STORAGE_KEY);
         return [];
       }
-      // Filter out items with invalid IDs (non-UUID format)
       return parsed.filter(item => isValidUUID(item.id));
     } catch (error) {
-      // Si el JSON está corrupto, limpiar y arrancar con carrito vacío
       console.warn('CartContext: Error al leer catarsis_cart, limpiando storage:', error);
       localStorage.removeItem(STORAGE_KEY);
       return [];
@@ -63,7 +79,6 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
 
   // CORRECCIÓN [CART-PERSIST]: setItem envuelto en try/catch.
-  // Si falla el guardado (storage lleno o bloqueado), la UI sigue funcionando.
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
@@ -73,22 +88,14 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [items]);
 
   const isProductOrderable = useCallback((product: MenuItem): boolean => {
-    // Check if category is in non-orderable list
     const categoryLower = product.categoria.toLowerCase();
-    if (NON_ORDERABLE_CATEGORIES.includes(categoryLower)) {
-      return false;
-    }
-    // Also check is_orderable field if it exists
-    if ('is_orderable' in product && product.is_orderable === false) {
-      return false;
-    }
+    if (NON_ORDERABLE_CATEGORIES.includes(categoryLower)) return false;
+    if ('is_orderable' in product && product.is_orderable === false) return false;
     return true;
   }, []);
 
   const addToCart = useCallback((product: MenuItem): boolean => {
-    if (!isProductOrderable(product)) {
-      return false;
-    }
+    if (!isProductOrderable(product)) return false;
 
     setItems(prev => {
       const existing = prev.find(item => item.id === product.id);
@@ -135,6 +142,37 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
   }, []);
 
+  // FEATURE [EXTRAS]: Agregar un extra a un producto del carrito
+  const addExtra = useCallback((productId: string, extra: CartItemExtra) => {
+    setItems(prev =>
+      prev.map(item => {
+        if (item.id !== productId) return item;
+        const currentExtras = item.extras || [];
+        // Evitar duplicados
+        if (currentExtras.some(e => e.extraId === extra.extraId)) return item;
+        return { ...item, extras: [...currentExtras, extra] };
+      })
+    );
+  }, []);
+
+  // FEATURE [EXTRAS]: Quitar un extra de un producto del carrito
+  const removeExtra = useCallback((productId: string, extraId: string) => {
+    setItems(prev =>
+      prev.map(item => {
+        if (item.id !== productId) return item;
+        return {
+          ...item,
+          extras: (item.extras || []).filter(e => e.extraId !== extraId),
+        };
+      })
+    );
+  }, []);
+
+  // FEATURE [EXTRAS]: Obtener extras de un producto
+  const getItemExtras = useCallback((productId: string): CartItemExtra[] => {
+    return items.find(item => item.id === productId)?.extras || [];
+  }, [items]);
+
   const clearCart = useCallback(() => {
     setItems([]);
   }, []);
@@ -144,7 +182,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [items]);
 
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
-  const subtotal = items.reduce((sum, item) => sum + item.precio_usd * item.quantity, 0);
+
+  // FEATURE [EXTRAS]: El subtotal incluye el precio de los extras multiplicado por la cantidad
+  const subtotal = items.reduce((sum, item) => {
+    const extrasTotal = (item.extras || []).reduce((eSum, e) => eSum + e.precio_usd, 0);
+    return sum + (item.precio_usd + extrasTotal) * item.quantity;
+  }, 0);
 
   return (
     <CartContext.Provider value={{
@@ -158,6 +201,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       totalItems,
       subtotal,
       isProductOrderable,
+      addExtra,
+      removeExtra,
+      getItemExtras,
     }}>
       {children}
     </CartContext.Provider>
