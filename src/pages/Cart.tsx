@@ -256,7 +256,11 @@ const Cart = () => {
             })}
           </div>
 
-          {/* Summary - Desktop */}
+            {/* FEATURE [UPSELL]: Sugerencias de compra para aumentar el ticket */}
+            <div className="lg:col-span-2">
+              <UpsellSuggestions maxItems={6} />
+            </div>
+
           <div className="lg:col-span-1 hidden lg:block">
             <Card className="sticky top-4 bg-gradient-to-br from-card to-muted/30 border-border/50 shadow-[0_0_20px_hsl(var(--primary)/0.08)]">
               <CardContent className="p-6 space-y-5">
