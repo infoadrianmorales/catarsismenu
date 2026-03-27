@@ -1,3 +1,6 @@
+// FEATURE [EXTRAS + UPSELL]: Página del carrito con soporte de extras por producto
+// y sección de sugerencias de compra para aumentar el ticket promedio.
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShoppingCart, Trash2, ArrowLeft, ShoppingBag, MessageSquare, ChevronDown, ChevronUp, Minus, Plus, Shield } from 'lucide-react';
@@ -9,13 +12,18 @@ import { useCurrency } from '@/hooks/useCurrency';
 import { MenuHeader } from '@/components/MenuHeader';
 import { Footer } from '@/components/Footer';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useProductExtras } from '@/hooks/useProductExtras';
+import { ProductExtras } from '@/components/cart/ProductExtras';
+import { UpsellSuggestions } from '@/components/cart/UpsellSuggestions';
 
 const Cart = () => {
   const navigate = useNavigate();
-  const { items, removeFromCart, clearCart, subtotal, totalItems, updateQuantity, updateItemNotes } = useCart();
+  const { items, removeFromCart, clearCart, subtotal, totalItems, updateQuantity, updateItemNotes, addExtra, removeExtra } = useCart();
   const { currency, toggleCurrency, displayMode, getPrices } = useCurrency();
   const [expandedNotes, setExpandedNotes] = useState<Record<string, boolean>>({});
   const isMobile = useIsMobile();
+  // FEATURE [EXTRAS]: cargar extras disponibles
+  const { getExtrasForProduct, categoryHasExtras } = useProductExtras();
 
   const toggleNotesExpanded = (itemId: string) => {
     setExpandedNotes(prev => ({ ...prev, [itemId]: !prev[itemId] }));
