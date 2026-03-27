@@ -1,3 +1,6 @@
+// FEATURE [EXTRAS + UPSELL]: CartDrawer con soporte de extras inline
+// y sugerencias de compra compactas antes del checkout.
+
 import { ShoppingCart, Trash2, ShoppingBag, X, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -16,6 +19,9 @@ import { useCurrency } from '@/hooks/useCurrency';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useEffect, useState } from 'react';
+import { useProductExtras } from '@/hooks/useProductExtras';
+import { ProductExtras } from '@/components/cart/ProductExtras';
+import { UpsellSuggestions } from '@/components/cart/UpsellSuggestions';
 
 interface CartDrawerProps {
   variant?: 'header' | 'sticky' | 'floating';
