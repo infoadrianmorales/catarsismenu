@@ -181,7 +181,9 @@ export const CartDrawer = ({ variant = 'header' }: CartDrawerProps) => {
             <ScrollArea className="flex-1 -mx-6 px-6">
               <div className="space-y-4 py-4">
                 {items.map((item) => {
-                  const itemTotal = item.precio_usd * item.quantity;
+                  // FEATURE [EXTRAS]: incluir extras en el total de línea
+                  const extrasTotal = (item.extras || []).reduce((s, e) => s + e.precio_usd, 0);
+                  const itemTotal = (item.precio_usd + extrasTotal) * item.quantity;
                   
                   return (
                     <div 
