@@ -1,3 +1,6 @@
+// FEATURE [EXTRAS + UPSELL]: Página del carrito con soporte de extras por producto
+// y sección de sugerencias de compra para aumentar el ticket promedio.
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShoppingCart, Trash2, ArrowLeft, ShoppingBag, MessageSquare, ChevronDown, ChevronUp, Minus, Plus, Shield } from 'lucide-react';
@@ -9,13 +12,18 @@ import { useCurrency } from '@/hooks/useCurrency';
 import { MenuHeader } from '@/components/MenuHeader';
 import { Footer } from '@/components/Footer';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useProductExtras } from '@/hooks/useProductExtras';
+import { ProductExtras } from '@/components/cart/ProductExtras';
+import { UpsellSuggestions } from '@/components/cart/UpsellSuggestions';
 
 const Cart = () => {
   const navigate = useNavigate();
-  const { items, removeFromCart, clearCart, subtotal, totalItems, updateQuantity, updateItemNotes } = useCart();
+  const { items, removeFromCart, clearCart, subtotal, totalItems, updateQuantity, updateItemNotes, addExtra, removeExtra } = useCart();
   const { currency, toggleCurrency, displayMode, getPrices } = useCurrency();
   const [expandedNotes, setExpandedNotes] = useState<Record<string, boolean>>({});
   const isMobile = useIsMobile();
+  // FEATURE [EXTRAS]: cargar extras disponibles
+  const { getExtrasForProduct, categoryHasExtras } = useProductExtras();
 
   const toggleNotesExpanded = (itemId: string) => {
     setExpandedNotes(prev => ({ ...prev, [itemId]: !prev[itemId] }));
@@ -167,18 +175,45 @@ const Cart = () => {
                           </div>
                           
                           <div className="text-right">
-                            <span className="font-bold text-secondary">
-                              {formatPrice(item.precio_usd * item.quantity)}
-                            </span>
-                            {formatPriceAlt(item.precio_usd * item.quantity) && (
-                              <p className="text-[11px] text-muted-foreground">
-                                {formatPriceAlt(item.precio_usd * item.quantity)}
-                              </p>
-                            )}
+                            {/* FEATURE [EXTRAS]: el total de línea incluye extras */}
+                            {(() => {
+                              const extrasTotal = (item.extras || []).reduce((s, e) => s + e.precio_usd, 0);
+                              const lineTotal = (item.precio_usd + extrasTotal) * item.quantity;
+                              return (
+                                <>
+                                  <span className="font-bold text-secondary">
+                                    {formatPrice(lineTotal)}
+                                  </span>
+                                  {formatPriceAlt(lineTotal) && (
+                                    <p className="text-[11px] text-muted-foreground">
+                                      {formatPriceAlt(lineTotal)}
+                                    </p>
+                                  )}
+                                </>
+                              );
+                            })()}
                           </div>
                         </div>
                       </div>
                     </div>
+
+                    {/* FEATURE [EXTRAS]: Sección de extras si la categoría tiene disponibles */}
+                    {categoryHasExtras(item.categoria) && (
+                      <div className="mt-2 px-1">
+                        <ProductExtras
+                          extras={getExtrasForProduct(item.id, item.categoria)}
+                          selectedExtras={item.extras || []}
+                          onToggleExtra={(extra) => {
+                            const isSelected = (item.extras || []).some(e => e.extraId === extra.id);
+                            if (isSelected) {
+                              removeExtra(item.id, extra.id);
+                            } else {
+                              addExtra(item.id, { extraId: extra.id, nombre: extra.nombre, precio_usd: extra.precio_usd });
+                            }
+                          }}
+                        />
+                      </div>
+                    )}
                     
                     {/* Notes Section */}
                     <div className="mt-3 pt-3 border-t border-border/40">
@@ -221,7 +256,11 @@ const Cart = () => {
             })}
           </div>
 
-          {/* Summary - Desktop */}
+            {/* FEATURE [UPSELL]: Sugerencias de compra para aumentar el ticket */}
+            <div className="lg:col-span-2">
+              <UpsellSuggestions maxItems={6} />
+            </div>
+
           <div className="lg:col-span-1 hidden lg:block">
             <Card className="sticky top-4 bg-gradient-to-br from-card to-muted/30 border-border/50 shadow-[0_0_20px_hsl(var(--primary)/0.08)]">
               <CardContent className="p-6 space-y-5">

@@ -1,3 +1,6 @@
+// FEATURE [EXTRAS + UPSELL]: CartDrawer con soporte de extras inline
+// y sugerencias de compra compactas antes del checkout.
+
 import { ShoppingCart, Trash2, ShoppingBag, X, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -16,13 +19,16 @@ import { useCurrency } from '@/hooks/useCurrency';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useEffect, useState } from 'react';
+import { useProductExtras } from '@/hooks/useProductExtras';
+import { ProductExtras } from '@/components/cart/ProductExtras';
+import { UpsellSuggestions } from '@/components/cart/UpsellSuggestions';
 
 interface CartDrawerProps {
   variant?: 'header' | 'sticky' | 'floating';
 }
 
 export const CartDrawer = ({ variant = 'header' }: CartDrawerProps) => {
-  const { items, totalItems, subtotal, removeFromCart, updateQuantity, updateItemNotes } = useCart();
+  const { items, totalItems, subtotal, removeFromCart, updateQuantity, updateItemNotes, addExtra, removeExtra } = useCart();
   const [expandedNotes, setExpandedNotes] = useState<Record<string, boolean>>({});
 
   const toggleNotesExpanded = (itemId: string) => {
@@ -32,6 +38,8 @@ export const CartDrawer = ({ variant = 'header' }: CartDrawerProps) => {
   const navigate = useNavigate();
   const [isAnimating, setIsAnimating] = useState(false);
   const [open, setOpen] = useState(false);
+  // FEATURE [EXTRAS]: cargar extras disponibles
+  const { getExtrasForProduct, categoryHasExtras } = useProductExtras();
 
   const prices = getPrices(subtotal);
 
@@ -173,7 +181,9 @@ export const CartDrawer = ({ variant = 'header' }: CartDrawerProps) => {
             <ScrollArea className="flex-1 -mx-6 px-6">
               <div className="space-y-4 py-4">
                 {items.map((item) => {
-                  const itemTotal = item.precio_usd * item.quantity;
+                  // FEATURE [EXTRAS]: incluir extras en el total de línea
+                  const extrasTotal = (item.extras || []).reduce((s, e) => s + e.precio_usd, 0);
+                  const itemTotal = (item.precio_usd + extrasTotal) * item.quantity;
                   
                   return (
                     <div 
@@ -277,11 +287,33 @@ export const CartDrawer = ({ variant = 'header' }: CartDrawerProps) => {
                             </div>
                           )}
                         </div>
+
+                        {/* FEATURE [EXTRAS]: Extras inline en el drawer */}
+                        {categoryHasExtras(item.categoria) && (
+                          <div className="mt-1.5 pt-1.5 border-t border-border/30">
+                            <ProductExtras
+                              extras={getExtrasForProduct(item.id, item.categoria)}
+                              selectedExtras={item.extras || []}
+                              onToggleExtra={(extra) => {
+                                const isSelected = (item.extras || []).some(e => e.extraId === extra.id);
+                                if (isSelected) {
+                                  removeExtra(item.id, extra.id);
+                                } else {
+                                  addExtra(item.id, { extraId: extra.id, nombre: extra.nombre, precio_usd: extra.precio_usd });
+                                }
+                              }}
+                              compact
+                            />
+                          </div>
+                        )}
                       </div>
                     </div>
                   );
                 })}
               </div>
+
+              {/* FEATURE [UPSELL]: Sugerencias compactas en el drawer */}
+              <UpsellSuggestions maxItems={3} compact />
             </ScrollArea>
 
             {/* Footer */}

@@ -304,14 +304,25 @@ const Checkout = () => {
     return phone.replace(/[\s\-\(\)]/g, '');
   };
 
+  // FEATURE [EXTRAS]: El mensaje de WhatsApp incluye extras seleccionados debajo de cada producto
   const generateWhatsAppMessage = (orderNum: string): string => {
     const itemLines = items.map(item => {
-      const lineTotal = item.precio_usd * item.quantity;
+      const extrasTotal = (item.extras || []).reduce((s, e) => s + e.precio_usd, 0);
+      const lineTotal = (item.precio_usd + extrasTotal) * item.quantity;
       const linePrices = getPrices(lineTotal);
       const priceStr = paymentCurrency === 'USD' 
         ? linePrices.formattedUSD
         : linePrices.formattedVES;
       let line = `- ${item.quantity}x ${item.nombre} — ${priceStr}`;
+      // FEATURE [EXTRAS]: listar extras seleccionados
+      if (item.extras && item.extras.length > 0) {
+        const extrasStr = item.extras.map(e => {
+          const ep = getPrices(e.precio_usd);
+          const epStr = paymentCurrency === 'USD' ? ep.formattedUSD : ep.formattedVES;
+          return `   ➕ ${e.nombre} (+${epStr})`;
+        }).join('\n');
+        line += '\n' + extrasStr;
+      }
       if (item.notes?.trim()) {
         line += `\n   📝 ${item.notes.trim()}`;
       }
@@ -476,15 +487,19 @@ Correo: ${formData.email.toLowerCase()}`;
         console.error('Error al actualizar mensaje WhatsApp:', (updateResult as any).error);
       }
 
-      // Create order items
-      const orderItems = items.map(item => ({
-        order_id: newOrderId,
-        product_id: item.id,
-        product_name_snapshot: item.nombre,
-        unit_price_snapshot: item.precio_usd,
-        quantity: item.quantity,
-        line_total: item.precio_usd * item.quantity,
-      }));
+      // FEATURE [EXTRAS]: order_items incluye extras_snapshot con los extras seleccionados
+      const orderItems = items.map(item => {
+        const extrasTotal = (item.extras || []).reduce((s, e) => s + e.precio_usd, 0);
+        return {
+          order_id: newOrderId,
+          product_id: item.id,
+          product_name_snapshot: item.nombre,
+          unit_price_snapshot: item.precio_usd,
+          quantity: item.quantity,
+          line_total: (item.precio_usd + extrasTotal) * item.quantity,
+          extras_snapshot: item.extras && item.extras.length > 0 ? JSON.parse(JSON.stringify(item.extras)) : null,
+        };
+      });
 
       const { error: itemsError } = await supabase
         .from('order_items')

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Loader2, LogOut, Settings, Package, Users, Layers, ShoppingBag, UserCheck, Image, BarChart3, Store } from 'lucide-react';
+import { Loader2, LogOut, Settings, Package, Users, Layers, ShoppingBag, UserCheck, Image, BarChart3, Store, PlusCircle } from 'lucide-react';
 import { AnalyticsPanel } from '@/components/admin/AnalyticsPanel';
 import { ConfigPanel } from '@/components/admin/ConfigPanel';
 import { ProductsPanel } from '@/components/admin/ProductsPanel';
@@ -13,6 +13,8 @@ import { OrdersPanel } from '@/components/admin/OrdersPanel';
 import { CustomersPanel } from '@/components/admin/CustomersPanel';
 import { HeroSlidesPanel } from '@/components/admin/HeroSlidesPanel';
 import { MetaCatalogPanel } from '@/components/admin/MetaCatalogPanel';
+// FEATURE [EXTRAS-ADMIN]: Panel de gestión de extras/add-ons
+import { ExtrasPanel } from '@/components/admin/ExtrasPanel';
 
 const Admin = () => {
   const { user, isAdmin, loading, roleLoading, signOut } = useAuth();
@@ -74,7 +76,7 @@ const Admin = () => {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6">
         <Tabs defaultValue="analytics" className="w-full">
-          <TabsList className="grid w-full grid-cols-9 mb-6">
+          <TabsList className="grid w-full grid-cols-10 mb-6">
             <TabsTrigger value="analytics" className="gap-2">
               <BarChart3 className="h-4 w-4" />
               <span className="hidden sm:inline">Analíticas</span>
@@ -102,6 +104,10 @@ const Admin = () => {
             <TabsTrigger value="products" className="gap-2">
               <Package className="h-4 w-4" />
               <span className="hidden sm:inline">Productos</span>
+            </TabsTrigger>
+            <TabsTrigger value="extras" className="gap-2">
+              <PlusCircle className="h-4 w-4" />
+              <span className="hidden sm:inline">Extras</span>
             </TabsTrigger>
             <TabsTrigger value="meta-catalog" className="gap-2">
               <Store className="h-4 w-4" />
@@ -139,6 +145,10 @@ const Admin = () => {
 
           <TabsContent value="products">
             <ProductsPanel />
+          </TabsContent>
+
+          <TabsContent value="extras">
+            <ExtrasPanel />
           </TabsContent>
 
           <TabsContent value="meta-catalog">
