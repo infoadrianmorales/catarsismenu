@@ -304,14 +304,25 @@ const Checkout = () => {
     return phone.replace(/[\s\-\(\)]/g, '');
   };
 
+  // FEATURE [EXTRAS]: El mensaje de WhatsApp incluye extras seleccionados debajo de cada producto
   const generateWhatsAppMessage = (orderNum: string): string => {
     const itemLines = items.map(item => {
-      const lineTotal = item.precio_usd * item.quantity;
+      const extrasTotal = (item.extras || []).reduce((s, e) => s + e.precio_usd, 0);
+      const lineTotal = (item.precio_usd + extrasTotal) * item.quantity;
       const linePrices = getPrices(lineTotal);
       const priceStr = paymentCurrency === 'USD' 
         ? linePrices.formattedUSD
         : linePrices.formattedVES;
       let line = `- ${item.quantity}x ${item.nombre} — ${priceStr}`;
+      // FEATURE [EXTRAS]: listar extras seleccionados
+      if (item.extras && item.extras.length > 0) {
+        const extrasStr = item.extras.map(e => {
+          const ep = getPrices(e.precio_usd);
+          const epStr = paymentCurrency === 'USD' ? ep.formattedUSD : ep.formattedVES;
+          return `   ➕ ${e.nombre} (+${epStr})`;
+        }).join('\n');
+        line += '\n' + extrasStr;
+      }
       if (item.notes?.trim()) {
         line += `\n   📝 ${item.notes.trim()}`;
       }
