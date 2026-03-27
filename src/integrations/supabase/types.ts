@@ -140,6 +140,7 @@ export type Database = {
       order_items: {
         Row: {
           created_at: string
+          extras_snapshot: Json | null
           id: string
           line_total: number
           order_id: string
@@ -150,6 +151,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          extras_snapshot?: Json | null
           id?: string
           line_total: number
           order_id: string
@@ -160,6 +162,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          extras_snapshot?: Json | null
           id?: string
           line_total?: number
           order_id?: string
@@ -374,6 +377,57 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      product_extras: {
+        Row: {
+          activo: boolean
+          categoria: Database["public"]["Enums"]["product_category"]
+          created_at: string
+          id: string
+          nombre: string
+          orden: number
+          precio_usd: number
+          product_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          categoria: Database["public"]["Enums"]["product_category"]
+          created_at?: string
+          id?: string
+          nombre: string
+          orden?: number
+          precio_usd?: number
+          product_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          categoria?: Database["public"]["Enums"]["product_category"]
+          created_at?: string
+          id?: string
+          nombre?: string
+          orden?: number
+          precio_usd?: number
+          product_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_extras_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "best_sellers_food"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_extras_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       products: {
         Row: {
