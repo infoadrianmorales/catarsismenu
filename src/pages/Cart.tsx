@@ -175,18 +175,45 @@ const Cart = () => {
                           </div>
                           
                           <div className="text-right">
-                            <span className="font-bold text-secondary">
-                              {formatPrice(item.precio_usd * item.quantity)}
-                            </span>
-                            {formatPriceAlt(item.precio_usd * item.quantity) && (
-                              <p className="text-[11px] text-muted-foreground">
-                                {formatPriceAlt(item.precio_usd * item.quantity)}
-                              </p>
-                            )}
+                            {/* FEATURE [EXTRAS]: el total de línea incluye extras */}
+                            {(() => {
+                              const extrasTotal = (item.extras || []).reduce((s, e) => s + e.precio_usd, 0);
+                              const lineTotal = (item.precio_usd + extrasTotal) * item.quantity;
+                              return (
+                                <>
+                                  <span className="font-bold text-secondary">
+                                    {formatPrice(lineTotal)}
+                                  </span>
+                                  {formatPriceAlt(lineTotal) && (
+                                    <p className="text-[11px] text-muted-foreground">
+                                      {formatPriceAlt(lineTotal)}
+                                    </p>
+                                  )}
+                                </>
+                              );
+                            })()}
                           </div>
                         </div>
                       </div>
                     </div>
+
+                    {/* FEATURE [EXTRAS]: Sección de extras si la categoría tiene disponibles */}
+                    {categoryHasExtras(item.categoria) && (
+                      <div className="mt-2 px-1">
+                        <ProductExtras
+                          extras={getExtrasForProduct(item.id, item.categoria)}
+                          selectedExtras={item.extras || []}
+                          onToggleExtra={(extra) => {
+                            const isSelected = (item.extras || []).some(e => e.extraId === extra.id);
+                            if (isSelected) {
+                              removeExtra(item.id, extra.id);
+                            } else {
+                              addExtra(item.id, { extraId: extra.id, nombre: extra.nombre, precio_usd: extra.precio_usd });
+                            }
+                          }}
+                        />
+                      </div>
+                    )
                     
                     {/* Notes Section */}
                     <div className="mt-3 pt-3 border-t border-border/40">
