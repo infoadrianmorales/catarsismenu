@@ -28,7 +28,7 @@ interface CartDrawerProps {
 }
 
 export const CartDrawer = ({ variant = 'header' }: CartDrawerProps) => {
-  const { items, totalItems, subtotal, removeFromCart, updateQuantity, updateItemNotes } = useCart();
+  const { items, totalItems, subtotal, removeFromCart, updateQuantity, updateItemNotes, addExtra, removeExtra } = useCart();
   const [expandedNotes, setExpandedNotes] = useState<Record<string, boolean>>({});
 
   const toggleNotesExpanded = (itemId: string) => {
