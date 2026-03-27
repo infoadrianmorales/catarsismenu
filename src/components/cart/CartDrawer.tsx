@@ -38,6 +38,8 @@ export const CartDrawer = ({ variant = 'header' }: CartDrawerProps) => {
   const navigate = useNavigate();
   const [isAnimating, setIsAnimating] = useState(false);
   const [open, setOpen] = useState(false);
+  // FEATURE [EXTRAS]: cargar extras disponibles
+  const { getExtrasForProduct, categoryHasExtras } = useProductExtras();
 
   const prices = getPrices(subtotal);
 
