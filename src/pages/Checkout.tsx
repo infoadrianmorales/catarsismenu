@@ -487,15 +487,19 @@ Correo: ${formData.email.toLowerCase()}`;
         console.error('Error al actualizar mensaje WhatsApp:', (updateResult as any).error);
       }
 
-      // Create order items
-      const orderItems = items.map(item => ({
-        order_id: newOrderId,
-        product_id: item.id,
-        product_name_snapshot: item.nombre,
-        unit_price_snapshot: item.precio_usd,
-        quantity: item.quantity,
-        line_total: item.precio_usd * item.quantity,
-      }));
+      // FEATURE [EXTRAS]: order_items incluye extras_snapshot con los extras seleccionados
+      const orderItems = items.map(item => {
+        const extrasTotal = (item.extras || []).reduce((s, e) => s + e.precio_usd, 0);
+        return {
+          order_id: newOrderId,
+          product_id: item.id,
+          product_name_snapshot: item.nombre,
+          unit_price_snapshot: item.precio_usd,
+          quantity: item.quantity,
+          line_total: (item.precio_usd + extrasTotal) * item.quantity,
+          extras_snapshot: item.extras && item.extras.length > 0 ? item.extras : null,
+        };
+      });
 
       const { error: itemsError } = await supabase
         .from('order_items')
