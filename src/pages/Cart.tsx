@@ -213,7 +213,7 @@ const Cart = () => {
                           }}
                         />
                       </div>
-                    )
+                    )}
                     
                     {/* Notes Section */}
                     <div className="mt-3 pt-3 border-t border-border/40">
