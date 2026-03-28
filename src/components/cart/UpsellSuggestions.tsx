@@ -7,6 +7,7 @@ import { useProducts } from '@/hooks/useProducts';
 import { useCurrency } from '@/hooks/useCurrency';
 import { Plus, TrendingUp, GlassWater } from 'lucide-react';
 import { MenuItem } from '@/types/menu';
+import { usePublicCategories } from '@/hooks/usePublicCategories';
 
 interface UpsellSuggestionsProps {
   maxItems?: number;
@@ -17,8 +18,10 @@ export const UpsellSuggestions = ({ maxItems = 6, compact = false }: UpsellSugge
   const { items, addToCart } = useCart();
   const { bestSellers, products } = useProducts();
   const { currency, displayMode, getPrices } = useCurrency();
+  const { categories } = usePublicCategories();
 
   const cartIds = new Set(items.map(i => i.id));
+  const bebidasActive = categories.some(c => c.slug === 'bebidas');
 
   const formatPrice = (priceUsd: number) => {
     const p = getPrices(priceUsd);
@@ -33,9 +36,11 @@ export const UpsellSuggestions = ({ maxItems = 6, compact = false }: UpsellSugge
   ).slice(0, maxItems);
 
   // Bebidas exclusivamente
-  const drinks = products.filter(p =>
-    p.categoria === 'bebidas' && !cartIds.has(p.id) && p.is_orderable !== false
-  ).slice(0, maxItems);
+  const drinks = bebidasActive
+    ? products.filter(p =>
+        p.categoria === 'bebidas' && !cartIds.has(p.id) && p.is_orderable !== false
+      ).slice(0, maxItems)
+    : [];
 
   if (filteredBestSellers.length === 0 && drinks.length === 0) return null;
 
