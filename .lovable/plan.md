@@ -1,48 +1,31 @@
 
 
-## Plan: Preview del carrito al pasar el mouse (hover)
+## Plan: Ocultar sección "¿Algo para tomar?" si la categoría bebidas está desactivada
 
 ### Concepto
-Agregar un popup flotante que aparece al hacer hover sobre el botón del carrito en el header. Muestra una vista previa compacta de los productos agregados con una animación de slide desde la derecha. Al hacer click, sigue navegando a `/carrito`.
+La sección de bebidas en el carrito solo debe aparecer si la categoría `bebidas` existe y está activa (`activo = true`) en la base de datos. Si un admin desactiva la categoría, la sección desaparece automáticamente. Al reactivarla, vuelve a aparecer sin necesidad de cambios en código.
 
-### Cambio principal
+### Cambio
 
-**Archivo: `src/components/cart/CartDrawer.tsx`**
+**Archivo: `src/components/cart/UpsellSuggestions.tsx`**
 
-Para el variant `header` con items > 0:
-- Envolver el botón en un contenedor con `onMouseEnter` / `onMouseLeave`
-- Al hacer hover, mostrar un div posicionado absolute (debajo-derecha del botón) con:
-  - Lista compacta de productos (imagen miniatura + nombre + cantidad + precio)
-  - Subtotal
-  - Botón "Ver carrito completo"
-- Animación: `animate-slide-in-right` o CSS transition con `translate-x` y `opacity`
-- Al salir el mouse, ocultar con la animación inversa
-- El click del botón sigue navegando a `/carrito` (sin cambios)
-- Solo visible en desktop (`hidden` en mobile)
+- Importar `usePublicCategories` y verificar si existe una categoría con slug `bebidas` en las categorías activas
+- Condicionar la obtención y renderizado de bebidas a que la categoría esté activa:
 
-### Estructura del popup
+```text
+const { categories } = usePublicCategories();
+const bebidasActive = categories.some(c => c.slug === 'bebidas');
 
-```
-┌──────────────────────┐
-│ 🛒 Tu carrito (3)    │
-├──────────────────────┤
-│ [img] Hamburguesa x2 │
-│       $12.00         │
-│ [img] Coca-Cola   x1 │
-│       $2.00          │
-├──────────────────────┤
-│ Subtotal:    $14.00  │
-│ [Ver carrito →]      │
-└──────────────────────┘
+// Solo buscar bebidas si la categoría está activa
+const drinks = bebidasActive
+  ? products.filter(p => p.categoria === 'bebidas' && !cartIds.has(p.id) && p.is_orderable !== false).slice(0, maxItems)
+  : [];
 ```
 
-### Detalle técnico
-- Estado `hoverOpen` con `useState(false)` + timer de 200ms para evitar flicker al mover el mouse
-- Max 4 items visibles + "y X más..." si hay más
-- Posición: `absolute right-0 top-full mt-2 w-80 z-50`
-- Animación con clases de Tailwind: `transition-all duration-300 translate-x-0 opacity-100` (visible) vs `translate-x-4 opacity-0` (oculto)
-- El Sheet drawer existente no se afecta (solo se usa en sticky/floating)
+- Sin cambios en la lógica de renderizado (ya tiene `drinks.length > 0` como condición)
 
-### Sin cambios
-- CartContext, Cart.tsx, checkout, extras, schemas, rutas, FloatingCartButton
+### Resultado
+- Categoría bebidas desactivada en admin → sección "¿Algo para tomar?" no aparece
+- Categoría bebidas activada → aparece automáticamente
+- Un solo archivo modificado, sin cambios en DB ni otros componentes
 
