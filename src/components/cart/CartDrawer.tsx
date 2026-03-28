@@ -18,7 +18,7 @@ import { useCart } from '@/contexts/CartContext';
 import { useCurrency } from '@/hooks/useCurrency';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useProductExtras } from '@/hooks/useProductExtras';
 import { ProductExtras } from '@/components/cart/ProductExtras';
 import { UpsellSuggestions } from '@/components/cart/UpsellSuggestions';
