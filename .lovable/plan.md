@@ -1,26 +1,28 @@
 
 
-## Plan: Multi-select de productos en ExtrasPanel
+## Plan: Sección de bebidas en sugerencias del carrito + categoría de ejemplo
 
-### Problema actual
-El formulario de extras solo permite seleccionar UN producto específico o "toda la categoría". El usuario necesita poder asignar un extra a varios productos específicos a la vez.
+### Contexto
+No existe la categoría "bebidas" en la base de datos. Se creará con productos de ejemplo. En el carrito, debajo de "Complementa tu pedido" (best sellers mezclados con bebidas como está ahora), se agregará una segunda sección exclusiva de bebidas: "¿Algo para tomar?".
 
-### Enfoque
-Mantener el esquema actual (`product_id` como UUID único por fila). Cuando el admin seleccione N productos, se crean N filas en `product_extras` (una por producto). No se necesita migración DB.
+### Cambios
 
-### Cambios en `src/components/admin/ExtrasPanel.tsx`
+**1. Datos: crear categoría "bebidas" + productos de ejemplo**
+- Insertar categoría `bebidas` (type: DRINK, icono: GlassWater, orden: 7)
+- Insertar 4 productos de ejemplo: Coca-Cola ($2.00), Agua Mineral ($1.50), Jugo Natural ($3.00), Cerveza ($3.50)
+- Luego se editan/eliminan desde el admin
 
-1. **Cambiar `product_id: string` a `product_ids: string[]`** en el tipo `ExtraForm`
-2. **Reemplazar el Select de producto** por una lista de checkboxes con los productos de la categoría seleccionada, más una opción "Toda la categoría" que deselecciona los individuales
-3. **Al guardar (crear)**:
-   - Si `product_ids` está vacío → insertar 1 fila con `product_id: null` (toda la categoría)
-   - Si hay IDs seleccionados → insertar N filas (una por producto) con el mismo nombre, precio, categoría, orden
-4. **Al editar**: mantener el comportamiento actual (edita solo esa fila individual)
-5. **En la lista de extras**: agrupar visualmente los que comparten nombre+categoría y mostrar los nombres de productos asignados
+**2. `src/components/cart/UpsellSuggestions.tsx`**
+- Mantener la sección actual "Complementa tu pedido" con best sellers (excluyendo bebidas para no duplicar)
+- Agregar una segunda sección debajo: "¿Algo para tomar?" con icono `GlassWater`
+- Filtrar solo productos de categoría `bebidas` que no estén en el carrito
+- Mismo estilo de carrusel horizontal con tarjetas
+- Extraer el JSX del carrusel a una función interna para reutilizar sin duplicar código
+- Ambas secciones se ocultan independientemente si no tienen items
 
-### Archivos
-- `src/components/admin/ExtrasPanel.tsx` — único archivo modificado
+### Archivo modificado
+- `src/components/cart/UpsellSuggestions.tsx`
 
 ### Sin cambios
-- Base de datos, `useProductExtras`, `CartContext`, checkout, schemas, SEO
+- CartContext, Cart.tsx, CartDrawer.tsx, checkout, schemas, admin panels
 
