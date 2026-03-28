@@ -38,10 +38,21 @@ export const CartDrawer = ({ variant = 'header' }: CartDrawerProps) => {
   const navigate = useNavigate();
   const [isAnimating, setIsAnimating] = useState(false);
   const [open, setOpen] = useState(false);
+  const [hoverOpen, setHoverOpen] = useState(false);
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // FEATURE [EXTRAS]: cargar extras disponibles
   const { getExtrasForProduct, categoryHasExtras } = useProductExtras();
 
   const prices = getPrices(subtotal);
+
+  const handleMouseEnter = useCallback(() => {
+    if (hoverTimer.current) clearTimeout(hoverTimer.current);
+    setHoverOpen(true);
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    hoverTimer.current = setTimeout(() => setHoverOpen(false), 200);
+  }, []);
 
   // Animate when items change
   useEffect(() => {
