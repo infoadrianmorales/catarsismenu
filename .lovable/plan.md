@@ -1,28 +1,48 @@
 
 
-## Plan: Sección de bebidas en sugerencias del carrito + categoría de ejemplo
+## Plan: Preview del carrito al pasar el mouse (hover)
 
-### Contexto
-No existe la categoría "bebidas" en la base de datos. Se creará con productos de ejemplo. En el carrito, debajo de "Complementa tu pedido" (best sellers mezclados con bebidas como está ahora), se agregará una segunda sección exclusiva de bebidas: "¿Algo para tomar?".
+### Concepto
+Agregar un popup flotante que aparece al hacer hover sobre el botón del carrito en el header. Muestra una vista previa compacta de los productos agregados con una animación de slide desde la derecha. Al hacer click, sigue navegando a `/carrito`.
 
-### Cambios
+### Cambio principal
 
-**1. Datos: crear categoría "bebidas" + productos de ejemplo**
-- Insertar categoría `bebidas` (type: DRINK, icono: GlassWater, orden: 7)
-- Insertar 4 productos de ejemplo: Coca-Cola ($2.00), Agua Mineral ($1.50), Jugo Natural ($3.00), Cerveza ($3.50)
-- Luego se editan/eliminan desde el admin
+**Archivo: `src/components/cart/CartDrawer.tsx`**
 
-**2. `src/components/cart/UpsellSuggestions.tsx`**
-- Mantener la sección actual "Complementa tu pedido" con best sellers (excluyendo bebidas para no duplicar)
-- Agregar una segunda sección debajo: "¿Algo para tomar?" con icono `GlassWater`
-- Filtrar solo productos de categoría `bebidas` que no estén en el carrito
-- Mismo estilo de carrusel horizontal con tarjetas
-- Extraer el JSX del carrusel a una función interna para reutilizar sin duplicar código
-- Ambas secciones se ocultan independientemente si no tienen items
+Para el variant `header` con items > 0:
+- Envolver el botón en un contenedor con `onMouseEnter` / `onMouseLeave`
+- Al hacer hover, mostrar un div posicionado absolute (debajo-derecha del botón) con:
+  - Lista compacta de productos (imagen miniatura + nombre + cantidad + precio)
+  - Subtotal
+  - Botón "Ver carrito completo"
+- Animación: `animate-slide-in-right` o CSS transition con `translate-x` y `opacity`
+- Al salir el mouse, ocultar con la animación inversa
+- El click del botón sigue navegando a `/carrito` (sin cambios)
+- Solo visible en desktop (`hidden` en mobile)
 
-### Archivo modificado
-- `src/components/cart/UpsellSuggestions.tsx`
+### Estructura del popup
+
+```
+┌──────────────────────┐
+│ 🛒 Tu carrito (3)    │
+├──────────────────────┤
+│ [img] Hamburguesa x2 │
+│       $12.00         │
+│ [img] Coca-Cola   x1 │
+│       $2.00          │
+├──────────────────────┤
+│ Subtotal:    $14.00  │
+│ [Ver carrito →]      │
+└──────────────────────┘
+```
+
+### Detalle técnico
+- Estado `hoverOpen` con `useState(false)` + timer de 200ms para evitar flicker al mover el mouse
+- Max 4 items visibles + "y X más..." si hay más
+- Posición: `absolute right-0 top-full mt-2 w-80 z-50`
+- Animación con clases de Tailwind: `transition-all duration-300 translate-x-0 opacity-100` (visible) vs `translate-x-4 opacity-0` (oculto)
+- El Sheet drawer existente no se afecta (solo se usa en sticky/floating)
 
 ### Sin cambios
-- CartContext, Cart.tsx, CartDrawer.tsx, checkout, schemas, admin panels
+- CartContext, Cart.tsx, checkout, extras, schemas, rutas, FloatingCartButton
 
