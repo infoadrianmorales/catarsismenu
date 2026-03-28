@@ -36,9 +36,11 @@ export const UpsellSuggestions = ({ maxItems = 6, compact = false }: UpsellSugge
   ).slice(0, maxItems);
 
   // Bebidas exclusivamente
-  const drinks = products.filter(p =>
-    p.categoria === 'bebidas' && !cartIds.has(p.id) && p.is_orderable !== false
-  ).slice(0, maxItems);
+  const drinks = bebidasActive
+    ? products.filter(p =>
+        p.categoria === 'bebidas' && !cartIds.has(p.id) && p.is_orderable !== false
+      ).slice(0, maxItems)
+    : [];
 
   if (filteredBestSellers.length === 0 && drinks.length === 0) return null;
 
