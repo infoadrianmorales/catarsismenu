@@ -18,8 +18,10 @@ export const UpsellSuggestions = ({ maxItems = 6, compact = false }: UpsellSugge
   const { items, addToCart } = useCart();
   const { bestSellers, products } = useProducts();
   const { currency, displayMode, getPrices } = useCurrency();
+  const { categories } = usePublicCategories();
 
   const cartIds = new Set(items.map(i => i.id));
+  const bebidasActive = categories.some(c => c.slug === 'bebidas');
 
   const formatPrice = (priceUsd: number) => {
     const p = getPrices(priceUsd);
