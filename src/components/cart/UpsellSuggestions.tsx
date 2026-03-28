@@ -7,6 +7,7 @@ import { useProducts } from '@/hooks/useProducts';
 import { useCurrency } from '@/hooks/useCurrency';
 import { Plus, TrendingUp, GlassWater } from 'lucide-react';
 import { MenuItem } from '@/types/menu';
+import { usePublicCategories } from '@/hooks/usePublicCategories';
 
 interface UpsellSuggestionsProps {
   maxItems?: number;
