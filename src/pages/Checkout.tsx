@@ -488,6 +488,7 @@ Correo: ${formData.email.toLowerCase()}`;
       }
 
       // FEATURE [EXTRAS]: order_items incluye extras_snapshot con los extras seleccionados
+      // [2026-04-08] SOURCE TRACKING: Persistir source en order_items para analytics
       const orderItems = items.map(item => {
         const extrasTotal = (item.extras || []).reduce((s, e) => s + e.precio_usd, 0);
         return {
@@ -498,6 +499,7 @@ Correo: ${formData.email.toLowerCase()}`;
           quantity: item.quantity,
           line_total: (item.precio_usd + extrasTotal) * item.quantity,
           extras_snapshot: item.extras && item.extras.length > 0 ? JSON.parse(JSON.stringify(item.extras)) : null,
+          source: item.source || 'menu',
         };
       });
 
