@@ -17,6 +17,8 @@ import { Footer } from '@/components/Footer';
 import { z } from 'zod';
 import { trackInitiateCheckout, trackPurchase, trackContact, trackAddPaymentInfo } from '@/lib/metaPixel';
 import { setSupabaseSessionHeader } from '@/lib/supabaseHeaders';
+// [2026-04-08] Sugerencias de último momento en checkout
+import { UpsellSuggestions } from '@/components/cart/UpsellSuggestions';
 
 // SEGURIDAD [C3]: session_id se genera una vez por sesión de checkout.
 // Se usa para vincular pedidos, items y pending_checkouts al mismo cliente.
