@@ -708,6 +708,28 @@ export type Database = {
         }[]
       }
       get_client_session_id: { Args: never; Returns: string }
+      get_page_views_summary: {
+        Args: { p_end: string; p_granularity?: string; p_start: string }
+        Returns: {
+          period: string
+          unique_visitors: number
+          views: number
+        }[]
+      }
+      get_page_views_totals: {
+        Args: { p_end: string; p_start: string }
+        Returns: {
+          total_views: number
+          unique_visitors: number
+        }[]
+      }
+      get_popular_pages: {
+        Args: { p_end: string; p_limit?: number; p_start: string }
+        Returns: {
+          path: string
+          views: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

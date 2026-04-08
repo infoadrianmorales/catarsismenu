@@ -1,6 +1,10 @@
-import { useState, useEffect, useMemo } from 'react';
+// [2026-04-08] Refactor: las analíticas de visitas ahora usan funciones SQL
+// (get_page_views_summary, get_popular_pages, get_page_views_totals) para agregar
+// datos directamente en PostgreSQL. Esto elimina el límite de 1,000 filas del SDK
+// y garantiza conteos exactos y verídicos.
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { startOfDay, endOfDay, format, eachDayOfInterval, eachHourOfInterval } from 'date-fns';
+import { startOfDay, endOfDay } from 'date-fns';
 
 export interface PageViewDataPoint {
   date: string;
@@ -13,18 +17,14 @@ export interface PopularPage {
   views: number;
 }
 
-interface RawPageView {
-  session_id: string;
-  path: string;
-  created_at: string;
-}
-
 export const usePageViews = (
   startDate: Date,
   endDate: Date,
   granularity: 'hourly' | 'daily' = 'daily'
 ) => {
-  const [pageViews, setPageViews] = useState<RawPageView[]>([]);
+  const [series, setSeries] = useState<PageViewDataPoint[]>([]);
+  const [summary, setSummary] = useState({ totalViews: 0, uniqueVisitors: 0 });
+  const [popularPages, setPopularPages] = useState<PopularPage[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -33,16 +33,51 @@ export const usePageViews = (
       setLoading(true);
       setError(null);
 
-      try {
-        const { data, error: fetchError } = await (supabase as any)
-          .from('page_views')
-          .select('session_id, path, created_at')
-          .gte('created_at', startOfDay(startDate).toISOString())
-          .lte('created_at', endOfDay(endDate).toISOString())
-          .order('created_at', { ascending: true });
+      const p_start = startOfDay(startDate).toISOString();
+      const p_end = endOfDay(endDate).toISOString();
 
-        if (fetchError) throw fetchError;
-        setPageViews(data || []);
+      try {
+        const [seriesRes, totalsRes, popularRes] = await Promise.all([
+          (supabase as any).rpc('get_page_views_summary', {
+            p_start,
+            p_end,
+            p_granularity: granularity,
+          }),
+          (supabase as any).rpc('get_page_views_totals', {
+            p_start,
+            p_end,
+          }),
+          (supabase as any).rpc('get_popular_pages', {
+            p_start,
+            p_end,
+            p_limit: 5,
+          }),
+        ]);
+
+        if (seriesRes.error) throw seriesRes.error;
+        if (totalsRes.error) throw totalsRes.error;
+        if (popularRes.error) throw popularRes.error;
+
+        setSeries(
+          (seriesRes.data || []).map((row: any) => ({
+            date: row.period,
+            views: Number(row.views),
+            uniqueVisitors: Number(row.unique_visitors),
+          }))
+        );
+
+        const totals = totalsRes.data?.[0];
+        setSummary({
+          totalViews: Number(totals?.total_views ?? 0),
+          uniqueVisitors: Number(totals?.unique_visitors ?? 0),
+        });
+
+        setPopularPages(
+          (popularRes.data || []).map((row: any) => ({
+            path: row.path,
+            views: Number(row.views),
+          }))
+        );
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Error fetching page views');
       } finally {
@@ -51,61 +86,7 @@ export const usePageViews = (
     };
 
     fetchData();
-  }, [startDate, endDate]);
-
-  // Time series data
-  const series = useMemo((): PageViewDataPoint[] => {
-    if (granularity === 'hourly') {
-      const hours = eachHourOfInterval({ start: startOfDay(startDate), end: endOfDay(endDate) });
-      return hours.map(hour => {
-        const hourStr = format(hour, "yyyy-MM-dd'T'HH");
-        const hourViews = pageViews.filter(pv =>
-          format(new Date(pv.created_at), "yyyy-MM-dd'T'HH") === hourStr
-        );
-        const uniqueSessions = new Set(hourViews.map(pv => pv.session_id));
-        return {
-          date: hour.toISOString(),
-          views: hourViews.length,
-          uniqueVisitors: uniqueSessions.size,
-        };
-      });
-    } else {
-      const days = eachDayOfInterval({ start: startDate, end: endDate });
-      return days.map(day => {
-        const dayStr = format(day, 'yyyy-MM-dd');
-        const dayViews = pageViews.filter(pv =>
-          format(new Date(pv.created_at), 'yyyy-MM-dd') === dayStr
-        );
-        const uniqueSessions = new Set(dayViews.map(pv => pv.session_id));
-        return {
-          date: day.toISOString(),
-          views: dayViews.length,
-          uniqueVisitors: uniqueSessions.size,
-        };
-      });
-    }
-  }, [pageViews, startDate, endDate, granularity]);
-
-  // Summary
-  const summary = useMemo(() => {
-    const uniqueSessions = new Set(pageViews.map(pv => pv.session_id));
-    return {
-      totalViews: pageViews.length,
-      uniqueVisitors: uniqueSessions.size,
-    };
-  }, [pageViews]);
-
-  // Popular pages
-  const popularPages = useMemo((): PopularPage[] => {
-    const pathMap = new Map<string, number>();
-    pageViews.forEach(pv => {
-      pathMap.set(pv.path, (pathMap.get(pv.path) || 0) + 1);
-    });
-    return Array.from(pathMap.entries())
-      .map(([path, views]) => ({ path, views }))
-      .sort((a, b) => b.views - a.views)
-      .slice(0, 5);
-  }, [pageViews]);
+  }, [startDate, endDate, granularity]);
 
   return { series, summary, popularPages, loading, error };
 };
