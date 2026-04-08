@@ -1,110 +1,62 @@
 
 
-## Plan: Corregir límite de 1000 visitas en analíticas
+## Plan: Source tracking — registrar origen de cada producto en el carrito
 
-### Problema confirmado
-- La DB tiene **24,945 page views** totales
-- Días como abril 3-5 tienen más de 1,200 visitas cada uno
-- El hook `usePageViews.ts` usa `.select()` sin paginación → Supabase retorna máximo 1,000 filas
-- Resultado: datos truncados e inexactos en el dashboard
+### Resumen
+Agregar un campo `source` a cada item del carrito para rastrear desde dónde fue agregado (best seller, menú, sugerencia, búsqueda). El valor se persiste en `order_items.source` al completar el pedido.
 
-### Solución
-Crear una **función SQL en la base de datos** que haga la agregación (GROUP BY) directamente en PostgreSQL y devuelva solo los datos resumidos (máx ~30 filas para un mes). Esto elimina el límite de 1,000 y es mucho más eficiente.
-
-### Cambios
-
-**1. Migración SQL — crear función `get_page_views_summary`**
-
+### 1. Migración SQL
+Agregar columna `source` a `order_items`:
 ```sql
-CREATE OR REPLACE FUNCTION public.get_page_views_summary(
-  p_start timestamptz,
-  p_end timestamptz,
-  p_granularity text DEFAULT 'daily'
-)
-RETURNS TABLE(
-  period text,
-  views bigint,
-  unique_visitors bigint
-)
-LANGUAGE sql
-STABLE SECURITY DEFINER
-SET search_path = 'public'
-AS $$
-  SELECT
-    CASE
-      WHEN p_granularity = 'hourly'
-        THEN to_char(date_trunc('hour', created_at), 'YYYY-MM-DD"T"HH24')
-      ELSE to_char(date_trunc('day', created_at), 'YYYY-MM-DD')
-    END AS period,
-    count(*)::bigint AS views,
-    count(DISTINCT session_id)::bigint AS unique_visitors
-  FROM page_views
-  WHERE created_at >= p_start AND created_at <= p_end
-  GROUP BY period
-  ORDER BY period
-$$;
+ALTER TABLE order_items ADD COLUMN IF NOT EXISTS source text DEFAULT 'menu';
+COMMENT ON COLUMN order_items.source IS 'Origen desde donde el usuario agregó el producto. Agregado 2026-04-08.';
 ```
 
-**2. Función SQL adicional — `get_popular_pages`**
+### 2. CartContext (`src/contexts/CartContext.tsx`)
+- Crear tipo `CartItemSource = 'menu' | 'best_seller' | 'suggestion' | 'search' | 'extras'`
+- Agregar `source: CartItemSource` a `CartItem`
+- Modificar `addToCart` para aceptar `source` como segundo parámetro (default `'menu'`)
+- Al crear nuevo item: asignar el source recibido
+- Al incrementar item existente: NO cambiar el source original
+- Actualizar la firma en `CartContextType`
 
-```sql
-CREATE OR REPLACE FUNCTION public.get_popular_pages(
-  p_start timestamptz,
-  p_end timestamptz,
-  p_limit int DEFAULT 5
-)
-RETURNS TABLE(path text, views bigint)
-LANGUAGE sql
-STABLE SECURITY DEFINER
-SET search_path = 'public'
-AS $$
-  SELECT path, count(*)::bigint AS views
-  FROM page_views
-  WHERE created_at >= p_start AND created_at <= p_end
-  GROUP BY path
-  ORDER BY views DESC
-  LIMIT p_limit
-$$;
-```
+### 3. Componentes que llaman `addToCart` — pasar source correcto
 
-**3. Función SQL — `get_page_views_totals` (resumen global)**
+| Archivo | Contexto | Source |
+|---|---|---|
+| `AddToCartButton.tsx` | Recibe `source` como prop, default `'menu'` | Depende del padre |
+| `MenuCard.tsx` | Menú general | `'menu'` |
+| `CompactProductCard.tsx` | Usado en carouseles (best sellers y menú) | Recibe prop `source`, default `'menu'` |
+| `ProductPage.tsx` | Página de detalle de producto | `'product_detail'` (se mapea a `'menu'`) |
+| `UpsellSuggestions.tsx` | Sugerencias del carrito | `'suggestion'` |
+| `FeaturedProducts.tsx` | Productos destacados en home | `'best_seller'` |
+| `MenuGrid.tsx` | Best sellers tab → `'best_seller'`; otras tabs → `'menu'` |
+| `ProductCarousel.tsx` | Recibe prop `source` del padre |
 
-```sql
-CREATE OR REPLACE FUNCTION public.get_page_views_totals(
-  p_start timestamptz,
-  p_end timestamptz
-)
-RETURNS TABLE(total_views bigint, unique_visitors bigint)
-LANGUAGE sql
-STABLE SECURITY DEFINER
-SET search_path = 'public'
-AS $$
-  SELECT
-    count(*)::bigint AS total_views,
-    count(DISTINCT session_id)::bigint AS unique_visitors
-  FROM page_views
-  WHERE created_at >= p_start AND created_at <= p_end
-$$;
-```
+**Propagación de source:**
+- `MenuCard` y `CompactProductCard` reciben prop `source?` y lo pasan a `AddToCartButton`
+- `AddToCartButton` pasa el `source` a `addToCart(product, source)`
+- Componentes padres (MenuGrid, FeaturedProducts, ProductCarousel) pasan el source correcto
 
-**4. Actualizar `src/hooks/usePageViews.ts`**
+### 4. Checkout (`src/pages/Checkout.tsx`)
+En el INSERT a `order_items` (línea ~491-502), agregar `source: item.source || 'menu'` al objeto de cada item.
 
-Reemplazar la consulta que trae filas crudas por llamadas RPC a las funciones:
+### 5. Archivos modificados (resumen)
 
-- `supabase.rpc('get_page_views_summary', { p_start, p_end, p_granularity })` → serie temporal
-- `supabase.rpc('get_page_views_totals', { p_start, p_end })` → resumen
-- `supabase.rpc('get_popular_pages', { p_start, p_end })` → páginas populares
+1. **Migración SQL** — nueva columna `order_items.source`
+2. **`src/contexts/CartContext.tsx`** — tipo `CartItemSource`, campo `source` en `CartItem`, parámetro en `addToCart`
+3. **`src/components/cart/AddToCartButton.tsx`** — acepta prop `source`, lo pasa a `addToCart`
+4. **`src/components/MenuCard.tsx`** — acepta prop `source`, lo pasa a `AddToCartButton`
+5. **`src/components/CompactProductCard.tsx`** — acepta prop `source`, lo pasa a `AddToCartButton`
+6. **`src/components/cart/UpsellSuggestions.tsx`** — pasa `source: 'suggestion'`
+7. **`src/components/FeaturedProducts.tsx`** — pasa `source: 'best_seller'`
+8. **`src/components/MenuGrid.tsx`** — pasa `'best_seller'` en tab best sellers, `'menu'` en el resto
+9. **`src/components/ProductCarousel.tsx`** — acepta prop `source`, lo pasa a `CompactProductCard`
+10. **`src/pages/ProductPage.tsx`** — pasa `source: 'menu'`
+11. **`src/pages/Checkout.tsx`** — incluye `source` en el INSERT a `order_items`
+12. **`src/components/CategorySection.tsx`** — pasa `source: 'menu'`
+13. **`src/components/FilteredProductsGrid.tsx`** — pasa `source: 'menu'`
+14. **`src/pages/CategoryPage.tsx`** — pasa `source: 'menu'`
 
-Eliminar todo el procesamiento con `useMemo` (filtrado, conteo, Set) ya que la DB lo hace.
-
-### Resultado
-- Visitas mostradas correctas sin límite de 1,000
-- Rendimiento mejorado (la DB devuelve ~30 filas en vez de miles)
-- Datos verídicos: conteos exactos desde PostgreSQL
-
-### Archivo modificado
-- `src/hooks/usePageViews.ts`
-
-### Comentario en código
-Se agregará comentario con fecha `[2026-04-08]` documentando el cambio.
+Todos los archivos modificados incluirán comentario con fecha `[2026-04-08]`.
 
