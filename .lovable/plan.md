@@ -1,68 +1,59 @@
 
 
-## Plan: Sugerencias contextuales en el carrito
+## Plan: Dashboard detallado de ventas y comportamiento por origen
 
 ### Resumen
-Crear un hook `useCartSuggestions` que analiza el contenido del carrito para generar sugerencias inteligentes, reemplazar la lógica interna de `UpsellSuggestions.tsx`, y agregar sugerencias en el checkout.
+Crear 4 RPCs SQL para agregar datos server-side, un hook para consumirlas, y un componente dashboard que se integra debajo de las secciones existentes del AnalyticsPanel. No se modifica nada existente.
 
-### Archivos a crear
+### Paso 1: Migraciones SQL (4 RPCs)
 
-**1. `src/hooks/useCartSuggestions.ts`** — Hook de sugerencias contextuales
+Una sola migración con las 4 funciones:
 
-- Recibe `maxItems` como parámetro
-- Usa `useCart()`, `useProducts()`, `usePublicCategories()` como fuentes de datos
-- Constante `EXCLUDED_CATEGORIES = ['cocteleria', 'postres']`
-- Analiza el carrito: `categoriesInCart`, `hasFoodItems`, `hasBeverages`
-- Genera dos pools:
-  - **Pool A (complementos)**: productos de categorías de comida que NO están en el carrito, excluyendo bebidas y categorías excluidas. Best sellers van primero.
-  - **Pool B (bebidas)**: solo si la categoría `bebidas` está activa en la DB
-- Lógica de mezcla:
-  - Carrito con comida + bebidas inactiva → 100% Pool A
-  - Carrito con comida + bebidas activa + sin bebidas en carrito → 60% Pool B + 40% Pool A
-  - Carrito con comida + ya tiene bebidas → 100% Pool A
-  - Carrito solo bebidas → 100% Pool A (best sellers de comida)
-  - Carrito vacío → arrays vacíos
-- Shuffle con seed diario (`Date.now() / 86400000 | 0`) para rotación consistente por día
-- Retorna `{ foodSuggestions, beverageSuggestions, isLoading }`
+1. **`get_product_sales_history(date_from, date_to, category_filter)`** — historial de ventas por producto con cantidad, ingresos, última venta, categoría
+2. **`get_sales_by_category(date_from, date_to)`** — ventas agrupadas por categoría
+3. **`get_sales_by_source(date_from, date_to)`** — ventas agrupadas por source con porcentaje
+4. **`get_extras_analytics(date_from, date_to)`** — extras vendidos desde extras_snapshot JSONB
 
-### Archivos a modificar
+Todas usan `SECURITY DEFINER`, `search_path = ''`, JOINs contra `orders` y `order_items`, excluyendo status `CANCELED`. La DB tiene 350 order_items, todos con source `menu` (esperado, el tracking se activó hoy).
 
-**2. `src/components/cart/UpsellSuggestions.tsx`**
+### Paso 2: Hook `src/hooks/useProductSalesAnalytics.ts`
 
-- Reemplazar lógica interna de filtrado por `useCartSuggestions(maxItems)`
-- Mantener diseño visual idéntico: cards, scroll horizontal, colores, iconos
-- Sección comida usa `foodSuggestions`, sección bebidas usa `beverageSuggestions`
-- Mantener `addToCart(product, 'suggestion')` para source tracking
-- Si ambos arrays están vacíos → no renderizar nada
-- Comentarios `[2026-04-08]` explicando el refactor
+- Recibe `dateFrom`, `dateTo`, `categoryFilter` (opcional)
+- Llama las 4 RPCs en paralelo con `Promise.all`
+- Re-ejecuta cuando cambian los filtros
+- Retorna `{ productHistory, salesByCategory, salesBySource, extrasAnalytics, isLoading, error }`
 
-**3. `src/pages/Checkout.tsx`**
+### Paso 3: Componente `src/components/admin/ProductSalesDashboard.tsx`
 
-- Importar `UpsellSuggestions`
-- Renderizar `<UpsellSuggestions maxItems={3} compact />` antes del botón de confirmar pedido
-- Al agregar producto desde checkout, el resumen se actualiza automáticamente (ya es reactivo vía CartContext)
+4 secciones con Tabs de shadcn/ui:
 
-### Archivos que NO se modifican
-- `CartDrawer.tsx` — ya monta `<UpsellSuggestions maxItems={3} compact />`, sigue igual
-- `Cart.tsx` — ya monta `<UpsellSuggestions maxItems={6} />`, sigue igual
-- `CartContext.tsx` — sin cambios, ya tiene source tracking
-- Sistema de extras — sin cambios
+**Tab 1 — Historial de Productos**: Tabla ordenable (click en headers) con búsqueda por nombre y filtro de categoría. Columnas: Producto, Categoría, Cantidad, Ingresos, Pedidos, Última venta. Totales al pie.
 
-### Detalle técnico: Shuffle determinístico
+**Tab 2 — Ventas por Categoría**: BarChart horizontal (Recharts) + tabla resumen con % del total.
 
-```typescript
-const seededShuffle = <T,>(arr: T[], seed: number): T[] => {
-  const copy = [...arr];
-  let s = seed;
-  for (let i = copy.length - 1; i > 0; i--) {
-    s = (s * 16807 + 0) % 2147483647;
-    const j = s % (i + 1);
-    [copy[i], copy[j]] = [copy[j], copy[i]];
-  }
-  return copy;
-};
-```
+**Tab 3 — Origen de Compras (Source)**: PieChart (Recharts) con colores de marca asignados. Labels legibles (menu→"Menú directo", best_seller→"Best Sellers", etc.). Banner informativo sobre la fecha de activación del tracking.
+
+**Tab 4 — Extras Vendidos**: Lista ranking o mensaje informativo si no hay datos.
+
+Colores de marca: Ocean Blue `#04308C`, Raspberry `#DB1F51`, Xanthous `#F2B60F`, Light Sea Green `#14B2AA`, violeta `#8B5CF6`.
+
+### Paso 4: Integrar en `src/components/admin/AnalyticsPanel.tsx`
+
+- Importar `ProductSalesDashboard`
+- Renderizar al final del componente (después de la grid de 3 columnas, línea ~500)
+- Pasar `startDate={start}` y `endDate={end}` para sincronizar filtros
+- Separador visual con título "Detalle de Ventas y Comportamiento"
+- Sin tocar ninguna sección existente
+
+### Archivos
+
+| Acción | Archivo |
+|--------|---------|
+| Crear | `supabase/migrations/add_sales_analytics_rpcs.sql` |
+| Crear | `src/hooks/useProductSalesAnalytics.ts` |
+| Crear | `src/components/admin/ProductSalesDashboard.tsx` |
+| Modificar | `src/components/admin/AnalyticsPanel.tsx` (solo agregar import + render al final) |
 
 ### Verificación
-Se verificará build con `npx tsc --noEmit` y se reportará la lista completa de archivos, comportamiento contextual, exclusiones, y puntos de montaje.
+Build con `npx tsc --noEmit`, confirmar que las RPCs devuelven datos, y que las secciones existentes del AnalyticsPanel no se alteran.
 
