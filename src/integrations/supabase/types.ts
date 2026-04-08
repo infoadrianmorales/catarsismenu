@@ -711,6 +711,15 @@ export type Database = {
         }[]
       }
       get_client_session_id: { Args: never; Returns: string }
+      get_extras_analytics: {
+        Args: { date_from?: string; date_to?: string }
+        Returns: {
+          extra_name: string
+          times_added: number
+          total_quantity: number
+          total_revenue: number
+        }[]
+      }
       get_page_views_summary: {
         Args: { p_end: string; p_granularity?: string; p_start: string }
         Returns: {
@@ -731,6 +740,37 @@ export type Database = {
         Returns: {
           path: string
           views: number
+        }[]
+      }
+      get_product_sales_history: {
+        Args: { category_filter?: string; date_from?: string; date_to?: string }
+        Returns: {
+          category: string
+          last_sold_at: string
+          order_count: number
+          product_id: string
+          product_name: string
+          total_quantity: number
+          total_revenue: number
+        }[]
+      }
+      get_sales_by_category: {
+        Args: { date_from?: string; date_to?: string }
+        Returns: {
+          category: string
+          product_count: number
+          total_quantity: number
+          total_revenue: number
+        }[]
+      }
+      get_sales_by_source: {
+        Args: { date_from?: string; date_to?: string }
+        Returns: {
+          order_count: number
+          percentage: number
+          source: string
+          total_quantity: number
+          total_revenue: number
         }[]
       }
       has_role: {
