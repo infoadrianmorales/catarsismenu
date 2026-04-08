@@ -1,5 +1,6 @@
 // FEATURE [UPSELL]: Componente de sugerencias de compra para aumentar el ticket promedio.
 // Muestra best sellers (sin bebidas) + sección dedicada de bebidas.
+// [2026-04-08] SOURCE TRACKING: Pasa source='suggestion' a addToCart.
 
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/contexts/CartContext';
@@ -74,7 +75,7 @@ export const UpsellSuggestions = ({ maxItems = 6, compact = false }: UpsellSugge
                 variant="ghost"
                 size="icon"
                 className="h-6 w-6 rounded-full bg-secondary/10 hover:bg-secondary/20 text-secondary"
-                onClick={() => addToCart(product)}
+                onClick={() => addToCart(product, 'suggestion')}
                 aria-label={`Agregar ${product.nombre} al carrito`}
               >
                 <Plus className="h-3.5 w-3.5" />

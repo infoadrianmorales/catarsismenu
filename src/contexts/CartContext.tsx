@@ -10,6 +10,12 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { MenuItem } from '@/types/menu';
 
+// [2026-04-08] SOURCE TRACKING: Registra de dónde se agrega cada producto al carrito.
+// Valores posibles: 'menu' | 'best_seller' | 'suggestion' | 'search' | 'extras'
+// Se persiste en order_items.source al completar el pedido.
+// Para agregar un origen nuevo: añadir al tipo CartItemSource.
+export type CartItemSource = 'menu' | 'best_seller' | 'suggestion' | 'search' | 'extras';
+
 // FEATURE [EXTRAS]: Tipo para extras seleccionados en el carrito
 export interface CartItemExtra {
   extraId: string;
@@ -27,11 +33,14 @@ export interface CartItem {
   notes?: string;
   // FEATURE [EXTRAS]: extras seleccionados para este producto
   extras?: CartItemExtra[];
+  // [2026-04-08] SOURCE TRACKING: origen de la primera adición al carrito
+  source: CartItemSource;
 }
 
 interface CartContextType {
   items: CartItem[];
-  addToCart: (product: MenuItem) => boolean;
+  // [2026-04-08] SOURCE TRACKING: segundo parámetro opcional con default 'menu'
+  addToCart: (product: MenuItem, source?: CartItemSource) => boolean;
   removeFromCart: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   updateItemNotes: (productId: string, notes: string) => void;
@@ -94,12 +103,17 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return true;
   }, []);
 
-  const addToCart = useCallback((product: MenuItem): boolean => {
+  // [2026-04-08] SOURCE TRACKING: Si no se especifica source, asume 'menu'.
+  // El source registra la PRIMERA interacción. Si el usuario encontró
+  // el producto en best sellers y luego incrementa cantidad desde el carrito,
+  // el source sigue siendo 'best_seller'.
+  const addToCart = useCallback((product: MenuItem, source: CartItemSource = 'menu'): boolean => {
     if (!isProductOrderable(product)) return false;
 
     setItems(prev => {
       const existing = prev.find(item => item.id === product.id);
       if (existing) {
+        // NO cambiar el source original al incrementar cantidad
         return prev.map(item =>
           item.id === product.id
             ? { ...item, quantity: item.quantity + 1 }
@@ -113,6 +127,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         imagen: product.imagen,
         quantity: 1,
         categoria: product.categoria,
+        source,
       }];
     });
     return true;

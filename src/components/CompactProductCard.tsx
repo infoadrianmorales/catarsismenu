@@ -1,3 +1,4 @@
+// [2026-04-08] SOURCE TRACKING: Acepta prop `source` y lo pasa a AddToCartButton.
 import { memo } from 'react';
 import { Link } from 'react-router-dom';
 import { MenuItem, Currency } from '@/types/menu';
@@ -7,6 +8,7 @@ import { AddToCartButton } from '@/components/cart/AddToCartButton';
 import { OptimizedImage } from '@/components/OptimizedImage';
 import { useViewMode } from '@/contexts/ViewModeContext';
 import { ExpandableText } from '@/components/ExpandableText';
+import { CartItemSource } from '@/contexts/CartContext';
 
 interface CompactProductCardProps {
   item: MenuItem;
@@ -14,9 +16,10 @@ interface CompactProductCardProps {
   displayMode?: PriceDisplayMode;
   /** Force immediate image loading (bypasses lazy loading) */
   forceLoad?: boolean;
+  source?: CartItemSource;
 }
 
-export const CompactProductCard = memo(({ item, currency, displayMode = 'ambas', forceLoad = false }: CompactProductCardProps) => {
+export const CompactProductCard = memo(({ item, currency, displayMode = 'ambas', forceLoad = false, source = 'menu' }: CompactProductCardProps) => {
   const { isLocalMode } = useViewMode();
   const { getPrices } = useCurrency();
   const prices = getPrices(item.precio_usd);
@@ -75,7 +78,7 @@ export const CompactProductCard = memo(({ item, currency, displayMode = 'ambas',
           
           <div className="mt-auto flex items-end justify-between gap-1 pt-1">
             {renderPrice()}
-            {!isLocalMode && <AddToCartButton product={item} variant="icon" />}
+            {!isLocalMode && <AddToCartButton product={item} variant="icon" source={source} />}
           </div>
         </div>
       </CardContent>
