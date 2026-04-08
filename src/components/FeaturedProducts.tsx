@@ -1,3 +1,4 @@
+// [2026-04-08] SOURCE TRACKING: Pasa source='best_seller' a MenuCard.
 import { MenuItem, Currency } from '@/types/menu';
 import { MenuCard } from '@/components/MenuCard';
 import { PriceDisplayMode } from '@/hooks/useCurrency';
@@ -35,6 +36,7 @@ export const FeaturedProducts = ({ items, currency, displayMode = 'ambas' }: Fea
               item={item}
               currency={currency}
               displayMode={displayMode}
+              source="best_seller"
             />
           ))}
         </div>

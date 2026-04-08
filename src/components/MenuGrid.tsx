@@ -1,3 +1,4 @@
+// [2026-04-08] SOURCE TRACKING: best-seller tab pasa source='best_seller', resto pasa 'menu'.
 import { MenuItem, Currency, MenuCategory } from '@/types/menu';
 import { MenuCard } from './MenuCard';
 import { PriceDisplayMode } from '@/hooks/useCurrency';
@@ -78,6 +79,7 @@ export const MenuGrid = ({ items, currency, selectedCategory, displayMode = 'amb
               item={item} 
               currency={currency}
               displayMode={displayMode}
+              source="best_seller"
             />
           ))}
         </div>

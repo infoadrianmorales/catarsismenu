@@ -1,17 +1,20 @@
+// [2026-04-08] SOURCE TRACKING: Acepta prop `source` y lo pasa a AddToCartButton.
 import { MenuItem, Currency } from '@/types/menu';
 import { Card, CardContent } from '@/components/ui/card';
 import { useCurrency, PriceDisplayMode } from '@/hooks/useCurrency';
 import { AddToCartButton } from '@/components/cart/AddToCartButton';
 import { useViewMode } from '@/contexts/ViewModeContext';
 import { ExpandableText } from '@/components/ExpandableText';
+import { CartItemSource } from '@/contexts/CartContext';
 
 interface MenuCardProps {
   item: MenuItem;
   currency: Currency;
   displayMode?: PriceDisplayMode;
+  source?: CartItemSource;
 }
 
-export const MenuCard = ({ item, currency, displayMode = 'ambas' }: MenuCardProps) => {
+export const MenuCard = ({ item, currency, displayMode = 'ambas', source = 'menu' }: MenuCardProps) => {
   const { isLocalMode } = useViewMode();
   const { getPrices } = useCurrency();
   const prices = getPrices(item.precio_usd);
@@ -88,7 +91,7 @@ export const MenuCard = ({ item, currency, displayMode = 'ambas' }: MenuCardProp
           {/* Prices and Add to Cart */}
           <div className="flex items-center justify-between gap-2">
             {renderPrices()}
-            {!isLocalMode && <AddToCartButton product={item} variant="compact" />}
+            {!isLocalMode && <AddToCartButton product={item} variant="compact" source={source} />}
           </div>
         </div>
       </CardContent>

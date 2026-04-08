@@ -1,13 +1,16 @@
+// [2026-04-08] SOURCE TRACKING: Acepta prop `source` y lo pasa a CompactProductCard.
 import { useState, useRef, useEffect } from 'react';
 import { MenuItem, Currency } from '@/types/menu';
 import { PriceDisplayMode } from '@/hooks/useCurrency';
 import { CompactProductCard } from './CompactProductCard';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { CartItemSource } from '@/contexts/CartContext';
 
 interface ProductCarouselProps {
   items: MenuItem[];
   currency: Currency;
   displayMode?: PriceDisplayMode;
+  source?: CartItemSource;
 }
 
 // Hook to detect when the carousel section enters viewport
@@ -50,7 +53,7 @@ const useCarouselVisibility = () => {
   return { ref, isVisible };
 };
 
-export const ProductCarousel = ({ items, currency, displayMode = 'ambas' }: ProductCarouselProps) => {
+export const ProductCarousel = ({ items, currency, displayMode = 'ambas', source = 'menu' }: ProductCarouselProps) => {
   const { ref, isVisible } = useCarouselVisibility();
 
   return (
@@ -67,6 +70,7 @@ export const ProductCarousel = ({ items, currency, displayMode = 'ambas' }: Prod
                 currency={currency} 
                 displayMode={displayMode}
                 forceLoad={isVisible}
+                source={source}
               />
             </div>
           ))}

@@ -1,6 +1,9 @@
+// [2026-04-08] SOURCE TRACKING: Acepta prop `source` para registrar
+// el origen de la adición al carrito. Se pasa a addToCart del CartContext.
 import { Plus, Minus, ShoppingCart, Ban } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/contexts/CartContext';
+import { CartItemSource } from '@/contexts/CartContext';
 import { MenuItem } from '@/types/menu';
 import { toast } from 'sonner';
 import { trackAddToCart, trackRemoveFromCart } from '@/lib/metaPixel';
@@ -8,9 +11,10 @@ import { trackAddToCart, trackRemoveFromCart } from '@/lib/metaPixel';
 interface AddToCartButtonProps {
   product: MenuItem;
   variant?: 'default' | 'compact' | 'icon';
+  source?: CartItemSource;
 }
 
-export const AddToCartButton = ({ product, variant = 'default' }: AddToCartButtonProps) => {
+export const AddToCartButton = ({ product, variant = 'default', source = 'menu' }: AddToCartButtonProps) => {
   const { addToCart, removeFromCart, getItemQuantity, updateQuantity, isProductOrderable } = useCart();
   
   const quantity = getItemQuantity(product.id);
@@ -27,7 +31,7 @@ export const AddToCartButton = ({ product, variant = 'default' }: AddToCartButto
 
   const handleAdd = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const success = addToCart(product);
+    const success = addToCart(product, source);
     if (success) {
       toast.success(`${product.nombre} agregado al carrito`);
       trackAddToCart({ id: product.id, nombre: product.nombre, precio_usd: product.precio_usd }, 1);
