@@ -1,62 +1,68 @@
 
 
-## Plan: Source tracking — registrar origen de cada producto en el carrito
+## Plan: Sugerencias contextuales en el carrito
 
 ### Resumen
-Agregar un campo `source` a cada item del carrito para rastrear desde dónde fue agregado (best seller, menú, sugerencia, búsqueda). El valor se persiste en `order_items.source` al completar el pedido.
+Crear un hook `useCartSuggestions` que analiza el contenido del carrito para generar sugerencias inteligentes, reemplazar la lógica interna de `UpsellSuggestions.tsx`, y agregar sugerencias en el checkout.
 
-### 1. Migración SQL
-Agregar columna `source` a `order_items`:
-```sql
-ALTER TABLE order_items ADD COLUMN IF NOT EXISTS source text DEFAULT 'menu';
-COMMENT ON COLUMN order_items.source IS 'Origen desde donde el usuario agregó el producto. Agregado 2026-04-08.';
+### Archivos a crear
+
+**1. `src/hooks/useCartSuggestions.ts`** — Hook de sugerencias contextuales
+
+- Recibe `maxItems` como parámetro
+- Usa `useCart()`, `useProducts()`, `usePublicCategories()` como fuentes de datos
+- Constante `EXCLUDED_CATEGORIES = ['cocteleria', 'postres']`
+- Analiza el carrito: `categoriesInCart`, `hasFoodItems`, `hasBeverages`
+- Genera dos pools:
+  - **Pool A (complementos)**: productos de categorías de comida que NO están en el carrito, excluyendo bebidas y categorías excluidas. Best sellers van primero.
+  - **Pool B (bebidas)**: solo si la categoría `bebidas` está activa en la DB
+- Lógica de mezcla:
+  - Carrito con comida + bebidas inactiva → 100% Pool A
+  - Carrito con comida + bebidas activa + sin bebidas en carrito → 60% Pool B + 40% Pool A
+  - Carrito con comida + ya tiene bebidas → 100% Pool A
+  - Carrito solo bebidas → 100% Pool A (best sellers de comida)
+  - Carrito vacío → arrays vacíos
+- Shuffle con seed diario (`Date.now() / 86400000 | 0`) para rotación consistente por día
+- Retorna `{ foodSuggestions, beverageSuggestions, isLoading }`
+
+### Archivos a modificar
+
+**2. `src/components/cart/UpsellSuggestions.tsx`**
+
+- Reemplazar lógica interna de filtrado por `useCartSuggestions(maxItems)`
+- Mantener diseño visual idéntico: cards, scroll horizontal, colores, iconos
+- Sección comida usa `foodSuggestions`, sección bebidas usa `beverageSuggestions`
+- Mantener `addToCart(product, 'suggestion')` para source tracking
+- Si ambos arrays están vacíos → no renderizar nada
+- Comentarios `[2026-04-08]` explicando el refactor
+
+**3. `src/pages/Checkout.tsx`**
+
+- Importar `UpsellSuggestions`
+- Renderizar `<UpsellSuggestions maxItems={3} compact />` antes del botón de confirmar pedido
+- Al agregar producto desde checkout, el resumen se actualiza automáticamente (ya es reactivo vía CartContext)
+
+### Archivos que NO se modifican
+- `CartDrawer.tsx` — ya monta `<UpsellSuggestions maxItems={3} compact />`, sigue igual
+- `Cart.tsx` — ya monta `<UpsellSuggestions maxItems={6} />`, sigue igual
+- `CartContext.tsx` — sin cambios, ya tiene source tracking
+- Sistema de extras — sin cambios
+
+### Detalle técnico: Shuffle determinístico
+
+```typescript
+const seededShuffle = <T,>(arr: T[], seed: number): T[] => {
+  const copy = [...arr];
+  let s = seed;
+  for (let i = copy.length - 1; i > 0; i--) {
+    s = (s * 16807 + 0) % 2147483647;
+    const j = s % (i + 1);
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+};
 ```
 
-### 2. CartContext (`src/contexts/CartContext.tsx`)
-- Crear tipo `CartItemSource = 'menu' | 'best_seller' | 'suggestion' | 'search' | 'extras'`
-- Agregar `source: CartItemSource` a `CartItem`
-- Modificar `addToCart` para aceptar `source` como segundo parámetro (default `'menu'`)
-- Al crear nuevo item: asignar el source recibido
-- Al incrementar item existente: NO cambiar el source original
-- Actualizar la firma en `CartContextType`
-
-### 3. Componentes que llaman `addToCart` — pasar source correcto
-
-| Archivo | Contexto | Source |
-|---|---|---|
-| `AddToCartButton.tsx` | Recibe `source` como prop, default `'menu'` | Depende del padre |
-| `MenuCard.tsx` | Menú general | `'menu'` |
-| `CompactProductCard.tsx` | Usado en carouseles (best sellers y menú) | Recibe prop `source`, default `'menu'` |
-| `ProductPage.tsx` | Página de detalle de producto | `'product_detail'` (se mapea a `'menu'`) |
-| `UpsellSuggestions.tsx` | Sugerencias del carrito | `'suggestion'` |
-| `FeaturedProducts.tsx` | Productos destacados en home | `'best_seller'` |
-| `MenuGrid.tsx` | Best sellers tab → `'best_seller'`; otras tabs → `'menu'` |
-| `ProductCarousel.tsx` | Recibe prop `source` del padre |
-
-**Propagación de source:**
-- `MenuCard` y `CompactProductCard` reciben prop `source?` y lo pasan a `AddToCartButton`
-- `AddToCartButton` pasa el `source` a `addToCart(product, source)`
-- Componentes padres (MenuGrid, FeaturedProducts, ProductCarousel) pasan el source correcto
-
-### 4. Checkout (`src/pages/Checkout.tsx`)
-En el INSERT a `order_items` (línea ~491-502), agregar `source: item.source || 'menu'` al objeto de cada item.
-
-### 5. Archivos modificados (resumen)
-
-1. **Migración SQL** — nueva columna `order_items.source`
-2. **`src/contexts/CartContext.tsx`** — tipo `CartItemSource`, campo `source` en `CartItem`, parámetro en `addToCart`
-3. **`src/components/cart/AddToCartButton.tsx`** — acepta prop `source`, lo pasa a `addToCart`
-4. **`src/components/MenuCard.tsx`** — acepta prop `source`, lo pasa a `AddToCartButton`
-5. **`src/components/CompactProductCard.tsx`** — acepta prop `source`, lo pasa a `AddToCartButton`
-6. **`src/components/cart/UpsellSuggestions.tsx`** — pasa `source: 'suggestion'`
-7. **`src/components/FeaturedProducts.tsx`** — pasa `source: 'best_seller'`
-8. **`src/components/MenuGrid.tsx`** — pasa `'best_seller'` en tab best sellers, `'menu'` en el resto
-9. **`src/components/ProductCarousel.tsx`** — acepta prop `source`, lo pasa a `CompactProductCard`
-10. **`src/pages/ProductPage.tsx`** — pasa `source: 'menu'`
-11. **`src/pages/Checkout.tsx`** — incluye `source` en el INSERT a `order_items`
-12. **`src/components/CategorySection.tsx`** — pasa `source: 'menu'`
-13. **`src/components/FilteredProductsGrid.tsx`** — pasa `source: 'menu'`
-14. **`src/pages/CategoryPage.tsx`** — pasa `source: 'menu'`
-
-Todos los archivos modificados incluirán comentario con fecha `[2026-04-08]`.
+### Verificación
+Se verificará build con `npx tsc --noEmit` y se reportará la lista completa de archivos, comportamiento contextual, exclusiones, y puntos de montaje.
 
