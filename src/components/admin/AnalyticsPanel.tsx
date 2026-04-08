@@ -25,6 +25,8 @@ import { useSalesAnalytics } from '@/hooks/useSalesAnalytics';
 import { usePageViews } from '@/hooks/usePageViews';
 import { cn } from '@/lib/utils';
 import type { DateRange } from 'react-day-picker';
+// [2026-04-08] Dashboard detallado de ventas y comportamiento
+import ProductSalesDashboard from './ProductSalesDashboard';
 
 type DatePreset = 'today' | 'yesterday' | '7days' | '30days' | 'thisMonth' | 'custom';
 type MetricType = 'orders' | 'revenue' | 'avgTicket' | 'views';
@@ -498,6 +500,9 @@ export const AnalyticsPanel = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* [2026-04-08] Dashboard detallado de ventas y comportamiento */}
+      <ProductSalesDashboard startDate={start} endDate={end} />
     </div>
   );
 };
