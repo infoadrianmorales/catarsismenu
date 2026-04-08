@@ -901,6 +901,11 @@ Correo: ${formData.email.toLowerCase()}`;
                 </p>
               </div>
 
+              {/* [2026-04-08] Sugerencias de último momento en checkout.
+                  Oportunidad de upsell antes de confirmar el pedido.
+                  Máximo 3 sugerencias en modo compact. */}
+              <UpsellSuggestions maxItems={3} compact />
+
               <Button 
                 className="w-full gap-2" 
                 size="lg"

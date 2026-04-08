@@ -1,14 +1,19 @@
-// FEATURE [UPSELL]: Componente de sugerencias de compra para aumentar el ticket promedio.
-// Muestra best sellers (sin bebidas) + sección dedicada de bebidas.
-// [2026-04-08] SOURCE TRACKING: Pasa source='suggestion' a addToCart.
+// ================================================
+// [2026-04-08] REFACTOR: Sugerencias contextuales
+// ANTES: Mostraba best sellers fijos + bebidas sin contexto
+// AHORA: Usa useCartSuggestions para analizar el carrito y
+//   sugerir productos que complementen el pedido actual.
+// Se mantiene el diseño visual, props y puntos de montaje.
+// EXCLUIDOS: coctelería y postres (regla de negocio)
+// BEBIDAS: aparecen automáticamente cuando la categoría se active
+// ================================================
 
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/contexts/CartContext';
-import { useProducts } from '@/hooks/useProducts';
 import { useCurrency } from '@/hooks/useCurrency';
 import { Plus, TrendingUp, GlassWater } from 'lucide-react';
 import { MenuItem } from '@/types/menu';
-import { usePublicCategories } from '@/hooks/usePublicCategories';
+import { useCartSuggestions } from '@/hooks/useCartSuggestions';
 
 interface UpsellSuggestionsProps {
   maxItems?: number;
@@ -16,13 +21,11 @@ interface UpsellSuggestionsProps {
 }
 
 export const UpsellSuggestions = ({ maxItems = 6, compact = false }: UpsellSuggestionsProps) => {
-  const { items, addToCart } = useCart();
-  const { bestSellers, products } = useProducts();
+  const { addToCart } = useCart();
   const { currency, displayMode, getPrices } = useCurrency();
-  const { categories } = usePublicCategories();
 
-  const cartIds = new Set(items.map(i => i.id));
-  const bebidasActive = categories.some(c => c.slug === 'bebidas');
+  // [2026-04-08] Hook contextual: analiza el carrito y genera sugerencias inteligentes
+  const { foodSuggestions, beverageSuggestions } = useCartSuggestions(maxItems);
 
   const formatPrice = (priceUsd: number) => {
     const p = getPrices(priceUsd);
@@ -31,19 +34,7 @@ export const UpsellSuggestions = ({ maxItems = 6, compact = false }: UpsellSugge
     return currency === 'USD' ? p.formattedUSD : p.formattedVES;
   };
 
-  // Best sellers sin bebidas
-  const filteredBestSellers = bestSellers.filter(p =>
-    !cartIds.has(p.id) && p.is_orderable !== false && p.categoria !== 'bebidas'
-  ).slice(0, maxItems);
-
-  // Bebidas exclusivamente
-  const drinks = bebidasActive
-    ? products.filter(p =>
-        p.categoria === 'bebidas' && !cartIds.has(p.id) && p.is_orderable !== false
-      ).slice(0, maxItems)
-    : [];
-
-  if (filteredBestSellers.length === 0 && drinks.length === 0) return null;
+  if (foodSuggestions.length === 0 && beverageSuggestions.length === 0) return null;
 
   const renderCarousel = (items: MenuItem[]) => (
     <div className={`flex gap-3 overflow-x-auto pb-2 scrollbar-hide ${compact ? '-mx-6 px-6' : ''}`}>
@@ -71,6 +62,7 @@ export const UpsellSuggestions = ({ maxItems = 6, compact = false }: UpsellSugge
               <span className={`font-bold text-secondary ${compact ? 'text-[11px]' : 'text-xs'}`}>
                 {formatPrice(product.precio_usd)}
               </span>
+              {/* [2026-04-08] Source 'suggestion' para analytics */}
               <Button
                 variant="ghost"
                 size="icon"
@@ -89,8 +81,8 @@ export const UpsellSuggestions = ({ maxItems = 6, compact = false }: UpsellSugge
 
   return (
     <div className={compact ? 'py-3' : 'py-4'}>
-      {/* Sección 1: Best Sellers */}
-      {filteredBestSellers.length > 0 && (
+      {/* Sección 1: Complementos contextuales */}
+      {foodSuggestions.length > 0 && (
         <div className="mb-4">
           <div className="flex items-center gap-2 mb-3">
             <TrendingUp className="h-4 w-4 text-secondary" />
@@ -98,12 +90,13 @@ export const UpsellSuggestions = ({ maxItems = 6, compact = false }: UpsellSugge
               Complementa tu pedido
             </h3>
           </div>
-          {renderCarousel(filteredBestSellers)}
+          {renderCarousel(foodSuggestions)}
         </div>
       )}
 
-      {/* Sección 2: Bebidas */}
-      {drinks.length > 0 && (
+      {/* [2026-04-08] Sección 2: Bebidas — se activa sola cuando se
+          carguen las bebidas en la DB. No requiere cambios de código. */}
+      {beverageSuggestions.length > 0 && (
         <div>
           <div className="flex items-center gap-2 mb-3">
             <GlassWater className="h-4 w-4 text-secondary" />
@@ -111,7 +104,7 @@ export const UpsellSuggestions = ({ maxItems = 6, compact = false }: UpsellSugge
               ¿Algo para tomar?
             </h3>
           </div>
-          {renderCarousel(drinks)}
+          {renderCarousel(beverageSuggestions)}
         </div>
       )}
     </div>
