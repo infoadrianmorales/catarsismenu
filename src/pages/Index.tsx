@@ -120,6 +120,7 @@ const Index = () => {
           ))}
         </div>
       ) : hasFilters ? (
+        // [2026-04-10] Búsqueda desde la home.
         <FilteredProductsGrid
           items={filteredItems}
           currency={currency}
@@ -127,6 +128,7 @@ const Index = () => {
           onClearFilters={clearFilters}
           searchQuery={searchQuery}
           categoryLabel={categoryLabels[selectedCategory]}
+          source="search"
         />
       ) : (
         <div className="space-y-2">

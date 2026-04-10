@@ -96,6 +96,7 @@ const MenuLocal = () => {
           ))}
         </div>
       ) : hasFilters ? (
+        // [2026-04-10] Búsqueda desde el menú local.
         <FilteredProductsGrid
           items={filteredItems}
           currency={currency}
@@ -103,6 +104,7 @@ const MenuLocal = () => {
           onClearFilters={clearFilters}
           searchQuery={searchQuery}
           categoryLabel={categoryLabels[selectedCategory]}
+          source="search"
         />
       ) : (
         <div className="space-y-2">

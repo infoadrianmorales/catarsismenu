@@ -1,9 +1,11 @@
 import { MenuItem, Currency } from '@/types/menu';
 import { PriceDisplayMode } from '@/hooks/useCurrency';
+import { CartItemSource } from '@/contexts/CartContext';
 import { MenuCard } from './MenuCard';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 
+// [2026-04-10] Resultados de búsqueda trackean como 'search' por defecto.
 interface FilteredProductsGridProps {
   items: MenuItem[];
   currency: Currency;
@@ -11,6 +13,7 @@ interface FilteredProductsGridProps {
   onClearFilters: () => void;
   searchQuery: string;
   categoryLabel?: string;
+  source?: CartItemSource;
 }
 
 export const FilteredProductsGrid = ({ 
@@ -19,7 +22,8 @@ export const FilteredProductsGrid = ({
   displayMode = 'ambas',
   onClearFilters,
   searchQuery,
-  categoryLabel
+  categoryLabel,
+  source = 'search',
 }: FilteredProductsGridProps) => {
   const hasResults = items.length > 0;
   
@@ -64,6 +68,7 @@ export const FilteredProductsGrid = ({
                 item={item} 
                 currency={currency} 
                 displayMode={displayMode}
+                source={source}
               />
             ))}
           </div>
