@@ -125,23 +125,28 @@ const Cart = () => {
                   >
                     {/* [2026-04-10] Padding reducido en mobile: p-3 vs p-4 */}
                     <CardContent className="p-3 md:p-4">
-                      <div className="flex gap-3 md:gap-4">
-                        {/* [2026-04-10] Imagen más pequeña en mobile: 60px vs 80-96px */}
-                        <div className="w-[60px] h-[60px] md:w-24 md:h-24 rounded-lg md:rounded-xl bg-white overflow-hidden flex-shrink-0 shadow-md">
+                      {/* [2026-04-10] FIX: Layout horizontal explícito con flex-row
+                          para garantizar imagen + detalles visibles en mobile */}
+                      <div className="flex flex-row gap-3 md:gap-4 items-start">
+                        {/* [2026-04-10] FIX: Imagen con dimensiones explícitas,
+                            sin bg-white para coherencia con tema oscuro */}
+                        <div className="w-[60px] h-[60px] md:w-24 md:h-24 rounded-lg md:rounded-xl overflow-hidden flex-shrink-0 shadow-md bg-muted/30">
                           <img 
                             src={item.imagen} 
                             alt={`${item.nombre} — Catarsis Drinks & Food, Lechería`}
-                            loading="lazy"
+                            loading="eager"
                             width="96"
                             height="96"
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-cover block"
                           />
                         </div>
                         
                         {/* Details */}
-                        <div className="flex-1 min-w-0">
+                        {/* [2026-04-10] FIX: flex-1 con min-w-0 y overflow visible */}
+                        <div className="flex-1 min-w-0 overflow-visible">
                           <div className="flex items-start justify-between gap-2">
-                            <h3 className="font-display font-semibold truncate text-sm md:text-base">{item.nombre}</h3>
+                            {/* [2026-04-10] FIX: Nombre siempre visible con color explícito */}
+                            <h3 className="font-display font-semibold truncate text-sm md:text-base text-foreground">{item.nombre}</h3>
                             <Button
                               variant="ghost"
                               size="icon"
