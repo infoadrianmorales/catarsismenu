@@ -120,7 +120,7 @@ const Index = () => {
           ))}
         </div>
       ) : hasFilters ? (
-        {/* [2026-04-10] Búsqueda desde la home. */}
+        // [2026-04-10] Búsqueda desde la home.
         <FilteredProductsGrid
           items={filteredItems}
           currency={currency}

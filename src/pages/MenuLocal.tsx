@@ -96,7 +96,7 @@ const MenuLocal = () => {
           ))}
         </div>
       ) : hasFilters ? (
-        {/* [2026-04-10] Búsqueda desde el menú local. */}
+        // [2026-04-10] Búsqueda desde el menú local.
         <FilteredProductsGrid
           items={filteredItems}
           currency={currency}
