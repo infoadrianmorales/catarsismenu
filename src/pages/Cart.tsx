@@ -329,11 +329,18 @@ const Cart = () => {
             </Card>
           </div>
         </div>
+
+        {/* [2026-04-10] Mobile: Sugerencias fuera del scroll vertical, dentro del flex column */}
+        {isMobile && (
+          <div className="flex-shrink-0 overflow-hidden">
+            <UpsellSuggestions maxItems={6} />
+          </div>
+        )}
       </div>
 
-      {/* [2026-04-10] Mobile: barra fija inferior expandible con desglose */}
+      {/* [2026-04-10] Mobile: barra inferior — flex-shrink-0 dentro del viewport */}
       {isMobile && (
-        <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-md border-t border-border z-50 md:hidden transition-all duration-300">
+        <div className="flex-shrink-0 bg-card/95 backdrop-blur-md border-t border-border z-50 md:hidden transition-all duration-300">
           {/* [2026-04-10] Área expandida con desglose — solo visible si summaryExpanded */}
           {summaryExpanded && (
             <div className="px-4 pt-3 pb-1 border-b border-border/40 animate-in slide-in-from-bottom-2 duration-200">
