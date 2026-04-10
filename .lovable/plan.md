@@ -1,59 +1,55 @@
 
 
-## Plan: Dashboard detallado de ventas y comportamiento por origen
+## Plan: Agregar filtro "Todo" al AnalyticsPanel
 
 ### Resumen
-Crear 4 RPCs SQL para agregar datos server-side, un hook para consumirlas, y un componente dashboard que se integra debajo de las secciones existentes del AnalyticsPanel. No se modifica nada existente.
+Agregar un preset "Todo" a los filtros de fecha del AnalyticsPanel que muestre el historial completo. Adaptar la granularidad del gráfico para rangos largos. El OrdersPanel ya tiene "Todo", no necesita cambios.
 
-### Paso 1: Migraciones SQL (4 RPCs)
+### Cambios
 
-Una sola migración con las 4 funciones:
+**1. `src/components/admin/AnalyticsPanel.tsx`**
 
-1. **`get_product_sales_history(date_from, date_to, category_filter)`** — historial de ventas por producto con cantidad, ingresos, última venta, categoría
-2. **`get_sales_by_category(date_from, date_to)`** — ventas agrupadas por categoría
-3. **`get_sales_by_source(date_from, date_to)`** — ventas agrupadas por source con porcentaje
-4. **`get_extras_analytics(date_from, date_to)`** — extras vendidos desde extras_snapshot JSONB
+- Agregar `'all'` al tipo `DatePreset`:
+  ```typescript
+  type DatePreset = 'today' | 'yesterday' | '7days' | '30days' | 'thisMonth' | 'all' | 'custom';
+  ```
 
-Todas usan `SECURITY DEFINER`, `search_path = ''`, JOINs contra `orders` y `order_items`, excluyendo status `CANCELED`. La DB tiene 350 order_items, todos con source `menu` (esperado, el tracking se activó hoy).
+- Agregar al array `presets`:
+  ```typescript
+  { key: 'all', label: 'Todo' },
+  ```
 
-### Paso 2: Hook `src/hooks/useProductSalesAnalytics.ts`
+- En `getDateRange`, agregar caso `'all'`:
+  ```typescript
+  case 'all':
+    return { start: new Date('2020-01-01'), end: endOfDay(now), granularity: 'daily' as const };
+  ```
 
-- Recibe `dateFrom`, `dateTo`, `categoryFilter` (opcional)
-- Llama las 4 RPCs en paralelo con `Promise.all`
-- Re-ejecuta cuando cambian los filtros
-- Retorna `{ productHistory, salesByCategory, salesBySource, extrasAnalytics, isLoading, error }`
+- Adaptar granularidad del gráfico: para "Todo", el rango puede ser de años. `eachDayOfInterval` generaría miles de puntos. Solución: en `chartData` (useMemo línea ~110), cuando el preset sea `'all'`, agrupar los datapoints por semana o mes para que el gráfico sea legible. Se agrupará por mes si el rango es mayor a 90 días.
 
-### Paso 3: Componente `src/components/admin/ProductSalesDashboard.tsx`
+- Ajustar el `dateLabel` en `chartData`: para granularidad mensual usar `format(date, "MMM yy")`.
 
-4 secciones con Tabs de shadcn/ui:
+**2. `src/hooks/useSalesAnalytics.ts`**
 
-**Tab 1 — Historial de Productos**: Tabla ordenable (click en headers) con búsqueda por nombre y filtro de categoría. Columnas: Producto, Categoría, Cantidad, Ingresos, Pedidos, Última venta. Totales al pie.
+- Agregar soporte para granularidad `'monthly'` al tipo y al cálculo de `series`. Usar `eachMonthOfInterval` de date-fns para generar los puntos cuando `granularity === 'monthly'`.
 
-**Tab 2 — Ventas por Categoría**: BarChart horizontal (Recharts) + tabla resumen con % del total.
+**3. `src/hooks/usePageViews.ts`**
 
-**Tab 3 — Origen de Compras (Source)**: PieChart (Recharts) con colores de marca asignados. Labels legibles (menu→"Menú directo", best_seller→"Best Sellers", etc.). Banner informativo sobre la fecha de activación del tracking.
-
-**Tab 4 — Extras Vendidos**: Lista ranking o mensaje informativo si no hay datos.
-
-Colores de marca: Ocean Blue `#04308C`, Raspberry `#DB1F51`, Xanthous `#F2B60F`, Light Sea Green `#14B2AA`, violeta `#8B5CF6`.
-
-### Paso 4: Integrar en `src/components/admin/AnalyticsPanel.tsx`
-
-- Importar `ProductSalesDashboard`
-- Renderizar al final del componente (después de la grid de 3 columnas, línea ~500)
-- Pasar `startDate={start}` y `endDate={end}` para sincronizar filtros
-- Separador visual con título "Detalle de Ventas y Comportamiento"
-- Sin tocar ninguna sección existente
+- Agregar soporte para granularidad `'monthly'` al tipo para que las visitas también se agrupen correctamente con el filtro "Todo".
 
 ### Archivos
 
 | Acción | Archivo |
 |--------|---------|
-| Crear | `supabase/migrations/add_sales_analytics_rpcs.sql` |
-| Crear | `src/hooks/useProductSalesAnalytics.ts` |
-| Crear | `src/components/admin/ProductSalesDashboard.tsx` |
-| Modificar | `src/components/admin/AnalyticsPanel.tsx` (solo agregar import + render al final) |
+| Modificar | `src/components/admin/AnalyticsPanel.tsx` |
+| Modificar | `src/hooks/useSalesAnalytics.ts` |
+| Modificar | `src/hooks/usePageViews.ts` |
+
+### No se modifica
+- `OrdersPanel.tsx` — ya tiene "Todo"
+- `ProductSalesDashboard.tsx` — recibe `startDate/endDate` del AnalyticsPanel, funciona automáticamente
+- RPCs — aceptan cualquier rango de fechas, sin cambios
 
 ### Verificación
-Build con `npx tsc --noEmit`, confirmar que las RPCs devuelven datos, y que las secciones existentes del AnalyticsPanel no se alteran.
+Build limpio, botón "Todo" visible y funcional, gráfico legible con granularidad mensual, todas las secciones y tabs responden al filtro.
 
