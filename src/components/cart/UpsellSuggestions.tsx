@@ -49,7 +49,8 @@ const SuggestionCarousel = ({
     const el = scrollRef.current;
     if (!el) return;
 
-    updateScrollState();
+    // [2026-04-10] RAF para esperar a que el DOM refleje los items
+    const raf = requestAnimationFrame(updateScrollState);
 
     el.addEventListener('scroll', updateScrollState, { passive: true });
 
@@ -58,6 +59,7 @@ const SuggestionCarousel = ({
     ro.observe(el);
 
     return () => {
+      cancelAnimationFrame(raf);
       el.removeEventListener('scroll', updateScrollState);
       ro.disconnect();
     };
