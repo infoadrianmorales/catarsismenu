@@ -1,55 +1,42 @@
 
 
-## Plan: Agregar filtro "Todo" al AnalyticsPanel
+## Plan: Carrusel horizontal animado para sugerencias del carrito
 
 ### Resumen
-Agregar un preset "Todo" a los filtros de fecha del AnalyticsPanel que muestre el historial completo. Adaptar la granularidad del gráfico para rangos largos. El OrdersPanel ya tiene "Todo", no necesita cambios.
+Reemplazar el scroll estático de `UpsellSuggestions` por un carrusel con flechas de navegación, degradado indicador, y soporte para 10 items. Mantener modo compact sin flechas para CartDrawer/Checkout.
 
 ### Cambios
 
-**1. `src/components/admin/AnalyticsPanel.tsx`**
+**1. `src/components/cart/UpsellSuggestions.tsx`** — Refactor completo del renderCarousel
 
-- Agregar `'all'` al tipo `DatePreset`:
-  ```typescript
-  type DatePreset = 'today' | 'yesterday' | '7days' | '30days' | 'thisMonth' | 'all' | 'custom';
-  ```
+- Extraer `renderCarousel` a un sub-componente interno `SuggestionCarousel` con:
+  - `useRef` para el contenedor de scroll
+  - Estado `canScrollLeft` / `canScrollRight` calculado via `onScroll` y `ResizeObserver`
+  - Flechas `ChevronLeft`/`ChevronRight` en círculos semi-transparentes (`bg-black/50 text-white`), posicionadas absolute en los extremos verticalmente centradas
+  - Click de flecha: `scrollBy({ left: ±cardWidth*2.5, behavior: 'smooth' })`
+  - Degradado derecho (`bg-gradient-to-l from-[#010C23] to-transparent`) que desaparece cuando `!canScrollRight`
+  - Degradado izquierdo simétrico cuando `canScrollLeft`
+  - En mobile: ocultar flechas con `hidden md:flex`, swipe nativo funciona
+  - CSS: `scrollbar-hide overflow-x-auto scroll-smooth`
+  - Cuando `compact=true`: sin flechas ni degradados (drawer/checkout son pequeños)
+- Cambiar `maxItems` default de 6 a 10
+- Agregar comentarios `[2026-04-10]`
 
-- Agregar al array `presets`:
-  ```typescript
-  { key: 'all', label: 'Todo' },
-  ```
+**2. `src/pages/Cart.tsx`** — Línea 261
 
-- En `getDateRange`, agregar caso `'all'`:
-  ```typescript
-  case 'all':
-    return { start: new Date('2020-01-01'), end: endOfDay(now), granularity: 'daily' as const };
-  ```
+Cambiar `maxItems={6}` → `maxItems={10}`
 
-- Adaptar granularidad del gráfico: para "Todo", el rango puede ser de años. `eachDayOfInterval` generaría miles de puntos. Solución: en `chartData` (useMemo línea ~110), cuando el preset sea `'all'`, agrupar los datapoints por semana o mes para que el gráfico sea legible. Se agrupará por mes si el rango es mayor a 90 días.
+**3. `src/hooks/useCartSuggestions.ts`**
 
-- Ajustar el `dateLabel` en `chartData`: para granularidad mensual usar `format(date, "MMM yy")`.
-
-**2. `src/hooks/useSalesAnalytics.ts`**
-
-- Agregar soporte para granularidad `'monthly'` al tipo y al cálculo de `series`. Usar `eachMonthOfInterval` de date-fns para generar los puntos cuando `granularity === 'monthly'`.
-
-**3. `src/hooks/usePageViews.ts`**
-
-- Agregar soporte para granularidad `'monthly'` al tipo para que las visitas también se agrupen correctamente con el filtro "Todo".
+Sin cambios de lógica necesarios — el hook ya acepta `maxItems` como parámetro y lo usa para `slice()`. Con `maxItems=10` devolverá hasta 10 items automáticamente.
 
 ### Archivos
 
 | Acción | Archivo |
 |--------|---------|
-| Modificar | `src/components/admin/AnalyticsPanel.tsx` |
-| Modificar | `src/hooks/useSalesAnalytics.ts` |
-| Modificar | `src/hooks/usePageViews.ts` |
-
-### No se modifica
-- `OrdersPanel.tsx` — ya tiene "Todo"
-- `ProductSalesDashboard.tsx` — recibe `startDate/endDate` del AnalyticsPanel, funciona automáticamente
-- RPCs — aceptan cualquier rango de fechas, sin cambios
+| Modificar | `src/components/cart/UpsellSuggestions.tsx` |
+| Modificar | `src/pages/Cart.tsx` (1 línea) |
 
 ### Verificación
-Build limpio, botón "Todo" visible y funcional, gráfico legible con granularidad mensual, todas las secciones y tabs responden al filtro.
+Build limpio, flechas visibles en desktop, swipe en mobile, degradado aparece/desaparece, 10 items en Cart, 3 en drawer/checkout, source `'suggestion'` intacto.
 
