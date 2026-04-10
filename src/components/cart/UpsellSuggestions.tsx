@@ -59,6 +59,10 @@ const SuggestionCarousel = ({
     // [2026-04-10] RAF para esperar a que el DOM refleje los items
     const raf = requestAnimationFrame(updateScrollState);
 
+    // [2026-04-10] FIX: Delay adicional para mobile donde el layout
+    // puede no estar listo en el primer frame
+    const timer = setTimeout(updateScrollState, 150);
+
     el.addEventListener('scroll', updateScrollState, { passive: true });
 
     // [2026-04-10] ResizeObserver para recalcular al cambiar tamaño
@@ -67,6 +71,7 @@ const SuggestionCarousel = ({
 
     return () => {
       cancelAnimationFrame(raf);
+      clearTimeout(timer);
       el.removeEventListener('scroll', updateScrollState);
       ro.disconnect();
     };
