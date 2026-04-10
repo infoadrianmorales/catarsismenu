@@ -90,25 +90,29 @@ const SuggestionCarousel = ({
   };
 
   return (
-    // [2026-04-10] overflow-hidden en Y para contener la altura
-    <div className="relative group overflow-hidden">
-      {/* [2026-04-10] Contenedor de scroll — flex-nowrap explícito, snap en mobile */}
+    // [2026-04-10] FIX DEFINITIVO: Carrusel mobile con overflow visible
+    <div className="relative group">
+      {/* [2026-04-10] FIX DEFINITIVO: hide-scrollbar inline style */}
+      <style>{`.hide-scrollbar::-webkit-scrollbar { display: none; }`}</style>
+      {/* [2026-04-10] FIX DEFINITIVO: flex-row flex-nowrap overflow-x-auto, sin grid */}
       <div
         ref={scrollRef}
-        className={`flex flex-nowrap gap-2 md:gap-3 overflow-x-auto overflow-y-hidden scroll-smooth scrollbar-hide
-          ${isMobile ? 'snap-x snap-mandatory' : ''}
+        className={`flex flex-row flex-nowrap overflow-x-auto gap-3 pb-2 hide-scrollbar
           ${compact ? '-mx-6 px-6' : ''}`}
-        style={{ WebkitOverflowScrolling: 'touch' }}
+        style={{
+          scrollSnapType: 'x mandatory',
+          WebkitOverflowScrolling: 'touch',
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+        }}
       >
         {items.map(product => (
           <div
             key={product.id}
-            // [2026-04-10] Cards adaptativas: 28vw en mobile (~3-4 cards visibles)
-            // Pantalla pequeña: 3 cards + borde de 4ta, mediana: ~3.5, grande: ~4
-            // [2026-04-10] Cards oscuras con paleta de marca Catarsis
-            className={`flex-shrink-0 rounded-lg md:rounded-xl border border-gray-700/50 bg-[#0a1628] overflow-hidden
-              ${isMobile ? 'snap-start' : ''}
-              ${compact ? 'w-[130px]' : isMobile ? 'w-[28vw] min-w-[100px] max-w-[140px]' : 'w-[150px]'}`}
+            // [2026-04-10] FIX DEFINITIVO: 30vw = 3 cards + borde de 4ta en 375px
+            className={`flex-shrink-0 flex-grow-0 rounded-lg md:rounded-xl border border-gray-700/50 bg-[#0a1628] overflow-hidden
+              ${compact ? 'w-[130px]' : isMobile ? 'w-[30vw]' : 'w-[150px]'}`}
+            style={{ scrollSnapAlign: 'start' }}
           >
             {/* [2026-04-10] Imagen sin fondo blanco, coherente con tema oscuro */}
             <div className={`${compact ? 'h-20' : isMobile ? 'h-[100px]' : 'h-24'}`}>
