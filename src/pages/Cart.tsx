@@ -258,7 +258,8 @@ const Cart = () => {
 
             {/* FEATURE [UPSELL]: Sugerencias de compra para aumentar el ticket */}
             <div className="lg:col-span-2">
-              <UpsellSuggestions maxItems={6} />
+              {/* [2026-04-10] Aumentar de 6 a 10 para más opciones de upsell */}
+              <UpsellSuggestions maxItems={10} />
             </div>
 
           <div className="lg:col-span-1 hidden lg:block">
