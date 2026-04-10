@@ -333,7 +333,7 @@ const Cart = () => {
         {/* [2026-04-10] Mobile: Sugerencias fuera del scroll vertical, dentro del flex column */}
         {isMobile && (
           <div className="flex-shrink-0 overflow-hidden">
-            <UpsellSuggestions maxItems={6} />
+            <UpsellSuggestions maxItems={10} />
           </div>
         )}
       </div>
