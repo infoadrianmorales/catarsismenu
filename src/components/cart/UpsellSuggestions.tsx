@@ -4,6 +4,8 @@
 // ANTES: grid estático con 6 items, el último se cortaba.
 // AHORA: carrusel con scroll horizontal suave, flechas de
 // navegación y 10 productos para más opciones de upsell.
+// [2026-04-10] MOBILE: scroll-snap, sin flechas, degradados
+// en ambos bordes, swipe nativo con momentum.
 // ================================================
 
 import { useRef, useState, useEffect, useCallback } from 'react';
@@ -13,15 +15,15 @@ import { useCurrency } from '@/hooks/useCurrency';
 import { Plus, TrendingUp, GlassWater, ChevronLeft, ChevronRight } from 'lucide-react';
 import { MenuItem } from '@/types/menu';
 import { useCartSuggestions } from '@/hooks/useCartSuggestions';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface UpsellSuggestionsProps {
-  // [2026-04-10] Aumentar de 6 a 10 para más opciones de upsell
   maxItems?: number;
   compact?: boolean;
 }
 
 // [2026-04-10] Sub-componente de carrusel con scroll horizontal animado,
-// flechas de navegación y degradados indicadores.
+// flechas de navegación (solo desktop), snap en mobile y degradados indicadores.
 const SuggestionCarousel = ({
   items,
   compact,
@@ -36,6 +38,7 @@ const SuggestionCarousel = ({
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
+  const isMobile = useIsMobile();
 
   // [2026-04-10] Calcular si hay scroll disponible en cada dirección
   const updateScrollState = useCallback(() => {
@@ -76,20 +79,26 @@ const SuggestionCarousel = ({
     });
   };
 
+  // [2026-04-10] En mobile: scroll-snap para swipe natural
+  // Cada card tiene scroll-snap-align: start
+  const mobileSnapClass = isMobile ? 'snap-x snap-mandatory' : '';
+  const mobileCardSnapClass = isMobile ? 'snap-start' : '';
+
   return (
     <div className="relative group">
       {/* [2026-04-10] Contenedor de scroll con scrollbar oculto */}
       <div
         ref={scrollRef}
-        className={`flex gap-3 overflow-x-auto scroll-smooth scrollbar-hide ${compact ? '-mx-6 px-6' : ''}`}
+        className={`flex gap-2.5 md:gap-3 overflow-x-auto scroll-smooth scrollbar-hide ${mobileSnapClass} ${compact ? '-mx-6 px-6' : ''}`}
+        style={{ WebkitOverflowScrolling: 'touch' }}
       >
         {items.map(product => (
           <div
             key={product.id}
-            className={`flex-shrink-0 rounded-xl border border-border/50 bg-muted/30 overflow-hidden
-              ${compact ? 'w-[130px]' : 'w-[150px]'}`}
+            className={`flex-shrink-0 rounded-xl border border-border/50 bg-muted/30 overflow-hidden ${mobileCardSnapClass}
+              ${compact ? 'w-[130px]' : isMobile ? 'w-[140px]' : 'w-[150px]'}`}
           >
-            <div className={`bg-white ${compact ? 'h-20' : 'h-24'}`}>
+            <div className={`bg-white ${compact ? 'h-20' : isMobile ? 'h-[76px]' : 'h-24'}`}>
               <img
                 src={product.imagen}
                 alt={product.nombre}
@@ -99,12 +108,12 @@ const SuggestionCarousel = ({
                 className="w-full h-full object-cover"
               />
             </div>
-            <div className="p-2">
-              <p className={`font-medium truncate ${compact ? 'text-[11px]' : 'text-xs'}`}>
+            <div className="p-1.5 md:p-2">
+              <p className={`font-medium truncate ${compact ? 'text-[11px]' : 'text-[11px] md:text-xs'}`}>
                 {product.nombre}
               </p>
-              <div className="flex items-center justify-between mt-1.5">
-                <span className={`font-bold text-secondary ${compact ? 'text-[11px]' : 'text-xs'}`}>
+              <div className="flex items-center justify-between mt-1 md:mt-1.5">
+                <span className={`font-bold text-secondary ${compact ? 'text-[11px]' : 'text-[11px] md:text-xs'}`}>
                   {formatPrice(product.precio_usd)}
                 </span>
                 {/* [2026-04-08] Source 'suggestion' para analytics */}
@@ -124,7 +133,7 @@ const SuggestionCarousel = ({
       </div>
 
       {/* [2026-04-10] Flechas de navegación — solo desktop, solo modo no-compact */}
-      {!compact && canScrollLeft && (
+      {!compact && !isMobile && canScrollLeft && (
         <button
           onClick={() => scroll('left')}
           className="absolute left-0 top-1/2 -translate-y-1/2 z-10 hidden md:flex items-center justify-center w-8 h-8 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
@@ -133,7 +142,7 @@ const SuggestionCarousel = ({
           <ChevronLeft className="h-4 w-4" />
         </button>
       )}
-      {!compact && canScrollRight && (
+      {!compact && !isMobile && canScrollRight && (
         <button
           onClick={() => scroll('right')}
           className="absolute right-0 top-1/2 -translate-y-1/2 z-10 hidden md:flex items-center justify-center w-8 h-8 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
@@ -143,13 +152,12 @@ const SuggestionCarousel = ({
         </button>
       )}
 
-      {/* [2026-04-10] Degradado derecho — indica más contenido */}
+      {/* [2026-04-10] Degradados en los bordes — indican más contenido */}
       {!compact && canScrollRight && (
-        <div className="absolute right-0 top-0 bottom-0 w-10 bg-gradient-to-l from-[#010C23] to-transparent pointer-events-none hidden md:block" />
+        <div className="absolute right-0 top-0 bottom-0 w-8 md:w-10 bg-gradient-to-l from-background to-transparent pointer-events-none" />
       )}
-      {/* [2026-04-10] Degradado izquierdo simétrico */}
       {!compact && canScrollLeft && (
-        <div className="absolute left-0 top-0 bottom-0 w-10 bg-gradient-to-r from-[#010C23] to-transparent pointer-events-none hidden md:block" />
+        <div className="absolute left-0 top-0 bottom-0 w-8 md:w-10 bg-gradient-to-r from-background to-transparent pointer-events-none" />
       )}
     </div>
   );
@@ -172,13 +180,13 @@ export const UpsellSuggestions = ({ maxItems = 10, compact = false }: UpsellSugg
   if (foodSuggestions.length === 0 && beverageSuggestions.length === 0) return null;
 
   return (
-    <div className={compact ? 'py-3' : 'py-4'}>
+    <div className={compact ? 'py-3' : 'py-3 md:py-4'}>
       {/* Sección 1: Complementos contextuales */}
       {foodSuggestions.length > 0 && (
-        <div className="mb-4">
-          <div className="flex items-center gap-2 mb-3">
-            <TrendingUp className="h-4 w-4 text-secondary" />
-            <h3 className={`font-display font-semibold ${compact ? 'text-sm' : 'text-base'}`}>
+        <div className="mb-3 md:mb-4">
+          <div className="flex items-center gap-2 mb-2 md:mb-3">
+            <TrendingUp className="h-3.5 w-3.5 md:h-4 md:w-4 text-secondary" />
+            <h3 className={`font-display font-semibold ${compact ? 'text-sm' : 'text-sm md:text-base'}`}>
               Complementa tu pedido
             </h3>
           </div>
@@ -194,9 +202,9 @@ export const UpsellSuggestions = ({ maxItems = 10, compact = false }: UpsellSugg
       {/* [2026-04-08] Sección 2: Bebidas */}
       {beverageSuggestions.length > 0 && (
         <div>
-          <div className="flex items-center gap-2 mb-3">
-            <GlassWater className="h-4 w-4 text-secondary" />
-            <h3 className={`font-display font-semibold ${compact ? 'text-sm' : 'text-base'}`}>
+          <div className="flex items-center gap-2 mb-2 md:mb-3">
+            <GlassWater className="h-3.5 w-3.5 md:h-4 md:w-4 text-secondary" />
+            <h3 className={`font-display font-semibold ${compact ? 'text-sm' : 'text-sm md:text-base'}`}>
               ¿Algo para tomar?
             </h3>
           </div>

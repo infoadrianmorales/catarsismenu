@@ -1,5 +1,7 @@
 // FEATURE [EXTRAS + UPSELL]: Página del carrito con soporte de extras por producto
 // y sección de sugerencias de compra para aumentar el ticket promedio.
+// [2026-04-10] REDISEÑO MOBILE-FIRST: resumen sticky/expandible,
+// items compactos, carrusel de sugerencias con snap.
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -24,6 +26,9 @@ const Cart = () => {
   const isMobile = useIsMobile();
   // FEATURE [EXTRAS]: cargar extras disponibles
   const { getExtrasForProduct, categoryHasExtras } = useProductExtras();
+
+  // [2026-04-10] Estado para expandir/colapsar resumen en mobile
+  const [summaryExpanded, setSummaryExpanded] = useState(false);
 
   const toggleNotesExpanded = (itemId: string) => {
     setExpandedNotes(prev => ({ ...prev, [itemId]: !prev[itemId] }));
@@ -86,184 +91,186 @@ const Cart = () => {
         displayMode={displayMode}
       />
       
-      <div className={`container px-4 py-8 ${isMobile ? 'pb-28' : ''}`}>
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/')} className="rounded-full">
-              <ArrowLeft className="h-5 w-5" />
+      {/* [2026-04-10] pb-36 en mobile para que la barra fija inferior no tape contenido */}
+      <div className={`container px-4 py-6 md:py-8 ${isMobile ? 'pb-36' : ''}`}>
+        {/* [2026-04-10] Header más compacto en mobile */}
+        <div className="flex items-center justify-between mb-4 md:mb-6">
+          <div className="flex items-center gap-2 md:gap-3">
+            <Button variant="ghost" size="icon" onClick={() => navigate('/')} className="rounded-full h-8 w-8 md:h-10 md:w-10">
+              <ArrowLeft className="h-4 w-4 md:h-5 md:w-5" />
             </Button>
             <div>
-              <h1 className="text-2xl font-display font-bold">Tu Carrito</h1>
-              <p className="text-sm text-muted-foreground">{totalItems} {totalItems === 1 ? 'producto' : 'productos'}</p>
+              <h1 className="text-xl md:text-2xl font-display font-bold">Tu Carrito</h1>
+              <p className="text-xs md:text-sm text-muted-foreground">{totalItems} {totalItems === 1 ? 'producto' : 'productos'}</p>
             </div>
           </div>
-          <Button variant="ghost" size="sm" onClick={clearCart} className="text-destructive hover:text-destructive gap-2">
-            <Trash2 className="h-4 w-4" />
+          <Button variant="ghost" size="sm" onClick={clearCart} className="text-destructive hover:text-destructive gap-1.5 md:gap-2 text-xs md:text-sm">
+            <Trash2 className="h-3.5 w-3.5 md:h-4 md:w-4" />
             Vaciar
           </Button>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Items List */}
-          <div className="lg:col-span-2 space-y-3">
-            {items.map((item, index) => {
-              const isNotesExpanded = expandedNotes[item.id] || !!item.notes;
-              
-              return (
-                <Card 
-                  key={item.id} 
-                  className="overflow-hidden border-border/50 hover:border-border transition-all duration-300 hover:shadow-[0_0_15px_hsl(var(--primary)/0.08)] animate-in fade-in slide-in-from-bottom-4"
-                  style={{ animationDelay: `${index * 60}ms`, animationFillMode: 'backwards' }}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex gap-4">
-                      {/* Image */}
-                      {/* OPTIMIZACIÓN DE PERFORMANCE — Cart item image
-                          loading="lazy", width/height para CLS, alt con marca */}
-                      <div className="w-20 h-20 md:w-24 md:h-24 rounded-xl bg-white overflow-hidden flex-shrink-0 shadow-md">
-                        <img 
-                          src={item.imagen} 
-                          alt={`${item.nombre} — Catarsis Drinks & Food, Lechería`}
-                          loading="lazy"
-                          width="96"
-                          height="96"
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      
-                      {/* Details */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-2">
-                          <h3 className="font-display font-semibold truncate text-base">{item.nombre}</h3>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full flex-shrink-0"
-                            onClick={() => removeFromCart(item.id)}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
+        <div className="grid lg:grid-cols-3 gap-6 md:gap-8">
+          {/* [2026-04-10] Items List — scrollable en mobile con max-height */}
+          <div className="lg:col-span-2">
+            <div className={`space-y-2 md:space-y-3 ${isMobile && items.length > 3 ? 'max-h-[55vh] overflow-y-auto pr-1 scrollbar-hide' : ''}`}>
+              {items.map((item, index) => {
+                const isNotesExpanded = expandedNotes[item.id] || !!item.notes;
+                
+                return (
+                  <Card 
+                    key={item.id} 
+                    className="overflow-hidden border-border/50 hover:border-border transition-all duration-300 hover:shadow-[0_0_15px_hsl(var(--primary)/0.08)] animate-in fade-in slide-in-from-bottom-4"
+                    style={{ animationDelay: `${index * 60}ms`, animationFillMode: 'backwards' }}
+                  >
+                    {/* [2026-04-10] Padding reducido en mobile: p-3 vs p-4 */}
+                    <CardContent className="p-3 md:p-4">
+                      <div className="flex gap-3 md:gap-4">
+                        {/* [2026-04-10] Imagen más pequeña en mobile: 60px vs 80-96px */}
+                        <div className="w-[60px] h-[60px] md:w-24 md:h-24 rounded-lg md:rounded-xl bg-white overflow-hidden flex-shrink-0 shadow-md">
+                          <img 
+                            src={item.imagen} 
+                            alt={`${item.nombre} — Catarsis Drinks & Food, Lechería`}
+                            loading="lazy"
+                            width="96"
+                            height="96"
+                            className="w-full h-full object-cover"
+                          />
                         </div>
                         
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {formatPrice(item.precio_usd)} c/u
-                        </p>
-                        
-                        <div className="flex items-center justify-between mt-3">
-                          {/* Pill quantity controls */}
-                          <div className="flex items-center gap-0 bg-background rounded-full border border-border">
+                        {/* Details */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <h3 className="font-display font-semibold truncate text-sm md:text-base">{item.nombre}</h3>
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 rounded-full hover:bg-muted"
-                              onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                              className="h-6 w-6 md:h-7 md:w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full flex-shrink-0"
+                              onClick={() => removeFromCart(item.id)}
                             >
-                              <Minus className="h-3.5 w-3.5" />
-                            </Button>
-                            <span className="text-sm font-bold w-6 text-center tabular-nums">
-                              {item.quantity}
-                            </span>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 rounded-full hover:bg-muted"
-                              onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                            >
-                              <Plus className="h-3.5 w-3.5" />
+                              <Trash2 className="h-3 w-3 md:h-3.5 md:w-3.5" />
                             </Button>
                           </div>
                           
-                          <div className="text-right">
-                            {/* FEATURE [EXTRAS]: el total de línea incluye extras */}
-                            {(() => {
-                              const extrasTotal = (item.extras || []).reduce((s, e) => s + e.precio_usd, 0);
-                              const lineTotal = (item.precio_usd + extrasTotal) * item.quantity;
-                              return (
-                                <>
-                                  <span className="font-bold text-secondary">
-                                    {formatPrice(lineTotal)}
-                                  </span>
-                                  {formatPriceAlt(lineTotal) && (
-                                    <p className="text-[11px] text-muted-foreground">
-                                      {formatPriceAlt(lineTotal)}
-                                    </p>
-                                  )}
-                                </>
-                              );
-                            })()}
+                          <p className="text-[11px] md:text-xs text-muted-foreground mt-0.5">
+                            {formatPrice(item.precio_usd)} c/u
+                          </p>
+                          
+                          <div className="flex items-center justify-between mt-2 md:mt-3">
+                            {/* [2026-04-10] Controles más compactos en mobile */}
+                            <div className="flex items-center gap-0 bg-background rounded-full border border-border">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 md:h-8 md:w-8 rounded-full hover:bg-muted"
+                                onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                              >
+                                <Minus className="h-3 w-3 md:h-3.5 md:w-3.5" />
+                              </Button>
+                              <span className="text-xs md:text-sm font-bold w-5 md:w-6 text-center tabular-nums">
+                                {item.quantity}
+                              </span>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 md:h-8 md:w-8 rounded-full hover:bg-muted"
+                                onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                              >
+                                <Plus className="h-3 w-3 md:h-3.5 md:w-3.5" />
+                              </Button>
+                            </div>
+                            
+                            <div className="text-right">
+                              {/* FEATURE [EXTRAS]: el total de línea incluye extras */}
+                              {(() => {
+                                const extrasTotal = (item.extras || []).reduce((s, e) => s + e.precio_usd, 0);
+                                const lineTotal = (item.precio_usd + extrasTotal) * item.quantity;
+                                return (
+                                  <>
+                                    <span className="font-bold text-secondary text-sm md:text-base">
+                                      {formatPrice(lineTotal)}
+                                    </span>
+                                    {formatPriceAlt(lineTotal) && (
+                                      <p className="text-[10px] md:text-[11px] text-muted-foreground">
+                                        {formatPriceAlt(lineTotal)}
+                                      </p>
+                                    )}
+                                  </>
+                                );
+                              })()}
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* FEATURE [EXTRAS]: Sección de extras si la categoría tiene disponibles */}
-                    {categoryHasExtras(item.categoria) && (
-                      <div className="mt-2 px-1">
-                        <ProductExtras
-                          extras={getExtrasForProduct(item.id, item.categoria)}
-                          selectedExtras={item.extras || []}
-                          onToggleExtra={(extra) => {
-                            const isSelected = (item.extras || []).some(e => e.extraId === extra.id);
-                            if (isSelected) {
-                              removeExtra(item.id, extra.id);
-                            } else {
-                              addExtra(item.id, { extraId: extra.id, nombre: extra.nombre, precio_usd: extra.precio_usd });
-                            }
-                          }}
-                        />
-                      </div>
-                    )}
-                    
-                    {/* Notes Section */}
-                    <div className="mt-3 pt-3 border-t border-border/40">
-                      <button
-                        onClick={() => toggleNotesExpanded(item.id)}
-                        className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors w-full"
-                      >
-                        <MessageSquare className="h-3.5 w-3.5" />
-                        <span>{item.notes ? 'Editar nota' : 'Agregar nota'}</span>
-                        {isNotesExpanded ? (
-                          <ChevronUp className="h-3.5 w-3.5 ml-auto" />
-                        ) : (
-                          <ChevronDown className="h-3.5 w-3.5 ml-auto" />
-                        )}
-                        {item.notes && !expandedNotes[item.id] && (
-                          <span className="text-[11px] text-secondary ml-1 truncate max-w-[120px]">
-                            📝 {item.notes}
-                          </span>
-                        )}
-                      </button>
-                      
-                      {isNotesExpanded && (
-                        <div className="mt-2 animate-in slide-in-from-top-2 duration-200">
-                          <Textarea
-                            value={item.notes || ''}
-                            onChange={(e) => updateItemNotes(item.id, e.target.value)}
-                            placeholder="Ej: sin vegetales, extra salsa, poco picante..."
-                            className="min-h-[56px] text-xs resize-none bg-muted/30"
-                            maxLength={200}
+                      {/* FEATURE [EXTRAS]: Sección de extras si la categoría tiene disponibles */}
+                      {categoryHasExtras(item.categoria) && (
+                        <div className="mt-2 px-1">
+                          <ProductExtras
+                            extras={getExtrasForProduct(item.id, item.categoria)}
+                            selectedExtras={item.extras || []}
+                            onToggleExtra={(extra) => {
+                              const isSelected = (item.extras || []).some(e => e.extraId === extra.id);
+                              if (isSelected) {
+                                removeExtra(item.id, extra.id);
+                              } else {
+                                addExtra(item.id, { extraId: extra.id, nombre: extra.nombre, precio_usd: extra.precio_usd });
+                              }
+                            }}
                           />
-                          <p className="text-[10px] text-muted-foreground mt-1 text-right">
-                            {(item.notes?.length || 0)}/200
-                          </p>
                         </div>
                       )}
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-
-            {/* FEATURE [UPSELL]: Sugerencias de compra para aumentar el ticket */}
-            <div className="lg:col-span-2">
-              {/* [2026-04-10] Aumentar de 6 a 10 para más opciones de upsell */}
-              <UpsellSuggestions maxItems={10} />
+                      
+                      {/* [2026-04-10] Notes Section — menos espacio vertical en mobile */}
+                      <div className="mt-2 md:mt-3 pt-2 md:pt-3 border-t border-border/40">
+                        <button
+                          onClick={() => toggleNotesExpanded(item.id)}
+                          className="flex items-center gap-1.5 md:gap-2 text-[11px] md:text-xs text-muted-foreground hover:text-foreground transition-colors w-full"
+                        >
+                          <MessageSquare className="h-3 w-3 md:h-3.5 md:w-3.5" />
+                          <span>{item.notes ? 'Editar nota' : 'Agregar nota'}</span>
+                          {isNotesExpanded ? (
+                            <ChevronUp className="h-3 w-3 md:h-3.5 md:w-3.5 ml-auto" />
+                          ) : (
+                            <ChevronDown className="h-3 w-3 md:h-3.5 md:w-3.5 ml-auto" />
+                          )}
+                          {item.notes && !expandedNotes[item.id] && (
+                            <span className="text-[10px] md:text-[11px] text-secondary ml-1 truncate max-w-[100px] md:max-w-[120px]">
+                              📝 {item.notes}
+                            </span>
+                          )}
+                        </button>
+                        
+                        {isNotesExpanded && (
+                          <div className="mt-1.5 md:mt-2 animate-in slide-in-from-top-2 duration-200">
+                            <Textarea
+                              value={item.notes || ''}
+                              onChange={(e) => updateItemNotes(item.id, e.target.value)}
+                              placeholder="Ej: sin vegetales, extra salsa..."
+                              className="min-h-[48px] md:min-h-[56px] text-xs resize-none bg-muted/30"
+                              maxLength={200}
+                            />
+                            <p className="text-[10px] text-muted-foreground mt-1 text-right">
+                              {(item.notes?.length || 0)}/200
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
 
+            {/* [2026-04-10] Sugerencias — 6 en mobile, 10 en desktop */}
+            <div className="mt-4 md:mt-6">
+              <UpsellSuggestions maxItems={isMobile ? 6 : 10} />
+            </div>
+          </div>
+
+          {/* [2026-04-10] Desktop: resumen sticky con top que respeta el header */}
           <div className="lg:col-span-1 hidden lg:block">
-            <Card className="sticky top-4 bg-gradient-to-br from-card to-muted/30 border-border/50 shadow-[0_0_20px_hsl(var(--primary)/0.08)]">
+            <Card className="sticky top-24 bg-gradient-to-br from-card to-muted/30 border-border/50 shadow-[0_0_20px_hsl(var(--primary)/0.08)]">
               <CardContent className="p-6 space-y-5">
                 <h2 className="text-lg font-display font-bold">Resumen del pedido</h2>
                 
@@ -316,26 +323,60 @@ const Cart = () => {
         </div>
       </div>
 
-      {/* Mobile Sticky Bottom Bar */}
+      {/* [2026-04-10] Mobile: barra fija inferior expandible con desglose */}
       {isMobile && (
-        <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-md border-t border-border p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] z-50 md:hidden">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-muted-foreground">Total</span>
-            <div className="text-right">
-              <span className="text-lg font-bold text-secondary">{formatPrice(subtotal)}</span>
+        <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-md border-t border-border z-50 md:hidden transition-all duration-300">
+          {/* [2026-04-10] Área expandida con desglose — solo visible si summaryExpanded */}
+          {summaryExpanded && (
+            <div className="px-4 pt-3 pb-1 border-b border-border/40 animate-in slide-in-from-bottom-2 duration-200">
+              <div className="flex justify-between text-sm mb-2">
+                <span className="text-muted-foreground">Subtotal ({totalItems} {totalItems === 1 ? 'item' : 'items'})</span>
+                <span>{formatPrice(subtotal)}</span>
+              </div>
               {formatPriceAlt(subtotal) && (
-                <p className="text-[11px] text-muted-foreground">{formatPriceAlt(subtotal)}</p>
+                <div className="flex justify-between text-xs mb-2">
+                  <span className="text-muted-foreground">Equivalente</span>
+                  <span className="text-muted-foreground">{formatPriceAlt(subtotal)}</span>
+                </div>
               )}
+              <div className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground pb-1">
+                <Shield className="h-3 w-3" />
+                <span>Pedido seguro</span>
+              </div>
+            </div>
+          )}
+
+          {/* [2026-04-10] Barra compacta: chevron + total + botón */}
+          <div className="px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+            <div className="flex items-center gap-3">
+              {/* [2026-04-10] Chevron para expandir/colapsar desglose */}
+              <button
+                onClick={() => setSummaryExpanded(prev => !prev)}
+                className="flex items-center gap-2 flex-1 min-w-0"
+                aria-label={summaryExpanded ? 'Ocultar desglose' : 'Ver desglose'}
+              >
+                <div className="flex items-center gap-1">
+                  {summaryExpanded ? (
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </div>
+                <div className="text-left">
+                  <p className="text-[11px] text-muted-foreground leading-none mb-0.5">Total</p>
+                  <p className="text-lg font-bold text-secondary leading-none">{formatPrice(subtotal)}</p>
+                </div>
+              </button>
+
+              <Button 
+                className="gap-2 bg-secondary hover:bg-secondary/90 text-secondary-foreground font-bold h-11 px-6 animate-checkout-glow flex-shrink-0" 
+                onClick={() => navigate('/checkout')}
+              >
+                <ShoppingBag className="h-4 w-4" />
+                Finalizar
+              </Button>
             </div>
           </div>
-          <Button 
-            className="w-full gap-2 bg-secondary hover:bg-secondary/90 text-secondary-foreground font-bold h-12 animate-checkout-glow" 
-            size="lg"
-            onClick={() => navigate('/checkout')}
-          >
-            <ShoppingBag className="h-5 w-5" />
-            Finalizar Compra
-          </Button>
         </div>
       )}
       
