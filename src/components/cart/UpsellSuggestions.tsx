@@ -100,12 +100,13 @@ const SuggestionCarousel = ({
             key={product.id}
             // [2026-04-10] Cards adaptativas: 28vw en mobile (~3-4 cards visibles)
             // Pantalla pequeña: 3 cards + borde de 4ta, mediana: ~3.5, grande: ~4
-            className={`flex-shrink-0 rounded-lg md:rounded-xl border border-border/50 bg-muted/30 overflow-hidden
+            // [2026-04-10] Cards oscuras con paleta de marca Catarsis
+            className={`flex-shrink-0 rounded-lg md:rounded-xl border border-gray-700/50 bg-[#0a1628] overflow-hidden
               ${isMobile ? 'snap-start' : ''}
               ${compact ? 'w-[130px]' : isMobile ? 'w-[28vw] min-w-[100px] max-w-[140px]' : 'w-[150px]'}`}
           >
-            {/* [2026-04-10] Imagen: 100px en mobile, 96px desktop, 80px compact */}
-            <div className={`bg-white ${compact ? 'h-20' : isMobile ? 'h-[100px]' : 'h-24'}`}>
+            {/* [2026-04-10] Imagen sin fondo blanco, coherente con tema oscuro */}
+            <div className={`${compact ? 'h-20' : isMobile ? 'h-[100px]' : 'h-24'}`}>
               <img
                 src={product.imagen}
                 alt={product.nombre}
@@ -117,18 +118,20 @@ const SuggestionCarousel = ({
             </div>
             {/* [2026-04-10] Info compacta: nombre truncado + precio + botón */}
             <div className="p-1.5 md:p-2">
-              <p className={`font-medium truncate ${compact ? 'text-[11px]' : 'text-[11px] md:text-xs'}`}>
+              {/* [2026-04-10] Texto Seasalt sobre fondo oscuro */}
+              <p className={`font-medium truncate text-[#F7F8F9] ${compact ? 'text-[11px]' : 'text-[11px] md:text-xs'}`}>
                 {product.nombre}
               </p>
               <div className="flex items-center justify-between mt-1 md:mt-1.5">
-                <span className={`font-bold text-secondary ${compact ? 'text-[11px]' : 'text-[11px] md:text-xs'}`}>
+                {/* [2026-04-10] Precio Xanthous */}
+                <span className={`font-bold text-[#F2B60F] ${compact ? 'text-[11px]' : 'text-[11px] md:text-xs'}`}>
                   {formatPrice(product.precio_usd)}
                 </span>
-                {/* [2026-04-08] Source 'suggestion' para analytics */}
+                {/* [2026-04-10] Botón (+) con acento Xanthous */}
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-6 w-6 rounded-full bg-secondary/10 hover:bg-secondary/20 text-secondary"
+                  className="h-6 w-6 rounded-full border border-[#F2B60F] text-[#F2B60F] hover:bg-[#F2B60F]/20"
                   onClick={() => onAdd(product)}
                   aria-label={`Agregar ${product.nombre} al carrito`}
                 >
@@ -140,20 +143,20 @@ const SuggestionCarousel = ({
         ))}
       </div>
 
-      {/* [2026-04-10] Flechas de navegación — solo desktop, solo modo no-compact */}
-      {!compact && !isMobile && canScrollLeft && (
+      {/* [2026-04-10] Flechas de navegación — visibles en mobile y desktop */}
+      {!compact && canScrollLeft && (
         <button
           onClick={() => scroll('left')}
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 hidden md:flex items-center justify-center w-8 h-8 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
+          className="absolute left-1 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center w-8 h-8 rounded-full bg-[#010C23]/85 border border-gray-700/50 text-white hover:bg-[#010C23] transition-colors"
           aria-label="Desplazar a la izquierda"
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
       )}
-      {!compact && !isMobile && canScrollRight && (
+      {!compact && canScrollRight && (
         <button
           onClick={() => scroll('right')}
-          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 hidden md:flex items-center justify-center w-8 h-8 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
+          className="absolute right-1 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center w-8 h-8 rounded-full bg-[#010C23]/85 border border-gray-700/50 text-white hover:bg-[#010C23] transition-colors"
           aria-label="Desplazar a la derecha"
         >
           <ChevronRight className="h-4 w-4" />
