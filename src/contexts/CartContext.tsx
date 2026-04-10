@@ -14,7 +14,9 @@ import { MenuItem } from '@/types/menu';
 // Valores posibles: 'menu' | 'best_seller' | 'suggestion' | 'search' | 'extras'
 // Se persiste en order_items.source al completar el pedido.
 // Para agregar un origen nuevo: añadir al tipo CartItemSource.
-export type CartItemSource = 'menu' | 'best_seller' | 'suggestion' | 'search' | 'extras';
+// [2026-04-10] Sources ampliados para mayor granularidad
+// en el dashboard de comportamiento: product_page y category.
+export type CartItemSource = 'menu' | 'best_seller' | 'suggestion' | 'search' | 'extras' | 'product_page' | 'category';
 
 // FEATURE [EXTRAS]: Tipo para extras seleccionados en el carrito
 export interface CartItemExtra {

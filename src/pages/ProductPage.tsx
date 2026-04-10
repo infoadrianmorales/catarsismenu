@@ -43,9 +43,10 @@ const ProductPage = () => {
     }
   }, [product?.id]);
 
-  // [2026-04-08] SOURCE TRACKING: desde página de producto se registra como 'menu'
+  // [2026-04-10] Distinguir compras desde página individual
+  // de producto vs. menú general.
   const handleAddToCart = () => {
-    if (product && addToCart(product, 'menu')) {
+    if (product && addToCart(product, 'product_page')) {
       toast.success(`${product.nombre} agregado al carrito`);
       trackAddToCart({ id: product.id, nombre: product.nombre, precio_usd: product.precio_usd }, 1);
     }

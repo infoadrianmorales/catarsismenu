@@ -30,12 +30,16 @@ import { useProductSalesAnalytics } from '@/hooks/useProductSalesAnalytics';
 import type { ProductSalesHistoryItem } from '@/hooks/useProductSalesAnalytics';
 
 // [2026-04-08] Colores de marca para gráficos
+// [2026-04-10] Colores y labels ampliados para nuevos sources
+// (product_page, category) que mejoran la granularidad del tracking.
 const SOURCE_COLORS: Record<string, string> = {
   menu: '#04308C',
   best_seller: '#DB1F51',
   suggestion: '#F2B60F',
   search: '#14B2AA',
   extras: '#8B5CF6',
+  product_page: '#F97316',
+  category: '#06B6D4',
 };
 
 const SOURCE_LABELS: Record<string, string> = {
@@ -44,6 +48,8 @@ const SOURCE_LABELS: Record<string, string> = {
   suggestion: 'Sugerencias del carrito',
   search: 'Búsqueda',
   extras: 'Extras',
+  product_page: 'Página de producto',
+  category: 'Página de categoría',
 };
 
 const CATEGORY_COLORS = ['#04308C', '#DB1F51', '#F2B60F', '#14B2AA', '#8B5CF6', '#EC4899', '#F97316', '#06B6D4', '#84CC16', '#6366F1', '#EF4444', '#10B981'];
