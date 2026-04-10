@@ -34,7 +34,7 @@ const SuggestionCarousel = ({
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(items.length > 3);
   const isMobile = useIsMobile();
 
   // [2026-04-10] Calcular si hay scroll disponible en cada dirección
@@ -105,7 +105,7 @@ const SuggestionCarousel = ({
               ${compact ? 'w-[130px]' : ''}`}
             style={{
               scrollSnapAlign: 'start',
-              ...(!compact ? { width: isMobile ? 'calc((100% - 20px) / 3)' : '150px' } : {}),
+              ...(!compact ? { width: isMobile ? 'calc((100% - 30px) / 3.5)' : '150px' } : {}),
             }}
           >
             {/* [2026-04-10] Imagen */}
