@@ -17,10 +17,11 @@ export interface PopularPage {
   views: number;
 }
 
+// [2026-04-10] Agregado soporte para granularidad 'monthly' para el filtro "Todo"
 export const usePageViews = (
   startDate: Date,
   endDate: Date,
-  granularity: 'hourly' | 'daily' = 'daily'
+  granularity: 'hourly' | 'daily' | 'monthly' = 'daily'
 ) => {
   const [series, setSeries] = useState<PageViewDataPoint[]>([]);
   const [summary, setSummary] = useState({ totalViews: 0, uniqueVisitors: 0 });

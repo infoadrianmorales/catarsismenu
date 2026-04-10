@@ -1,6 +1,7 @@
+// [2026-04-10] Agregado soporte para granularidad 'monthly' para el filtro "Todo"
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { startOfDay, endOfDay, format, eachDayOfInterval, eachHourOfInterval } from 'date-fns';
+import { startOfDay, endOfDay, format, eachDayOfInterval, eachHourOfInterval, eachMonthOfInterval } from 'date-fns';
 
 export interface SalesDataPoint {
   date: string;
@@ -44,7 +45,7 @@ interface OrderItem {
 export const useSalesAnalytics = (
   startDate: Date,
   endDate: Date,
-  granularity: 'hourly' | 'daily' = 'daily'
+  granularity: 'hourly' | 'daily' | 'monthly' = 'daily'
 ) => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
@@ -57,7 +58,6 @@ export const useSalesAnalytics = (
       setError(null);
 
       try {
-        // Fetch orders in date range (excluding canceled)
         const { data: ordersData, error: ordersError } = await supabase
           .from('orders')
           .select('id, created_at, total, status, payment_method')
@@ -68,7 +68,6 @@ export const useSalesAnalytics = (
         if (ordersError) throw ordersError;
         setOrders(ordersData || []);
 
-        // Get order IDs for items query (ALL orders except CANCELED)
         const validOrderIds = (ordersData || []).map(o => o.id);
 
         if (validOrderIds.length > 0) {
@@ -92,7 +91,7 @@ export const useSalesAnalytics = (
     fetchData();
   }, [startDate, endDate]);
 
-  // Calculate time series data
+  // [2026-04-10] Soporte para granularidad monthly además de hourly y daily
   const series = useMemo((): SalesDataPoint[] => {
     if (granularity === 'hourly') {
       const hours = eachHourOfInterval({ start: startOfDay(startDate), end: endOfDay(endDate) });
@@ -105,6 +104,20 @@ export const useSalesAnalytics = (
           date: hour.toISOString(),
           orders: hourOrders.length,
           revenue: hourOrders.reduce((sum, o) => sum + Number(o.total), 0)
+        };
+      });
+    } else if (granularity === 'monthly') {
+      // [2026-04-10] Agrupar por mes para rangos largos (filtro "Todo")
+      const months = eachMonthOfInterval({ start: startDate, end: endDate });
+      return months.map(month => {
+        const monthStr = format(month, 'yyyy-MM');
+        const monthOrders = orders.filter(o =>
+          format(new Date(o.created_at), 'yyyy-MM') === monthStr
+        );
+        return {
+          date: month.toISOString(),
+          orders: monthOrders.length,
+          revenue: monthOrders.reduce((sum, o) => sum + Number(o.total), 0)
         };
       });
     } else {
@@ -123,7 +136,6 @@ export const useSalesAnalytics = (
     }
   }, [orders, startDate, endDate, granularity]);
 
-  // Calculate summary
   const summary = useMemo((): SalesSummary => {
     const totalRevenue = orders.reduce((sum, o) => sum + Number(o.total), 0);
     return {
@@ -133,7 +145,6 @@ export const useSalesAnalytics = (
     };
   }, [orders]);
 
-  // Calculate top products
   const topProducts = useMemo((): TopProduct[] => {
     const productMap = new Map<string, { quantity: number; revenue: number }>();
     
@@ -151,7 +162,6 @@ export const useSalesAnalytics = (
       .slice(0, 5);
   }, [orderItems]);
 
-  // Calculate payment method distribution
   const paymentMethods = useMemo((): PaymentMethodStats[] => {
     const methodMap = new Map<string, number>();
     

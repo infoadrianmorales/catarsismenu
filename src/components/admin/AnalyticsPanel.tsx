@@ -19,7 +19,8 @@ import {
   ArrowUpRight,
   ArrowDownRight,
 } from 'lucide-react';
-import { format, subDays, startOfMonth, startOfDay, endOfDay } from 'date-fns';
+// [2026-04-10] Agregado differenceInDays, eachMonthOfInterval, startOfMonth para granularidad adaptativa
+import { format, subDays, startOfMonth, startOfDay, endOfDay, differenceInDays, eachMonthOfInterval } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useSalesAnalytics } from '@/hooks/useSalesAnalytics';
 import { usePageViews } from '@/hooks/usePageViews';
@@ -28,7 +29,8 @@ import type { DateRange } from 'react-day-picker';
 // [2026-04-08] Dashboard detallado de ventas y comportamiento
 import ProductSalesDashboard from './ProductSalesDashboard';
 
-type DatePreset = 'today' | 'yesterday' | '7days' | '30days' | 'thisMonth' | 'custom';
+// [2026-04-10] Agregado 'all' para filtro de historial completo
+type DatePreset = 'today' | 'yesterday' | '7days' | '30days' | 'thisMonth' | 'all' | 'custom';
 type MetricType = 'orders' | 'revenue' | 'avgTicket' | 'views';
 
 const presets: { key: DatePreset; label: string }[] = [
@@ -37,8 +39,10 @@ const presets: { key: DatePreset; label: string }[] = [
   { key: '7days', label: '7 días' },
   { key: '30days', label: '30 días' },
   { key: 'thisMonth', label: 'Este mes' },
+  { key: 'all', label: 'Todo' }, // [2026-04-10] Historial completo sin límite de fechas
 ];
 
+// [2026-04-10] Granularidad adaptativa: hourly para hoy/ayer, daily para 7-30 días, monthly para "Todo"
 const getDateRange = (preset: DatePreset, customRange?: { from: Date; to: Date }) => {
   const now = new Date();
   switch (preset) {
@@ -54,9 +58,14 @@ const getDateRange = (preset: DatePreset, customRange?: { from: Date; to: Date }
       return { start: startOfDay(subDays(now, 29)), end: endOfDay(now), granularity: 'daily' as const };
     case 'thisMonth':
       return { start: startOfMonth(now), end: endOfDay(now), granularity: 'daily' as const };
+    case 'all':
+      // [2026-04-10] Historial completo desde 2020, granularidad mensual para no saturar gráficos
+      return { start: new Date('2020-01-01T00:00:00'), end: endOfDay(now), granularity: 'monthly' as const };
     case 'custom':
       if (customRange) {
-        return { start: startOfDay(customRange.from), end: endOfDay(customRange.to), granularity: 'daily' as const };
+        const days = differenceInDays(customRange.to, customRange.from);
+        const gran = days > 90 ? 'monthly' as const : 'daily' as const;
+        return { start: startOfDay(customRange.from), end: endOfDay(customRange.to), granularity: gran };
       }
       return { start: startOfDay(subDays(now, 6)), end: endOfDay(now), granularity: 'daily' as const };
     default:
@@ -107,26 +116,30 @@ export const AnalyticsPanel = () => {
     },
   };
 
+  // [2026-04-10] dateLabel adaptativo: hourly→HH:mm, daily→d MMM, monthly→MMM yy
+  const formatDateLabel = (dateStr: string) => {
+    const d = new Date(dateStr);
+    if (granularity === 'hourly') return format(d, 'HH:mm');
+    if (granularity === 'monthly') return format(d, 'MMM yy', { locale: es });
+    return format(d, 'd MMM', { locale: es });
+  };
+
   const chartData = useMemo(() => {
     if (selectedMetric === 'views') {
       return viewsSeries.map(point => ({
-        dateLabel: granularity === 'hourly'
-          ? format(new Date(point.date), 'HH:mm')
-          : format(new Date(point.date), 'd MMM', { locale: es }),
+        dateLabel: formatDateLabel(point.date),
         value: point.views,
       }));
     }
 
-    return series.map((point, i) => {
+    return series.map((point) => {
       let value = 0;
       if (selectedMetric === 'orders') value = point.orders;
       else if (selectedMetric === 'revenue') value = point.revenue;
       else if (selectedMetric === 'avgTicket') value = point.orders > 0 ? point.revenue / point.orders : 0;
 
       return {
-        dateLabel: granularity === 'hourly'
-          ? format(new Date(point.date), 'HH:mm')
-          : format(new Date(point.date), 'd MMM', { locale: es }),
+        dateLabel: formatDateLabel(point.date),
         value,
       };
     });
