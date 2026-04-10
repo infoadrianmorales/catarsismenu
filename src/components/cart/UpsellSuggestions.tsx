@@ -6,6 +6,8 @@
 // navegación y 10 productos para más opciones de upsell.
 // [2026-04-10] MOBILE: scroll-snap, sin flechas, degradados
 // en ambos bordes, swipe nativo con momentum.
+// [2026-04-10] Cards adaptativas según ancho de pantalla:
+// 320-375px: ~3 cards, 376-430px: ~3.5 cards, 431px+: ~4 cards
 // ================================================
 
 import { useRef, useState, useEffect, useCallback } from 'react';
@@ -70,11 +72,12 @@ const SuggestionCarousel = ({
     };
   }, [updateScrollState, items]);
 
-  // [2026-04-10] Desplazar ~2.5 cards por click
+  // [2026-04-10] Desplazar 3 cards por click para avanzar más rápido
   const scroll = (direction: 'left' | 'right') => {
     if (!scrollRef.current) return;
-    const cardWidth = compact ? 130 : 150;
-    const amount = cardWidth * 2.5 + 12 * 2; // cards + gaps
+    // [2026-04-10] Ancho adaptativo: 28vw en mobile, fijo en desktop
+    const cardWidth = isMobile ? window.innerWidth * 0.28 : compact ? 130 : 150;
+    const amount = cardWidth * 3 + 8 * 3; // 3 cards + 3 gaps
     scrollRef.current.scrollBy({
       left: direction === 'left' ? -amount : amount,
       behavior: 'smooth',
@@ -95,9 +98,11 @@ const SuggestionCarousel = ({
         {items.map(product => (
           <div
             key={product.id}
+            // [2026-04-10] Cards adaptativas: 28vw en mobile (~3-4 cards visibles)
+            // Pantalla pequeña: 3 cards + borde de 4ta, mediana: ~3.5, grande: ~4
             className={`flex-shrink-0 rounded-lg md:rounded-xl border border-border/50 bg-muted/30 overflow-hidden
               ${isMobile ? 'snap-start' : ''}
-              ${compact ? 'w-[130px]' : isMobile ? 'w-[140px]' : 'w-[150px]'}`}
+              ${compact ? 'w-[130px]' : isMobile ? 'w-[28vw] min-w-[100px] max-w-[140px]' : 'w-[150px]'}`}
           >
             {/* [2026-04-10] Imagen: 100px en mobile, 96px desktop, 80px compact */}
             <div className={`bg-white ${compact ? 'h-20' : isMobile ? 'h-[100px]' : 'h-24'}`}>
