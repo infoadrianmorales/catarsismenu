@@ -1,34 +1,43 @@
 
 
-## Plan: Flechas visibles en mobile + cards oscuras en carrusel de sugerencias
+## Plan: Banner de sugerencias con indicador explícito de "ver más"
 
-### Problema 1: Flechas ocultas en mobile
-Las flechas tienen dos bloqueos: (1) la condición `!isMobile` en líneas 144 y 153 impide que se rendericen en mobile, y (2) la clase `hidden md:flex` las oculta por CSS en pantallas pequeñas. Hay que quitar ambos filtros.
-
-### Problema 2: Cards con fondo blanco
-Las cards usan `bg-muted/30` y la imagen tiene `bg-white` (línea 108). No es coherente con la paleta oscura de Catarsis (#010C23 Rich Black).
+### Problema actual
+Desde la captura del usuario: las cards de sugerencias se ven ~3 completas pero no hay un indicador claro de que hay más. El usuario quiere un "banner" contenido que muestre exactamente 3 cards completas y en la posición de la 4ta card un botón/overlay que diga "desplazar para ver más".
 
 ### Cambios en `src/components/cart/UpsellSuggestions.tsx`
 
-**Flechas — líneas 143-161:**
-- Quitar `!isMobile &&` de las condiciones de renderizado (líneas 144 y 153)
-- Cambiar clase de `hidden md:flex` a `flex` para que sean visibles en todas las pantallas
-- Cambiar fondo de `bg-black/50` a `bg-[#010C23]/85 border border-gray-700/50` para coherencia de marca
-- Posición: `left-1` / `right-1` para no pegarse al borde en mobile
+**1. Contenedor tipo banner**
+- Envolver el carrusel en un contenedor con fondo diferenciado (`bg-[#0a1628]` con borde `border-gray-700/50` y `rounded-xl`) para que se sienta como un bloque/banner independiente
+- Padding interno para que las cards no toquen los bordes
+- Título "COMPLEMENTA TU PEDIDO" dentro del banner
 
-**Cards — líneas 103 y 108:**
-- Cambiar `bg-muted/30 border-border/50` a `bg-[#0a1628] border-gray-700/50`
-- Quitar `bg-white` del contenedor de imagen
-- Texto nombre: agregar `text-[#F7F8F9]`
-- Precio: cambiar `text-secondary` a `text-[#F2B60F]`
-- Botón (+): cambiar a `border border-[#F2B60F] text-[#F2B60F] hover:bg-[#F2B60F]/20`
+**2. Cards: ancho exacto para 3 visibles**
+- Cambiar `w-[30vw]` a `calc((100% - 2*12px) / 3)` usando style inline, o bien `w-[calc(33.33%-8px)]` para que exactamente 3 cards llenen el ancho visible del banner
+- `flex-shrink-0` se mantiene
 
-### Archivos
+**3. Indicador de "ver más" en el borde derecho**
+- En lugar del degradado sutil actual, agregar un overlay en la zona derecha del carrusel que muestre un botón circular con `ChevronRight` siempre visible cuando `canScrollRight` es true
+- El botón se posiciona absolute en el borde derecho, centrado verticalmente sobre las cards
+- Fondo semi-transparente `bg-[#010C23]/90` con borde `border-[#F2B60F]` para destacar
+- Al tocarlo: `scrollBy` 3 cards hacia la derecha
 
-| Acción | Archivo |
+**4. Mantener scroll-snap y swipe**
+- El swipe nativo se mantiene como alternativa al botón
+- `scrollSnapType: 'x mandatory'` sigue activo
+- Hide scrollbar se mantiene
+
+### Archivo a modificar
+
+| Accion | Archivo |
 |--------|---------|
 | Modificar | `src/components/cart/UpsellSuggestions.tsx` |
 
-### Verificación
-Flechas visibles en mobile (390px), se ocultan según posición de scroll, cards con fondo oscuro y colores de marca, desktop sin regresiones.
+### Verificacion
+1. Se ven exactamente 3 cards completas dentro del banner
+2. Un botón de flecha derecha visible indica que hay más
+3. Al tocar la flecha se desplazan 3 cards más
+4. Swipe sigue funcionando
+5. Sin scrollbar visible
+6. Desktop sin regresiones
 
