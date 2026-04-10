@@ -24,6 +24,8 @@ interface UpsellSuggestionsProps {
 
 // [2026-04-10] Sub-componente de carrusel con scroll horizontal animado,
 // flechas de navegación (solo desktop), snap en mobile y degradados indicadores.
+// [2026-04-10] FIX MOBILE: Cards compactas con overflow-hidden vertical,
+// flex-nowrap explícito y altura controlada para no expandir la página.
 const SuggestionCarousel = ({
   items,
   compact,
@@ -79,35 +81,36 @@ const SuggestionCarousel = ({
     });
   };
 
-  // [2026-04-10] En mobile: scroll-snap para swipe natural
-  // Cada card tiene scroll-snap-align: start
-  const mobileSnapClass = isMobile ? 'snap-x snap-mandatory' : '';
-  const mobileCardSnapClass = isMobile ? 'snap-start' : '';
-
   return (
-    <div className="relative group">
-      {/* [2026-04-10] Contenedor de scroll con scrollbar oculto */}
+    // [2026-04-10] overflow-hidden en Y para contener la altura
+    <div className="relative group overflow-hidden">
+      {/* [2026-04-10] Contenedor de scroll — flex-nowrap explícito, snap en mobile */}
       <div
         ref={scrollRef}
-        className={`flex gap-2.5 md:gap-3 overflow-x-auto scroll-smooth scrollbar-hide ${mobileSnapClass} ${compact ? '-mx-6 px-6' : ''}`}
+        className={`flex flex-nowrap gap-2 md:gap-3 overflow-x-auto overflow-y-hidden scroll-smooth scrollbar-hide
+          ${isMobile ? 'snap-x snap-mandatory' : ''}
+          ${compact ? '-mx-6 px-6' : ''}`}
         style={{ WebkitOverflowScrolling: 'touch' }}
       >
         {items.map(product => (
           <div
             key={product.id}
-            className={`flex-shrink-0 rounded-xl border border-border/50 bg-muted/30 overflow-hidden ${mobileCardSnapClass}
+            className={`flex-shrink-0 rounded-lg md:rounded-xl border border-border/50 bg-muted/30 overflow-hidden
+              ${isMobile ? 'snap-start' : ''}
               ${compact ? 'w-[130px]' : isMobile ? 'w-[140px]' : 'w-[150px]'}`}
           >
-            <div className={`bg-white ${compact ? 'h-20' : isMobile ? 'h-[76px]' : 'h-24'}`}>
+            {/* [2026-04-10] Imagen: 100px en mobile, 96px desktop, 80px compact */}
+            <div className={`bg-white ${compact ? 'h-20' : isMobile ? 'h-[100px]' : 'h-24'}`}>
               <img
                 src={product.imagen}
                 alt={product.nombre}
                 loading="lazy"
                 width="150"
-                height="96"
+                height="100"
                 className="w-full h-full object-cover"
               />
             </div>
+            {/* [2026-04-10] Info compacta: nombre truncado + precio + botón */}
             <div className="p-1.5 md:p-2">
               <p className={`font-medium truncate ${compact ? 'text-[11px]' : 'text-[11px] md:text-xs'}`}>
                 {product.nombre}
@@ -153,10 +156,10 @@ const SuggestionCarousel = ({
       )}
 
       {/* [2026-04-10] Degradados en los bordes — indican más contenido */}
-      {!compact && canScrollRight && (
+      {canScrollRight && (
         <div className="absolute right-0 top-0 bottom-0 w-8 md:w-10 bg-gradient-to-l from-background to-transparent pointer-events-none" />
       )}
-      {!compact && canScrollLeft && (
+      {canScrollLeft && (
         <div className="absolute left-0 top-0 bottom-0 w-8 md:w-10 bg-gradient-to-r from-background to-transparent pointer-events-none" />
       )}
     </div>
@@ -184,9 +187,10 @@ export const UpsellSuggestions = ({ maxItems = 10, compact = false }: UpsellSugg
       {/* Sección 1: Complementos contextuales */}
       {foodSuggestions.length > 0 && (
         <div className="mb-3 md:mb-4">
-          <div className="flex items-center gap-2 mb-2 md:mb-3">
-            <TrendingUp className="h-3.5 w-3.5 md:h-4 md:w-4 text-secondary" />
-            <h3 className={`font-display font-semibold ${compact ? 'text-sm' : 'text-sm md:text-base'}`}>
+          {/* [2026-04-10] Título más sutil en mobile para no competir con el carrito */}
+          <div className="flex items-center gap-1.5 md:gap-2 mb-1.5 md:mb-3">
+            <TrendingUp className="h-3 w-3 md:h-4 md:w-4 text-secondary hidden md:block" />
+            <h3 className={`font-medium md:font-semibold ${compact ? 'text-sm' : 'text-xs md:text-base'} md:font-display`}>
               Complementa tu pedido
             </h3>
           </div>
@@ -202,9 +206,10 @@ export const UpsellSuggestions = ({ maxItems = 10, compact = false }: UpsellSugg
       {/* [2026-04-08] Sección 2: Bebidas */}
       {beverageSuggestions.length > 0 && (
         <div>
-          <div className="flex items-center gap-2 mb-2 md:mb-3">
-            <GlassWater className="h-3.5 w-3.5 md:h-4 md:w-4 text-secondary" />
-            <h3 className={`font-display font-semibold ${compact ? 'text-sm' : 'text-sm md:text-base'}`}>
+          {/* [2026-04-10] Título sutil en mobile */}
+          <div className="flex items-center gap-1.5 md:gap-2 mb-1.5 md:mb-3">
+            <GlassWater className="h-3 w-3 md:h-4 md:w-4 text-secondary hidden md:block" />
+            <h3 className={`font-medium md:font-semibold ${compact ? 'text-sm' : 'text-xs md:text-base'} md:font-display`}>
               ¿Algo para tomar?
             </h3>
           </div>

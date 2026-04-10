@@ -380,7 +380,8 @@ const Cart = () => {
         </div>
       )}
       
-      <Footer />
+      {/* [2026-04-10] Footer oculto en mobile — la barra fija lo reemplaza */}
+      {!isMobile && <Footer />}
     </div>
   );
 };
