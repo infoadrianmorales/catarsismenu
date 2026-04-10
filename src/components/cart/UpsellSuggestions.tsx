@@ -136,6 +136,7 @@ const SuggestionCarousel = ({
                   aria-label={`Agregar ${product.nombre} al carrito`}
                 >
                   <Plus className="h-3.5 w-3.5" />
+                </Button>
               </div>
             </div>
           </div>
