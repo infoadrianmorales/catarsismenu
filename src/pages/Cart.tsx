@@ -84,17 +84,17 @@ const Cart = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className={`bg-background ${isMobile ? 'h-[100dvh] flex flex-col overflow-hidden' : 'min-h-screen'}`}>
       <MenuHeader 
         currency={currency} 
         onCurrencyToggle={toggleCurrency}
         displayMode={displayMode}
       />
       
-      {/* [2026-04-10] pb-36 en mobile para que la barra fija inferior no tape contenido */}
-      <div className={`container px-4 py-6 md:py-8 ${isMobile ? 'pb-36' : ''}`}>
-        {/* [2026-04-10] Header más compacto en mobile */}
-        <div className="flex items-center justify-between mb-4 md:mb-6">
+      {/* [2026-04-10] Contenido principal — en mobile ocupa el espacio restante */}
+      <div className={`${isMobile ? 'flex-1 flex flex-col overflow-hidden px-4 pt-2 pb-0' : 'container px-4 py-8'}`}>
+        {/* [2026-04-10] Header compacto */}
+        <div className="flex items-center justify-between mb-2 md:mb-6 flex-shrink-0">
           <div className="flex items-center gap-2 md:gap-3">
             <Button variant="ghost" size="icon" onClick={() => navigate('/')} className="rounded-full h-8 w-8 md:h-10 md:w-10">
               <ArrowLeft className="h-4 w-4 md:h-5 md:w-5" />
@@ -110,10 +110,10 @@ const Cart = () => {
           </Button>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-6 md:gap-8">
-          {/* [2026-04-10] Items List — scrollable en mobile con max-height */}
-          <div className="lg:col-span-2">
-            <div className={`space-y-2 md:space-y-3 ${isMobile && items.length > 3 ? 'max-h-[55vh] overflow-y-auto pr-1 scrollbar-hide' : ''}`}>
+        <div className={`${isMobile ? 'flex-1 flex flex-col overflow-hidden min-h-0' : 'grid lg:grid-cols-3 gap-8'}`}>
+          {/* [2026-04-10] Items List — en mobile ocupa flex-1 con scroll interno */}
+          <div className={`${isMobile ? 'flex-1 overflow-y-auto min-h-0 pr-1' : 'lg:col-span-2'}`}>
+            <div className="space-y-2 md:space-y-3">
               {items.map((item, index) => {
                 const isNotesExpanded = expandedNotes[item.id] || !!item.notes;
                 
@@ -267,11 +267,14 @@ const Cart = () => {
               })}
             </div>
 
-            {/* [2026-04-10] Sugerencias — 6 en mobile, 10 en desktop */}
-            <div className="mt-4 md:mt-6">
-              <UpsellSuggestions maxItems={isMobile ? 6 : 10} />
-            </div>
           </div>
+
+          {/* [2026-04-10] Sugerencias — flex-shrink-0 para que no se comprima, overflow-hidden para aislar scroll horizontal */}
+          {isMobile ? null : (
+            <div className="mt-6">
+              <UpsellSuggestions maxItems={10} />
+            </div>
+          )}
 
           {/* [2026-04-10] Desktop: resumen sticky con top que respeta el header */}
           <div className="lg:col-span-1 hidden lg:block">
@@ -326,11 +329,18 @@ const Cart = () => {
             </Card>
           </div>
         </div>
+
+        {/* [2026-04-10] Mobile: Sugerencias fuera del scroll vertical, dentro del flex column */}
+        {isMobile && (
+          <div className="flex-shrink-0 overflow-hidden">
+            <UpsellSuggestions maxItems={6} />
+          </div>
+        )}
       </div>
 
-      {/* [2026-04-10] Mobile: barra fija inferior expandible con desglose */}
+      {/* [2026-04-10] Mobile: barra inferior — flex-shrink-0 dentro del viewport */}
       {isMobile && (
-        <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-md border-t border-border z-50 md:hidden transition-all duration-300">
+        <div className="flex-shrink-0 bg-card/95 backdrop-blur-md border-t border-border z-50 md:hidden transition-all duration-300">
           {/* [2026-04-10] Área expandida con desglose — solo visible si summaryExpanded */}
           {summaryExpanded && (
             <div className="px-4 pt-3 pb-1 border-b border-border/40 animate-in slide-in-from-bottom-2 duration-200">

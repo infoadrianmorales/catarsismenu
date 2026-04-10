@@ -189,7 +189,7 @@ export const UpsellSuggestions = ({ maxItems = 10, compact = false }: UpsellSugg
   if (foodSuggestions.length === 0 && beverageSuggestions.length === 0) return null;
 
   return (
-    <div className={compact ? 'py-3' : 'py-3 md:py-4'}>
+    <div className={compact ? 'py-3' : 'py-2 md:py-4'} style={{ overflow: 'hidden' }}>
       {/* [2026-04-10] Sección 1: Complementos — envuelto en banner */}
       {foodSuggestions.length > 0 && (
         <div className="mb-3 md:mb-4 bg-[#0a1628] border border-gray-700/50 rounded-xl p-3">
