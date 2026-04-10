@@ -187,9 +187,10 @@ export const UpsellSuggestions = ({ maxItems = 10, compact = false }: UpsellSugg
       {/* Sección 1: Complementos contextuales */}
       {foodSuggestions.length > 0 && (
         <div className="mb-3 md:mb-4">
-          <div className="flex items-center gap-2 mb-2 md:mb-3">
-            <TrendingUp className="h-3.5 w-3.5 md:h-4 md:w-4 text-secondary" />
-            <h3 className={`font-display font-semibold ${compact ? 'text-sm' : 'text-sm md:text-base'}`}>
+          {/* [2026-04-10] Título más sutil en mobile para no competir con el carrito */}
+          <div className="flex items-center gap-1.5 md:gap-2 mb-1.5 md:mb-3">
+            <TrendingUp className="h-3 w-3 md:h-4 md:w-4 text-secondary hidden md:block" />
+            <h3 className={`font-medium md:font-semibold ${compact ? 'text-sm' : 'text-xs md:text-base'} md:font-display`}>
               Complementa tu pedido
             </h3>
           </div>
@@ -205,9 +206,10 @@ export const UpsellSuggestions = ({ maxItems = 10, compact = false }: UpsellSugg
       {/* [2026-04-08] Sección 2: Bebidas */}
       {beverageSuggestions.length > 0 && (
         <div>
-          <div className="flex items-center gap-2 mb-2 md:mb-3">
-            <GlassWater className="h-3.5 w-3.5 md:h-4 md:w-4 text-secondary" />
-            <h3 className={`font-display font-semibold ${compact ? 'text-sm' : 'text-sm md:text-base'}`}>
+          {/* [2026-04-10] Título sutil en mobile */}
+          <div className="flex items-center gap-1.5 md:gap-2 mb-1.5 md:mb-3">
+            <GlassWater className="h-3 w-3 md:h-4 md:w-4 text-secondary hidden md:block" />
+            <h3 className={`font-medium md:font-semibold ${compact ? 'text-sm' : 'text-xs md:text-base'} md:font-display`}>
               ¿Algo para tomar?
             </h3>
           </div>
