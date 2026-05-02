@@ -12,7 +12,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid } from 'recharts';
-import { Globe, Eye, Users, TrendingUp, Calendar as CalendarIcon, MapPin, Compass } from 'lucide-react';
+import { Globe, Eye, Users, TrendingUp, Calendar as CalendarIcon, MapPin, Compass, Building2 } from 'lucide-react';
 import { format, subDays, startOfMonth, startOfDay, endOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import type { DateRange } from 'react-day-picker';
@@ -254,6 +254,41 @@ export const VisitorsPanel = () => {
                           <span className="mr-1.5">{flagOf(r.country)}</span>{r.country}
                         </span>
                         <span className="text-muted-foreground shrink-0 ml-2">{r.total}</span>
+                      </div>
+                      <Progress value={pct} className="h-2" />
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Ciudades */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Building2 className="h-5 w-5" /> Ciudades top
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="space-y-3">{[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-4 w-full" />)}</div>
+            ) : byCity.length === 0 ? (
+              <p className="py-8 text-center text-sm text-muted-foreground">Sin datos</p>
+            ) : (
+              <div className="space-y-4">
+                {byCity.map(r => {
+                  const pct = totalCityVisits ? Math.round((r.total / totalCityVisits) * 100) : 0;
+                  return (
+                    <div key={`${r.city}-${r.country}`} className="space-y-2">
+                      <div className="flex justify-between text-sm gap-2">
+                        <span className="font-medium truncate min-w-0">
+                          <span className="mr-1.5">{flagOf(r.country)}</span>
+                          {r.city}
+                          <span className="text-muted-foreground ml-1 text-xs">· {r.country}</span>
+                        </span>
+                        <span className="text-muted-foreground shrink-0">{r.total}</span>
                       </div>
                       <Progress value={pct} className="h-2" />
                     </div>
