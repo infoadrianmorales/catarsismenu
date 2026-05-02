@@ -1,51 +1,64 @@
-## Diagnóstico real
+## Diagnóstico
 
-Tu mensaje asume que el síntoma es "todas las visitas dicen Netherlands". La realidad en BD es distinta:
+Investigué los logs y encontré la causa real:
 
-- 147 visitas reales en las últimas 6 h con `country = NULL`.
-- 1 sola visita con "Netherlands / Groningen" — esa fue mi prueba desde el sandbox (Lovable corre en NL).
+1. **`page_views` recibe POSTs directos a `/rest/v1/page_views`** (confirmado en edge_logs desde iPhones reales con status 201). Estos inserts NO pasan por la edge function `track-visit`, por lo que entran sin `country` ni `city`.
+2. **La edge function `track-visit` solo recibe OPTIONS, cero POSTs** (confirmado en function_edge_logs). No se está usando en producción.
+3. La única fila con geo correcta (`Groningen, Netherlands`) es de mi prueba interna en `/__test_geo`.
 
-El código actual de `track-visit/index.ts` **ya lee `x-forwarded-for`** (líneas 28-36) **y ya pasa la IP al URL** de `ipwho.is` y `ipapi.co` (líneas 54 y 71-73). El cambio que pediste literalmente ya está implementado.
+**Causa**: Los visitantes en producción cargan un bundle JS antiguo (cacheado por el navegador o por el CDN de Vercel) que aún contiene la versión previa de `useVisitorTracker` que insertaba directo en la tabla. El nuevo código que invoca la edge function ya está desplegado, pero los clientes con caché agresiva siguen ejecutando el viejo.
 
-El verdadero problema es otro: **los proveedores de geo están devolviendo respuestas sin datos** (probablemente `success: false` por rate limit de `ipwho.is`, que limita a 10k req/mes por IP de servidor; o timeout de 2.5 s). Por eso terminan con `country = null`.
+Adicionalmente, aunque el código nuevo se cargue, hoy no hay nada en la BD que **impida** los inserts directos sin geo: la política RLS `Anyone can insert page views` permite el INSERT sin requerir país/ciudad. Eso significa que cualquier build vieja seguirá ensuciando los datos indefinidamente.
 
-## Cambios propuestos
+## Plan de fix
 
-### 1. Anotar en cabecera el contexto real
-Reemplazar el comentario superior para reflejar el diagnóstico verdadero (no "todas son NL"):
+### 1. Cerrar la puerta del INSERT directo desde el cliente (BD)
 
+Migración SQL:
+- Reemplazar la política `Anyone can insert page views` por `USING (false)` o eliminarla. El INSERT solo será permitido vía SERVICE_ROLE (que es lo que usa `track-visit`).
+- Esto fuerza a TODO cliente, viejo o nuevo, a pasar por la edge function. Las builds cacheadas dejarán de poder insertar (fallarán silenciosamente, que es exactamente lo que queremos).
+
+### 2. Mantener `useVisitorTracker.ts` invocando la edge function
+
+Ya está correcto, no se toca.
+
+### 3. Endurecer `track-visit` para evitar nuevos casos de `null`
+
+En `supabase/functions/track-visit/index.ts`:
+- Si `getClientIp()` retorna `null`, intentar también `cf-pseudo-ipv4` y `true-client-ip` como último recurso.
+- Si los 3 proveedores fallan, registrar el `user_agent` y la IP en el log para diagnóstico, pero seguir insertando la fila (no perder la visita) — el comportamiento actual ya hace esto, solo añadimos mejor logging.
+
+### 4. UX en el panel admin
+
+En `VisitorsPanel.tsx`, los registros con `country = null` se muestran como "Desconocido". Filtrar las filas `Desconocido` del top de países/ciudades para que no dominen la vista mientras los datos viejos siguen en la BD, **o** mostrar "Sin geo" como categoría aparte con un tooltip explicativo. Voy a optar por mostrarlas aparte (más honesto) en una sección colapsable, y excluirlas del cálculo de porcentajes del top.
+
+### 5. (Opcional) Limpieza de datos históricos
+
+Las 3762 filas existentes con `country = null` no se pueden re-resolver (no guardamos la IP, y ya pasaron más de 5 minutos así que la política de UPDATE tampoco aplica). Opciones:
+- Dejarlas y filtrar en UI (recomendado: preserva el conteo total de visitas).
+- Borrar las filas con `country = null` anteriores a hoy (perdemos 3762 visitas de los KPIs).
+
+Pregunto al usuario antes de borrar nada.
+
+## Detalles técnicos
+
+**Migración SQL propuesta**:
+```sql
+-- Cerrar INSERT público; solo SERVICE_ROLE (edge function) puede insertar
+DROP POLICY "Anyone can insert page views" ON public.page_views;
+-- No creamos política nueva: sin INSERT policy + RLS habilitado = INSERT solo vía service_role
 ```
-// [2026-05-02] FIX: geo resuelta desde IP real del visitante via
-// x-forwarded-for + logging de cada paso para diagnosticar nulls.
-// Sin este fix, la mayoría de visitantes quedaban como country=null
-// porque los proveedores fallaban silenciosamente.
-```
 
-### 2. Logging de diagnóstico
-Añadir `console.log` mínimos pero precisos en `resolveGeo` y en el handler:
-- IP detectada (o "no-ip" si headers vacíos).
-- Proveedor que respondió y país devuelto.
-- Motivo de fallo: `timeout`, `http <status>`, `success:false`, `empty`.
+**Cambios en `VisitorsPanel.tsx`**:
+- En `byCountry` y `byCity`, filtrar items con `country === 'Desconocido'` o `city === 'Desconocida'` antes de renderizar el ranking.
+- Añadir nota debajo de cada card: "X visitas sin geo resolver" (calculado desde el row Desconocido).
 
-Esto va a edge logs y nos permite, en una hora, saber exactamente qué está pasando con los visitantes reales.
+**Cambios en `track-visit`**:
+- Añadir headers `cf-pseudo-ipv4`, `true-client-ip`, `fastly-client-ip` al fallback de `getClientIp()`.
+- Loggear `req.headers` cuando no se detecta IP, para diagnóstico futuro.
 
-### 3. Hacer la resolución más resistente
-- Subir el timeout de 2.5 s a 4 s (los proveedores gratuitos a veces tardan).
-- Añadir `User-Agent` explícito al `fetch` (algunos endpoints rechazan requests sin UA).
-- Añadir un **tercer proveedor de fallback**: `https://api.country.is/{ip}` (solo país, sin rate limit conocido) — devuelve país aunque ipwho/ipapi fallen.
-- Saltar resolución si la IP detectada es privada/loopback (10.x, 192.168.x, 127.x, ::1) — esos casos garantizan respuestas vacías.
+## Archivos modificados
 
-### 4. Mantener tu intención
-Tu petición ("leer x-forwarded-for y pasarlo a ipwho.is") queda **explícitamente** documentada en el código aunque ya estuviera, para que sea inequívoco para el siguiente lector.
-
-## Lo que NO se toca
-- `useVisitorTracker.ts` ni cualquier otro archivo cliente (como pediste).
-- El esquema de BD (no hace falta).
-
-## Archivos afectados
-- `supabase/functions/track-visit/index.ts` — única modificación.
-
-## Validación post-deploy
-1. Abrir el sitio desde una pestaña incógnita real (no sandbox).
-2. Esperar ~30 s y consultar `page_views` de la última hora.
-3. Si vuelve a salir `null`, leer los edge logs — ahora dirán exactamente qué proveedor falló y por qué.
+- `supabase/migrations/<timestamp>_lock_page_views_insert.sql` (nuevo)
+- `supabase/functions/track-visit/index.ts` (headers extra + logging)
+- `src/components/admin/VisitorsPanel.tsx` (filtrar "Desconocido" del top, mostrar contador aparte)
