@@ -1,6 +1,10 @@
 // [2026-05-02] CATARSIS — useVisitorTracker
-// Propósito: Hook cliente que registra cada navegación SPA invocando la edge function track-visit.
-// Modificaciones: Se reemplazó el insert directo a page_views por supabase.functions.invoke('track-visit'); se añadió captureUtm() para persistir utm_source/medium/campaign en sessionStorage y reenviarlos en cada vista.
+// Propósito: Hook cliente que registra cada navegación SPA en page_views (INSERT directo)
+// y enriquece con país/ciudad de forma asíncrona vía ipwho.is.
+// Modificaciones: Migrado de invocar la edge function track-visit a un flujo client-side puro.
+// Añadidas detectSource() (UTM > referrer) y getGeoData() (ipwho.is, sin API key).
+// Tras INSERT se hace UPDATE en background con country/city; los UTM siguen
+// persistiéndose en sessionStorage para conservar atribución durante la sesión.
 import { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,12 +19,14 @@ const getSessionId = (): string => {
     sessionId = crypto.randomUUID();
     sessionStorage.setItem('visitor_session_id', sessionId);
   }
+  // Necesario para que la policy "Owner can patch geo within 5 minutes"
+  // pueda hacer match con get_client_session_id() en el UPDATE de geo.
   setSupabaseSessionHeader(sessionId);
   return sessionId;
 };
 
 // [2026-05-02] Persistir UTM en sessionStorage para que cualquier vista posterior
-// dentro de la sesión conserve la atribución original.
+// dentro de la sesión conserve la atribución original aunque la URL ya no los tenga.
 const captureUtm = () => {
   const params = new URLSearchParams(window.location.search);
   const utm_source = params.get('utm_source');
@@ -30,8 +36,52 @@ const captureUtm = () => {
     sessionStorage.setItem('visitor_utm', JSON.stringify({ utm_source, utm_medium, utm_campaign }));
   }
   const stored = sessionStorage.getItem('visitor_utm');
-  return stored ? JSON.parse(stored) : { utm_source: null, utm_medium: null, utm_campaign: null };
+  return stored
+    ? JSON.parse(stored)
+    : { utm_source: null, utm_medium: null, utm_campaign: null };
 };
+
+// [2026-05-02] Detecta la fuente de tráfico de forma síncrona.
+// Prioridad: UTM > referrer > 'Directo'.
+function detectSource(): string {
+  const params = new URLSearchParams(window.location.search);
+  const utmSource = params.get('utm_source')?.toLowerCase() ?? '';
+  const referrer = (document.referrer ?? '').toLowerCase();
+
+  if (utmSource) {
+    if (
+      utmSource.includes('facebook') ||
+      utmSource.includes('instagram') ||
+      utmSource.includes('meta')
+    ) {
+      return 'Meta Ads';
+    }
+    if (utmSource.includes('google')) return 'Google';
+    return utmSource.charAt(0).toUpperCase() + utmSource.slice(1);
+  }
+
+  if (!referrer) return 'Directo';
+  if (referrer.includes('google')) return 'Google';
+  if (referrer.includes('facebook') || referrer.includes('instagram')) return 'Meta';
+  if (referrer.includes('bing')) return 'Bing';
+  return 'Otros';
+}
+
+// [2026-05-02] Geolocalización por IP usando ipwho.is (gratuita, sin API key, HTTPS).
+// Si falla, la visita ya quedó registrada — solo se omite country/city.
+async function getGeoData(): Promise<{ country: string | null; city: string | null }> {
+  try {
+    const res = await fetch('https://ipwho.is/');
+    const data = await res.json();
+    if (data.success === false) return { country: null, city: null };
+    return {
+      country: data.country ?? null,
+      city: data.city ?? null,
+    };
+  } catch {
+    return { country: null, city: null };
+  }
+}
 
 export const useVisitorTracker = () => {
   const location = useLocation();
@@ -50,18 +100,41 @@ export const useVisitorTracker = () => {
       lastTrackedPath.current = path;
 
       try {
+        const session_id = getSessionId();
         const utm = captureUtm();
-        await supabase.functions.invoke('track-visit', {
-          body: {
-            session_id: getSessionId(),
+        const source = detectSource();
+
+        // a) INSERT inmediato — no esperamos la geo.
+        const { data, error } = await supabase
+          .from('page_views')
+          .insert({
+            session_id,
             path,
             referrer: document.referrer || null,
             user_agent: navigator.userAgent || null,
-            ...utm,
-          },
+            source,
+            utm_source: utm.utm_source || null,
+            utm_medium: utm.utm_medium || null,
+            utm_campaign: utm.utm_campaign || null,
+          })
+          .select('id')
+          .single();
+
+        if (error || !data?.id) return;
+
+        // b) En segundo plano, enriquecer con país/ciudad.
+        getGeoData().then(({ country, city }) => {
+          if (!country) return;
+          supabase
+            .from('page_views')
+            .update({ country, city })
+            .eq('id', data.id)
+            .then(() => {
+              // silent — fallar aquí solo significa perder geo de esta visita
+            });
         });
       } catch {
-        // Silent fail - don't break the app for analytics
+        // Silent fail — analytics nunca debe romper la app.
       }
     }, 1000);
 
