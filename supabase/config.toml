@@ -1,6 +1,7 @@
 # [2026-05-02] CATARSIS — supabase/config.toml
 # Propósito: Configuración del proyecto Supabase y flags por edge function.
-# Modificaciones: Registrado bloque [functions.track-visit] con verify_jwt = false para permitir tracking público de visitas.
+# Modificaciones: Eliminado bloque [functions.track-visit]; el tracking ahora es 100% client-side
+# (INSERT directo a page_views + UPDATE asíncrono con ipwho.is desde useVisitorTracker).
 
 project_id = "qucqigemdbyclxqjzkbs"
 
@@ -11,7 +12,4 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.sync-bcv-rate]
-verify_jwt = false
-
-[functions.track-visit]
 verify_jwt = false
