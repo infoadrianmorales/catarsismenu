@@ -3,6 +3,9 @@
 // Modificaciones:
 //   - Creación inicial — presets, KPIs, AreaChart, 3 tarjetas (fuentes, países, páginas).
 //   - [2026-05-02] FIX: añadida 4ta tarjeta "Ciudades top" (byCity) y grid responsive a 4 columnas en xl.
+//   - [2026-05-02] FIX UX: filas con país/ciudad "Desconocido(a)" se excluyen del top
+//     y se muestran como contador "sin geo" debajo del título. Evita que las visitas
+//     de builds antiguas cacheadas (sin geolocalización) dominen el ranking.
 import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -69,11 +72,17 @@ export const VisitorsPanel = () => {
   const { bySource, byCountry, byCity, daily, loading, error } = useVisitorAnalytics(start, end);
   const { popularPages, summary, loading: pagesLoading } = usePageViews(start, end, 'daily');
 
+  // [2026-05-02] Filtrar geo "Desconocido(a)" del ranking; se muestra aparte como contador.
+  const knownCountries = byCountry.filter(r => r.country !== 'Desconocido');
+  const unknownCountryCount = byCountry.find(r => r.country === 'Desconocido')?.total ?? 0;
+  const knownCities = byCity.filter(r => r.city !== 'Desconocida');
+  const unknownCityCount = byCity.find(r => r.city === 'Desconocida')?.total ?? 0;
+
   const totalSourceVisits = bySource.reduce((s, r) => s + r.total, 0);
-  const totalCountryVisits = byCountry.reduce((s, r) => s + r.total, 0);
-  const totalCityVisits = byCity.reduce((s, r) => s + r.total, 0);
+  const totalCountryVisits = knownCountries.reduce((s, r) => s + r.total, 0);
+  const totalCityVisits = knownCities.reduce((s, r) => s + r.total, 0);
   const topSource = bySource[0]?.source ?? '—';
-  const distinctCountries = byCountry.length;
+  const distinctCountries = knownCountries.length;
 
   const chartData = daily.map(d => ({
     label: format(new Date(d.date), 'd MMM', { locale: es }),
@@ -237,15 +246,20 @@ export const VisitorsPanel = () => {
             <CardTitle className="flex items-center gap-2 text-lg">
               <MapPin className="h-5 w-5" /> Países top
             </CardTitle>
+            {unknownCountryCount > 0 && (
+              <p className="text-xs text-muted-foreground">
+                {unknownCountryCount.toLocaleString()} visita{unknownCountryCount === 1 ? '' : 's'} sin geo resolver
+              </p>
+            )}
           </CardHeader>
           <CardContent>
             {loading ? (
               <div className="space-y-3">{[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-4 w-full" />)}</div>
-            ) : byCountry.length === 0 ? (
-              <p className="py-8 text-center text-sm text-muted-foreground">Sin datos</p>
+            ) : knownCountries.length === 0 ? (
+              <p className="py-8 text-center text-sm text-muted-foreground">Sin datos geolocalizados</p>
             ) : (
               <div className="space-y-4">
-                {byCountry.map(r => {
+                {knownCountries.map(r => {
                   const pct = totalCountryVisits ? Math.round((r.total / totalCountryVisits) * 100) : 0;
                   return (
                     <div key={r.country} className="space-y-2">
@@ -270,15 +284,20 @@ export const VisitorsPanel = () => {
             <CardTitle className="flex items-center gap-2 text-lg">
               <Building2 className="h-5 w-5" /> Ciudades top
             </CardTitle>
+            {unknownCityCount > 0 && (
+              <p className="text-xs text-muted-foreground">
+                {unknownCityCount.toLocaleString()} visita{unknownCityCount === 1 ? '' : 's'} sin geo resolver
+              </p>
+            )}
           </CardHeader>
           <CardContent>
             {loading ? (
               <div className="space-y-3">{[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-4 w-full" />)}</div>
-            ) : byCity.length === 0 ? (
-              <p className="py-8 text-center text-sm text-muted-foreground">Sin datos</p>
+            ) : knownCities.length === 0 ? (
+              <p className="py-8 text-center text-sm text-muted-foreground">Sin datos geolocalizados</p>
             ) : (
               <div className="space-y-4">
-                {byCity.map(r => {
+                {knownCities.map(r => {
                   const pct = totalCityVisits ? Math.round((r.total / totalCityVisits) * 100) : 0;
                   return (
                     <div key={`${r.city}-${r.country}`} className="space-y-2">

@@ -35,6 +35,8 @@ const GEO_UA = 'CatarsisVisitorTracker/1.0 (+https://catarsiszone.com)';
 
 // [2026-05-02] FIX: extraer IP real del visitante desde headers.
 // El gateway de Supabase Edge antepone la IP del cliente a x-forwarded-for.
+// Ampliado con cf-pseudo-ipv4, true-client-ip y fastly-client-ip para cubrir
+// más CDNs. Si no se detecta IP, loggeamos los headers para diagnóstico.
 function getClientIp(req: Request): string | null {
   const xff = req.headers.get('x-forwarded-for');
   if (xff) return xff.split(',')[0]?.trim() || null;
@@ -42,6 +44,12 @@ function getClientIp(req: Request): string | null {
   if (cf) return cf.trim();
   const real = req.headers.get('x-real-ip');
   if (real) return real.trim();
+  const trueClient = req.headers.get('true-client-ip');
+  if (trueClient) return trueClient.trim();
+  const fastly = req.headers.get('fastly-client-ip');
+  if (fastly) return fastly.trim();
+  const cfPseudo = req.headers.get('cf-pseudo-ipv4');
+  if (cfPseudo) return cfPseudo.trim();
   return null;
 }
 
@@ -195,6 +203,13 @@ Deno.serve(async (req) => {
     : null;
 
   const ip = getClientIp(req);
+  if (!ip) {
+    // Diagnóstico: si nunca detectamos IP, loggear todos los headers para
+    // identificar qué CDN/proxy intermediario está pasando la conexión.
+    const allHeaders: Record<string, string> = {};
+    req.headers.forEach((v, k) => { allHeaders[k] = v; });
+    console.log(`[track-visit] NO IP DETECTED. headers=${JSON.stringify(allHeaders)}`);
+  }
   console.log(`[track-visit] path=${path} ip=${ip ?? 'null'}`);
   const geo = await resolveGeo(ip);
 
