@@ -1,4 +1,6 @@
-// [2026-05-02] Hook que consume las RPCs admin: get_visits_by_source/_country/_daily.
+// [2026-05-02] CATARSIS — useVisitorAnalytics
+// Propósito: Hook admin que consume las RPCs SECURITY DEFINER de analítica de visitantes.
+// Modificaciones: Creación inicial — invoca get_visits_by_source, get_visits_by_country y get_visits_daily en paralelo y normaliza filas (source/country/daily con uniqueVisitors).
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { startOfDay, endOfDay } from 'date-fns';

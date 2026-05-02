@@ -1,4 +1,6 @@
-// [2026-05-02] Panel "Visitantes" — geo + fuentes de tráfico + tendencia diaria.
+// [2026-05-02] CATARSIS — VisitorsPanel (pestaña Visitantes en /admin)
+// Propósito: Dashboard admin con KPIs, tendencia diaria (Recharts) y widgets de fuentes/países/páginas populares.
+// Modificaciones: Creación inicial — presets de fechas, calendario rango, KPIs (visitas, únicos, países, fuente top), AreaChart de tendencia diaria y 3 tarjetas (fuentes, países con bandera, páginas populares).
 import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';

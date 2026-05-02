@@ -1,5 +1,6 @@
-// Edge function: track-visit
-// Inserta un page_view enriquecido con país/ciudad (vía ip-api.com) y fuente.
+// [2026-05-02] CATARSIS — track-visit (edge function)
+// Propósito: Registrar page_views enriquecidos con geolocalización (ip-api.com) y clasificación de fuente de tráfico.
+// Modificaciones: Creación inicial de la función, validación de session_id (UUID v4), geolocalización por IP, clasificación de source desde UTM/referrer e inserción server-side en page_views con service role.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
 const corsHeaders = {
