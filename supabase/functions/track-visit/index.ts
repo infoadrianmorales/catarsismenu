@@ -20,12 +20,27 @@
 // - Sin secrets adicionales: los 3 proveedores son gratuitos y sin API key.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers':
-    'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
+// [2026-05-02] FIX CRÍTICO CORS: el cliente Supabase global inyecta el header
+// `x-session-id` (ver src/lib/supabaseHeaders.ts). Si no lo declaramos como
+// permitido, el navegador completa OPTIONS pero BLOQUEA el POST real, dejando
+// page_views sin filas nuevas y por tanto sin geo. Reflejamos también
+// dinámicamente cualquier header solicitado por el preflight para no volver a
+// caer en este bug si en el futuro se agrega algún otro header personalizado.
+const BASE_ALLOWED_HEADERS =
+  'authorization, x-client-info, apikey, content-type, x-session-id, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version';
+
+function buildCorsHeaders(req?: Request): Record<string, string> {
+  const requested = req?.headers.get('access-control-request-headers');
+  return {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': requested ?? BASE_ALLOWED_HEADERS,
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Max-Age': '86400',
+    Vary: 'Access-Control-Request-Headers',
+  };
+}
+
+const corsHeaders = buildCorsHeaders();
 
 const SESSION_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
@@ -152,7 +167,7 @@ async function resolveGeo(
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response('ok', { headers: buildCorsHeaders(req) });
   }
   if (req.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'Method not allowed' }), {
