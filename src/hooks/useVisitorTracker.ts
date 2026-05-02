@@ -1,3 +1,6 @@
+// [2026-05-02] CATARSIS — useVisitorTracker
+// Propósito: Hook cliente que registra cada navegación SPA invocando la edge function track-visit.
+// Modificaciones: Se reemplazó el insert directo a page_views por supabase.functions.invoke('track-visit'); se añadió captureUtm() para persistir utm_source/medium/campaign en sessionStorage y reenviarlos en cada vista.
 import { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';

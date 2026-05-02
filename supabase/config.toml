@@ -1,3 +1,7 @@
+# [2026-05-02] CATARSIS — supabase/config.toml
+# Propósito: Configuración del proyecto Supabase y flags por edge function.
+# Modificaciones: Registrado bloque [functions.track-visit] con verify_jwt = false para permitir tracking público de visitas.
+
 project_id = "qucqigemdbyclxqjzkbs"
 
 [functions.create-admin-user]
