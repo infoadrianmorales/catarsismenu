@@ -104,7 +104,8 @@ export const useVisitorTracker = () => {
         const utm = captureUtm();
         const source = detectSource();
 
-        // a) INSERT inmediato — no esperamos la geo.
+        // [2026-05-02] a) INSERT inmediato a page_views — no bloqueamos por la geo.
+        // Se persiste source y UTM ya resueltos para no perder atribución si la geo falla.
         const { data, error } = await supabase
           .from('page_views')
           .insert({
@@ -122,7 +123,9 @@ export const useVisitorTracker = () => {
 
         if (error || !data?.id) return;
 
-        // b) En segundo plano, enriquecer con país/ciudad.
+        // [2026-05-02] b) Enriquecimiento asíncrono con país/ciudad vía ipwho.is.
+        // El UPDATE solo prospera si la policy "Owner can patch geo within 5 minutes"
+        // y el trigger guard_page_views_update() lo permiten (sólo country/city).
         getGeoData().then(({ country, city }) => {
           if (!country) return;
           supabase
