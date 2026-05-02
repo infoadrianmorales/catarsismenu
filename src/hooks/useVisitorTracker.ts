@@ -6,7 +6,6 @@ import { setSupabaseSessionHeader } from '@/lib/supabaseHeaders';
 const EXCLUDED_PATHS = ['/admin', '/auth'];
 
 // SEGURIDAD [C9]: session_id para analytics debe ser UUID v4 válido.
-// Se configura también el header x-session-id para consistencia con RLS.
 const getSessionId = (): string => {
   let sessionId = sessionStorage.getItem('visitor_session_id');
   if (!sessionId) {
@@ -17,6 +16,20 @@ const getSessionId = (): string => {
   return sessionId;
 };
 
+// [2026-05-02] Persistir UTM en sessionStorage para que cualquier vista posterior
+// dentro de la sesión conserve la atribución original.
+const captureUtm = () => {
+  const params = new URLSearchParams(window.location.search);
+  const utm_source = params.get('utm_source');
+  const utm_medium = params.get('utm_medium');
+  const utm_campaign = params.get('utm_campaign');
+  if (utm_source || utm_medium || utm_campaign) {
+    sessionStorage.setItem('visitor_utm', JSON.stringify({ utm_source, utm_medium, utm_campaign }));
+  }
+  const stored = sessionStorage.getItem('visitor_utm');
+  return stored ? JSON.parse(stored) : { utm_source: null, utm_medium: null, utm_campaign: null };
+};
+
 export const useVisitorTracker = () => {
   const location = useLocation();
   const lastTrackedPath = useRef<string>('');
@@ -25,24 +38,24 @@ export const useVisitorTracker = () => {
   useEffect(() => {
     const path = location.pathname;
 
-    // Skip excluded paths
     if (EXCLUDED_PATHS.some(excluded => path.startsWith(excluded))) return;
-
-    // Skip if same path (avoid duplicate on re-renders)
     if (path === lastTrackedPath.current) return;
 
-    // Debounce to avoid rapid duplicate inserts
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
 
     debounceTimer.current = setTimeout(async () => {
       lastTrackedPath.current = path;
 
       try {
-        await supabase.from('page_views' as any).insert({
-          session_id: getSessionId(),
-          path,
-          referrer: document.referrer || null,
-          user_agent: navigator.userAgent || null,
+        const utm = captureUtm();
+        await supabase.functions.invoke('track-visit', {
+          body: {
+            session_id: getSessionId(),
+            path,
+            referrer: document.referrer || null,
+            user_agent: navigator.userAgent || null,
+            ...utm,
+          },
         });
       } catch {
         // Silent fail - don't break the app for analytics

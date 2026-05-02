@@ -278,28 +278,46 @@ export type Database = {
       }
       page_views: {
         Row: {
+          city: string | null
+          country: string | null
           created_at: string
           id: string
           path: string
           referrer: string | null
           session_id: string
+          source: string | null
           user_agent: string | null
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
         }
         Insert: {
+          city?: string | null
+          country?: string | null
           created_at?: string
           id?: string
           path: string
           referrer?: string | null
           session_id: string
+          source?: string | null
           user_agent?: string | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
         }
         Update: {
+          city?: string | null
+          country?: string | null
           created_at?: string
           id?: string
           path?: string
           referrer?: string | null
           session_id?: string
+          source?: string | null
           user_agent?: string | null
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
         }
         Relationships: []
       }
@@ -771,6 +789,28 @@ export type Database = {
           source: string
           total_quantity: number
           total_revenue: number
+        }[]
+      }
+      get_visits_by_country: {
+        Args: { p_end?: string; p_start?: string }
+        Returns: {
+          country: string
+          total: number
+        }[]
+      }
+      get_visits_by_source: {
+        Args: { p_end?: string; p_start?: string }
+        Returns: {
+          source: string
+          total: number
+        }[]
+      }
+      get_visits_daily: {
+        Args: { p_end?: string; p_start?: string }
+        Returns: {
+          date: string
+          total: number
+          unique_visitors: number
         }[]
       }
       has_role: {
