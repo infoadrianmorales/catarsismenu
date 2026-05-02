@@ -3,6 +3,9 @@
 // Modificaciones:
 //   - Creación inicial — presets, KPIs, AreaChart, 3 tarjetas (fuentes, países, páginas).
 //   - [2026-05-02] FIX: añadida 4ta tarjeta "Ciudades top" (byCity) y grid responsive a 4 columnas en xl.
+//   - [2026-05-02] FIX UX: filas con país/ciudad "Desconocido(a)" se excluyen del top
+//     y se muestran como contador "sin geo" debajo del título. Evita que las visitas
+//     de builds antiguas cacheadas (sin geolocalización) dominen el ranking.
 import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
