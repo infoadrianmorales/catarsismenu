@@ -791,6 +791,14 @@ export type Database = {
           total_revenue: number
         }[]
       }
+      get_visits_by_city: {
+        Args: { p_end?: string; p_start?: string }
+        Returns: {
+          city: string
+          country: string
+          total: number
+        }[]
+      }
       get_visits_by_country: {
         Args: { p_end?: string; p_start?: string }
         Returns: {

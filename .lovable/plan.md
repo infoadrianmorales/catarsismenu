@@ -1,39 +1,32 @@
 ## Objetivo
-Hacer que el país/ciudad de las visitas se registre de forma confiable en `page_views`, porque ahora las visitas sí se guardan pero están entrando como `null` y el panel muestra todo como `Desconocido`.
+Mostrar la ciudad de cada visita en el panel **Visitantes**, además del país. La ciudad ya se está guardando en `page_views` (verificado: la última visita de prueba quedó como `Groningen, Netherlands`). Solo falta exponerla en el dashboard.
 
-## Hallazgos confirmados
-- El tracking sí inserta visitas en `page_views`.
-- En las visitas recientes, `country` y `city` están vacíos en todos los registros revisados.
-- El panel `Visitantes` solo refleja lo que ya existe en base; no es el origen del fallo.
-- La ruta `/auth` está excluida del tracking, así que probar allí no genera visitas.
-- La geolocalización actual depende de `fetch('https://ipwho.is/')` desde el navegador; si falla, el código hace fallback a `null` y aun así inserta la visita.
+## Cambios
 
-## Plan
-### 1. Mover la resolución de geo al backend
-Crear una función backend pequeña para registrar la visita y resolver `country/city` del lado servidor usando la IP real del request.
+### 1. Nueva agregación por ciudad (backend)
+Crear una RPC `get_visits_by_city(p_start, p_end)` siguiendo el mismo patrón que `get_visits_by_country`:
+- `SECURITY DEFINER`, restringida a admins.
+- Devuelve `country`, `city`, `total`, ordenado por `total DESC`, limitado a las 10 ciudades top.
+- Agrupa por `(country, city)` para distinguir, por ejemplo, "Caracas (Venezuela)" de otra ciudad homónima.
 
-### 2. Mantener la lógica de atribución en cliente
-Conservar en `useVisitorTracker.ts` la detección de `source`, `utm_source`, `utm_medium`, `utm_campaign`, `path`, `referrer` y `user_agent`, pero enviar esos datos a la función backend en vez de insertar directamente desde el cliente.
+### 2. Hook `useVisitorAnalytics`
+Agregar `byCity` al hook, llamando a la nueva RPC en paralelo con las otras tres.
 
-### 3. Añadir fallback de proveedor de geo
-Usar `ipwho.is` como primera opción y `ipapi.co/json/` como respaldo si el primero falla o no responde a tiempo, para evitar más visitas con geo vacía.
+### 3. Widget "Ciudades top" en `VisitorsPanel`
+Añadir una cuarta tarjeta junto a *Fuentes / Países / Páginas populares*:
+- Mismo diseño visual (lista con `Progress` y porcentaje).
+- Cada fila muestra `🏙️ Ciudad — País` y el conteo.
+- Layout: pasar el grid de `md:grid-cols-3` a `md:grid-cols-2 xl:grid-cols-4` para que las cuatro tarjetas respiren bien en pantallas grandes y se apilen en móvil.
 
-### 4. Registrar en una sola escritura
-Hacer que la función backend inserte `country` y `city` directamente en el `INSERT` de `page_views`, sin `UPDATE` posterior.
+### 4. KPI opcional
+Reemplazar o complementar el KPI "Países" con uno de "Ciudades" si aporta más detalle — a confirmar contigo si lo prefieres así o dejar ambos.
 
-### 5. Verificar el panel existente
-Comprobar que `VisitorsPanel` y las RPC `get_visits_by_country`, `get_visits_by_source` y `get_visits_daily` sigan funcionando sin cambios visuales, mostrando países reales una vez entren nuevos datos.
+## Archivos afectados
+- `supabase/migrations/...` (nueva migración con la RPC).
+- `src/hooks/useVisitorAnalytics.ts`.
+- `src/components/admin/VisitorsPanel.tsx`.
 
-## Archivos previstos
-- `src/hooks/useVisitorTracker.ts`
-- `supabase/functions/...` (nueva función backend para tracking)
-- `supabase/config.toml` solo si la función requiere configuración específica; si no, no se toca.
-
-## Detalles técnicos
-- No hace falta cambiar la tabla `page_views` ni sus RPC actuales.
-- No hace falta tocar el panel admin salvo validación.
-- Las visitas históricas que ya están con `country = null` seguirán viéndose como `Desconocido`; el arreglo aplica a visitas nuevas.
-- También ajustaré los comentarios del hook para que reflejen el flujo real y no el flujo antiguo cliente-only.
-
-## Resultado esperado
-Después del cambio, una visita nueva a `/` o cualquier ruta trackeada deberá guardarse con país/ciudad poblados, y la pestaña `Visitantes` empezará a mostrar países reales en lugar de solo `Desconocido`.
+## Notas
+- Las visitas históricas con `city = null` se agruparán como "Desconocida", igual que hoy se hace con países.
+- No se toca el tracking ni la edge function: ya está registrando ciudad correctamente.
+- No requiere cambios en RLS ni nuevos secretos.
