@@ -1,18 +1,23 @@
 // [2026-05-02] CATARSIS — track-visit
 // Propósito: Registrar una visita en page_views resolviendo país/ciudad
-// del lado servidor a partir de la IP real del request. Esto reemplaza la
-// resolución de geo en el navegador (bloqueada por CORS/adblockers/timeouts)
-// y garantiza que el panel "Visitantes" muestre países reales.
+// del lado servidor a partir de la IP real del request.
+//
+// [2026-05-02] FIX: geo resuelta desde IP real del visitante via
+// x-forwarded-for / cf-connecting-ip / x-real-ip + logging por paso para
+// diagnosticar nulls. Antes la mayoría de visitantes quedaban con
+// country = null porque los proveedores fallaban silenciosamente
+// (rate limit, timeout corto o respuestas vacías).
 //
 // Estrategia:
-// 1. Obtener la IP del visitante de los headers x-forwarded-for / cf-connecting-ip.
-// 2. Resolver país/ciudad consultando ipwho.is (principal) y ipapi.co (fallback).
-// 3. Insertar en page_views con SERVICE_ROLE para evitar dependencia de RLS
-//    de sesión anónima — la validación de inputs se hace aquí mismo.
+// 1. Detectar IP del visitante. Si es privada/loopback, saltar geo.
+// 2. Resolver con cascada: ipwho.is → ipapi.co → api.country.is.
+//    Cada intento con timeout de 4s y User-Agent explícito.
+// 3. Loggear el resultado de cada proveedor a edge logs para diagnóstico.
+// 4. Insertar en page_views con SERVICE_ROLE para evitar dependencia de RLS.
 //
 // Notas:
 // - verify_jwt = false por defecto (analytics público para visitantes anónimos).
-// - Sin secrets adicionales: ambos proveedores de geo son gratuitos y sin API key.
+// - Sin secrets adicionales: los 3 proveedores son gratuitos y sin API key.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
 const corsHeaders = {
@@ -25,6 +30,11 @@ const corsHeaders = {
 const SESSION_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
+const GEO_TIMEOUT_MS = 4000;
+const GEO_UA = 'CatarsisVisitorTracker/1.0 (+https://catarsiszone.com)';
+
+// [2026-05-02] FIX: extraer IP real del visitante desde headers.
+// El gateway de Supabase Edge antepone la IP del cliente a x-forwarded-for.
 function getClientIp(req: Request): string | null {
   const xff = req.headers.get('x-forwarded-for');
   if (xff) return xff.split(',')[0]?.trim() || null;
@@ -35,56 +45,100 @@ function getClientIp(req: Request): string | null {
   return null;
 }
 
+// IPs privadas / loopback / link-local — geo siempre fallaría.
+function isPrivateIp(ip: string): boolean {
+  if (ip === '127.0.0.1' || ip === '::1' || ip.startsWith('::ffff:127.')) return true;
+  if (ip.startsWith('10.')) return true;
+  if (ip.startsWith('192.168.')) return true;
+  if (ip.startsWith('169.254.')) return true;
+  if (ip.startsWith('fc') || ip.startsWith('fd')) return true;
+  // 172.16.0.0 – 172.31.255.255
+  const m = ip.match(/^172\.(\d+)\./);
+  if (m) {
+    const n = Number(m[1]);
+    if (n >= 16 && n <= 31) return true;
+  }
+  return false;
+}
+
 async function fetchWithTimeout(url: string, ms: number): Promise<Response> {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), ms);
   try {
-    return await fetch(url, { signal: ctrl.signal });
+    return await fetch(url, {
+      signal: ctrl.signal,
+      headers: { 'User-Agent': GEO_UA, Accept: 'application/json' },
+    });
   } finally {
     clearTimeout(t);
   }
 }
 
-// Resuelve geo con dos proveedores. Devuelve { country, city } o nulls.
+// Resuelve geo con cascada de proveedores. Devuelve { country, city } o nulls.
 async function resolveGeo(
   ip: string | null,
 ): Promise<{ country: string | null; city: string | null }> {
-  // 1) ipwho.is — campo `country` ya es el nombre legible.
+  if (!ip) {
+    console.log('[geo] no client ip in headers — skipping geo resolution');
+    return { country: null, city: null };
+  }
+  if (isPrivateIp(ip)) {
+    console.log(`[geo] private/loopback ip ${ip} — skipping`);
+    return { country: null, city: null };
+  }
+
+  // 1) ipwho.is — `country` ya es nombre legible.
   try {
-    const url = ip ? `https://ipwho.is/${ip}` : 'https://ipwho.is/';
-    const res = await fetchWithTimeout(url, 2500);
+    const res = await fetchWithTimeout(`https://ipwho.is/${ip}`, GEO_TIMEOUT_MS);
     if (res.ok) {
       const data = await res.json();
       if (data && data.success !== false && (data.country || data.city)) {
-        return {
-          country: data.country ?? null,
-          city: data.city ?? null,
-        };
+        console.log(`[geo] ipwho.is OK ip=${ip} country=${data.country} city=${data.city}`);
+        return { country: data.country ?? null, city: data.city ?? null };
       }
+      console.log(`[geo] ipwho.is empty/false for ip=${ip}: ${JSON.stringify(data).slice(0, 200)}`);
+    } else {
+      console.log(`[geo] ipwho.is http ${res.status} for ip=${ip}`);
     }
-  } catch {
-    // continúa al fallback
+  } catch (e) {
+    console.log(`[geo] ipwho.is error for ip=${ip}: ${(e as Error).message}`);
   }
 
-  // 2) ipapi.co — `country_name` es el nombre legible (`country` es ISO).
+  // 2) ipapi.co — `country_name` es nombre legible.
   try {
-    const url = ip
-      ? `https://ipapi.co/${ip}/json/`
-      : 'https://ipapi.co/json/';
-    const res = await fetchWithTimeout(url, 2500);
+    const res = await fetchWithTimeout(`https://ipapi.co/${ip}/json/`, GEO_TIMEOUT_MS);
     if (res.ok) {
       const data = await res.json();
-      if (data && (data.country_name || data.city)) {
-        return {
-          country: data.country_name ?? null,
-          city: data.city ?? null,
-        };
+      if (data && !data.error && (data.country_name || data.city)) {
+        console.log(`[geo] ipapi.co OK ip=${ip} country=${data.country_name} city=${data.city}`);
+        return { country: data.country_name ?? null, city: data.city ?? null };
       }
+      console.log(`[geo] ipapi.co empty/error for ip=${ip}: ${JSON.stringify(data).slice(0, 200)}`);
+    } else {
+      console.log(`[geo] ipapi.co http ${res.status} for ip=${ip}`);
     }
-  } catch {
-    // se inserta sin geo
+  } catch (e) {
+    console.log(`[geo] ipapi.co error for ip=${ip}: ${(e as Error).message}`);
   }
 
+  // 3) api.country.is — solo país, sin rate limit conocido. Devuelve ISO; lo conservamos.
+  try {
+    const res = await fetchWithTimeout(`https://api.country.is/${ip}`, GEO_TIMEOUT_MS);
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.country) {
+        console.log(`[geo] api.country.is OK ip=${ip} country=${data.country}`);
+        return { country: data.country, city: null };
+      }
+      console.log(`[geo] api.country.is empty for ip=${ip}`);
+    } else {
+      console.log(`[geo] api.country.is http ${res.status} for ip=${ip}`);
+    }
+  } catch (e) {
+    console.log(`[geo] api.country.is error for ip=${ip}: ${(e as Error).message}`);
+  }
+
+  console.log(`[geo] all providers failed for ip=${ip}`);
   return { country: null, city: null };
 }
 
@@ -141,6 +195,7 @@ Deno.serve(async (req) => {
     : null;
 
   const ip = getClientIp(req);
+  console.log(`[track-visit] path=${path} ip=${ip ?? 'null'}`);
   const geo = await resolveGeo(ip);
 
   const supabase = createClient(
@@ -163,6 +218,7 @@ Deno.serve(async (req) => {
   });
 
   if (error) {
+    console.log(`[track-visit] insert error: ${error.message}`);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
