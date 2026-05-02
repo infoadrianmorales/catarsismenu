@@ -1,10 +1,10 @@
 // [2026-05-02] CATARSIS — useVisitorTracker
-// Propósito: Hook cliente que registra cada navegación SPA en page_views (INSERT directo)
-// y enriquece con país/ciudad de forma asíncrona vía ipwho.is.
-// Modificaciones: Migrado de invocar la edge function track-visit a un flujo client-side puro.
-// Añadidas detectSource() (UTM > referrer) y getGeoData() (ipwho.is, sin API key).
-// Tras INSERT se hace UPDATE en background con country/city; los UTM siguen
-// persistiéndose en sessionStorage para conservar atribución durante la sesión.
+// Propósito: Hook cliente que registra cada navegación SPA en page_views.
+// Modificaciones: Migrado a invocar la edge function `track-visit`, que resuelve
+// país/ciudad desde la IP real del visitante (lado servidor). El INSERT directo
+// en cliente quedó obsoleto porque la geo client-side fallaba (CORS / adblockers /
+// timeout) y todas las visitas entraban con country = null.
+// El hook sigue detectando source y UTM en cliente y los persiste en sessionStorage.
 import { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -19,8 +19,7 @@ const getSessionId = (): string => {
     sessionId = crypto.randomUUID();
     sessionStorage.setItem('visitor_session_id', sessionId);
   }
-  // Necesario para que la policy "Owner can patch geo within 5 minutes"
-  // pueda hacer match con get_client_session_id() en el UPDATE de geo.
+  // Header global para que otros flujos (checkout, RPC) puedan validar la sesión.
   setSupabaseSessionHeader(sessionId);
   return sessionId;
 };
@@ -67,22 +66,6 @@ function detectSource(): string {
   return 'Otros';
 }
 
-// [2026-05-02] Geolocalización por IP usando ipwho.is (gratuita, sin API key, HTTPS).
-// Si falla, la visita ya quedó registrada — solo se omite country/city.
-async function getGeoData(): Promise<{ country: string | null; city: string | null }> {
-  try {
-    const res = await fetch('https://ipwho.is/');
-    const data = await res.json();
-    if (data.success === false) return { country: null, city: null };
-    return {
-      country: data.country ?? null,
-      city: data.city ?? null,
-    };
-  } catch {
-    return { country: null, city: null };
-  }
-}
-
 export const useVisitorTracker = () => {
   const location = useLocation();
   const lastTrackedPath = useRef<string>('');
@@ -97,8 +80,11 @@ export const useVisitorTracker = () => {
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
 
     debounceTimer.current = setTimeout(async () => {
-      // [2026-05-02] FIX: geo incluida en INSERT directo con timeout 3s
-      // Razón: UPDATE post-INSERT bloqueado por RLS policy de sesión anónima
+      // [2026-05-02] FIX: tracking ahora va por edge function `track-visit`.
+      // Razón: la geo client-side (ipwho.is desde el navegador) fallaba en
+      // ~100% de los casos por CORS / adblockers / timeout y las visitas
+      // entraban con country = null. Resolver la IP del lado servidor es
+      // confiable y no depende del navegador del visitante.
       lastTrackedPath.current = path;
 
       try {
@@ -106,26 +92,17 @@ export const useVisitorTracker = () => {
         const utm = captureUtm();
         const source = detectSource();
 
-        // Esperar geo con timeout duro de 3s — nunca bloquea más que eso.
-        // Si ipwho.is falla o tarda demasiado, se inserta con country/city = null.
-        const geo = await Promise.race([
-          getGeoData(),
-          new Promise<{ country: null; city: null }>((resolve) =>
-            setTimeout(() => resolve({ country: null, city: null }), 3000)
-          ),
-        ]);
-
-        await supabase.from('page_views').insert({
-          session_id,
-          path,
-          referrer: document.referrer || null,
-          user_agent: navigator.userAgent || null,
-          source,
-          utm_source: utm.utm_source || null,
-          utm_medium: utm.utm_medium || null,
-          utm_campaign: utm.utm_campaign || null,
-          country: geo.country,
-          city: geo.city,
+        await supabase.functions.invoke('track-visit', {
+          body: {
+            session_id,
+            path,
+            referrer: document.referrer || null,
+            user_agent: navigator.userAgent || null,
+            source,
+            utm_source: utm.utm_source || null,
+            utm_medium: utm.utm_medium || null,
+            utm_campaign: utm.utm_campaign || null,
+          },
         });
       } catch {
         // Silent fail — analytics nunca debe romper la app.
