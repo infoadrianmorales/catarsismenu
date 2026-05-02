@@ -72,11 +72,17 @@ export const VisitorsPanel = () => {
   const { bySource, byCountry, byCity, daily, loading, error } = useVisitorAnalytics(start, end);
   const { popularPages, summary, loading: pagesLoading } = usePageViews(start, end, 'daily');
 
+  // [2026-05-02] Filtrar geo "Desconocido(a)" del ranking; se muestra aparte como contador.
+  const knownCountries = byCountry.filter(r => r.country !== 'Desconocido');
+  const unknownCountryCount = byCountry.find(r => r.country === 'Desconocido')?.total ?? 0;
+  const knownCities = byCity.filter(r => r.city !== 'Desconocida');
+  const unknownCityCount = byCity.find(r => r.city === 'Desconocida')?.total ?? 0;
+
   const totalSourceVisits = bySource.reduce((s, r) => s + r.total, 0);
-  const totalCountryVisits = byCountry.reduce((s, r) => s + r.total, 0);
-  const totalCityVisits = byCity.reduce((s, r) => s + r.total, 0);
+  const totalCountryVisits = knownCountries.reduce((s, r) => s + r.total, 0);
+  const totalCityVisits = knownCities.reduce((s, r) => s + r.total, 0);
   const topSource = bySource[0]?.source ?? '—';
-  const distinctCountries = byCountry.length;
+  const distinctCountries = knownCountries.length;
 
   const chartData = daily.map(d => ({
     label: format(new Date(d.date), 'd MMM', { locale: es }),
