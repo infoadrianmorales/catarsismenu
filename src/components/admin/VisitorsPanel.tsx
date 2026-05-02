@@ -246,15 +246,20 @@ export const VisitorsPanel = () => {
             <CardTitle className="flex items-center gap-2 text-lg">
               <MapPin className="h-5 w-5" /> Países top
             </CardTitle>
+            {unknownCountryCount > 0 && (
+              <p className="text-xs text-muted-foreground">
+                {unknownCountryCount.toLocaleString()} visita{unknownCountryCount === 1 ? '' : 's'} sin geo resolver
+              </p>
+            )}
           </CardHeader>
           <CardContent>
             {loading ? (
               <div className="space-y-3">{[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-4 w-full" />)}</div>
-            ) : byCountry.length === 0 ? (
-              <p className="py-8 text-center text-sm text-muted-foreground">Sin datos</p>
+            ) : knownCountries.length === 0 ? (
+              <p className="py-8 text-center text-sm text-muted-foreground">Sin datos geolocalizados</p>
             ) : (
               <div className="space-y-4">
-                {byCountry.map(r => {
+                {knownCountries.map(r => {
                   const pct = totalCountryVisits ? Math.round((r.total / totalCountryVisits) * 100) : 0;
                   return (
                     <div key={r.country} className="space-y-2">
@@ -279,15 +284,20 @@ export const VisitorsPanel = () => {
             <CardTitle className="flex items-center gap-2 text-lg">
               <Building2 className="h-5 w-5" /> Ciudades top
             </CardTitle>
+            {unknownCityCount > 0 && (
+              <p className="text-xs text-muted-foreground">
+                {unknownCityCount.toLocaleString()} visita{unknownCityCount === 1 ? '' : 's'} sin geo resolver
+              </p>
+            )}
           </CardHeader>
           <CardContent>
             {loading ? (
               <div className="space-y-3">{[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-4 w-full" />)}</div>
-            ) : byCity.length === 0 ? (
-              <p className="py-8 text-center text-sm text-muted-foreground">Sin datos</p>
+            ) : knownCities.length === 0 ? (
+              <p className="py-8 text-center text-sm text-muted-foreground">Sin datos geolocalizados</p>
             ) : (
               <div className="space-y-4">
-                {byCity.map(r => {
+                {knownCities.map(r => {
                   const pct = totalCityVisits ? Math.round((r.total / totalCityVisits) * 100) : 0;
                   return (
                     <div key={`${r.city}-${r.country}`} className="space-y-2">
