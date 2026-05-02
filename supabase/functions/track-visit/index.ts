@@ -203,6 +203,13 @@ Deno.serve(async (req) => {
     : null;
 
   const ip = getClientIp(req);
+  if (!ip) {
+    // Diagnóstico: si nunca detectamos IP, loggear todos los headers para
+    // identificar qué CDN/proxy intermediario está pasando la conexión.
+    const allHeaders: Record<string, string> = {};
+    req.headers.forEach((v, k) => { allHeaders[k] = v; });
+    console.log(`[track-visit] NO IP DETECTED. headers=${JSON.stringify(allHeaders)}`);
+  }
   console.log(`[track-visit] path=${path} ip=${ip ?? 'null'}`);
   const geo = await resolveGeo(ip);
 
