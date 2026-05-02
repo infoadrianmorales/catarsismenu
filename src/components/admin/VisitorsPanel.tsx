@@ -1,6 +1,8 @@
 // [2026-05-02] CATARSIS — VisitorsPanel (pestaña Visitantes en /admin)
 // Propósito: Dashboard admin con KPIs, tendencia diaria (Recharts) y widgets de fuentes/países/páginas populares.
-// Modificaciones: Creación inicial — presets de fechas, calendario rango, KPIs (visitas, únicos, países, fuente top), AreaChart de tendencia diaria y 3 tarjetas (fuentes, países con bandera, páginas populares).
+// Modificaciones:
+//   - Creación inicial — presets, KPIs, AreaChart, 3 tarjetas (fuentes, países, páginas).
+//   - [2026-05-02] FIX: añadida 4ta tarjeta "Ciudades top" (byCity) y grid responsive a 4 columnas en xl.
 import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -64,11 +66,12 @@ export const VisitorsPanel = () => {
 
   const { start, end } = useMemo(() => getDateRange(selectedPreset, customRange), [selectedPreset, customRange]);
 
-  const { bySource, byCountry, daily, loading, error } = useVisitorAnalytics(start, end);
+  const { bySource, byCountry, byCity, daily, loading, error } = useVisitorAnalytics(start, end);
   const { popularPages, summary, loading: pagesLoading } = usePageViews(start, end, 'daily');
 
   const totalSourceVisits = bySource.reduce((s, r) => s + r.total, 0);
   const totalCountryVisits = byCountry.reduce((s, r) => s + r.total, 0);
+  const totalCityVisits = byCity.reduce((s, r) => s + r.total, 0);
   const topSource = bySource[0]?.source ?? '—';
   const distinctCountries = byCountry.length;
 
@@ -195,8 +198,8 @@ export const VisitorsPanel = () => {
         </CardContent>
       </Card>
 
-      {/* 3 widgets */}
-      <div className="grid md:grid-cols-3 gap-6">
+      {/* 4 widgets: fuentes / países / ciudades / páginas */}
+      <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-6">
         {/* Fuentes */}
         <Card>
           <CardHeader>
