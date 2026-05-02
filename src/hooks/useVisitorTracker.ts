@@ -97,6 +97,8 @@ export const useVisitorTracker = () => {
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
 
     debounceTimer.current = setTimeout(async () => {
+      // [2026-05-02] FIX: geo incluida en INSERT directo con timeout 3s
+      // Razón: UPDATE post-INSERT bloqueado por RLS policy de sesión anónima
       lastTrackedPath.current = path;
 
       try {
@@ -104,37 +106,26 @@ export const useVisitorTracker = () => {
         const utm = captureUtm();
         const source = detectSource();
 
-        // [2026-05-02] a) INSERT inmediato a page_views — no bloqueamos por la geo.
-        // Se persiste source y UTM ya resueltos para no perder atribución si la geo falla.
-        const { data, error } = await supabase
-          .from('page_views')
-          .insert({
-            session_id,
-            path,
-            referrer: document.referrer || null,
-            user_agent: navigator.userAgent || null,
-            source,
-            utm_source: utm.utm_source || null,
-            utm_medium: utm.utm_medium || null,
-            utm_campaign: utm.utm_campaign || null,
-          })
-          .select('id')
-          .single();
+        // Esperar geo con timeout duro de 3s — nunca bloquea más que eso.
+        // Si ipwho.is falla o tarda demasiado, se inserta con country/city = null.
+        const geo = await Promise.race([
+          getGeoData(),
+          new Promise<{ country: null; city: null }>((resolve) =>
+            setTimeout(() => resolve({ country: null, city: null }), 3000)
+          ),
+        ]);
 
-        if (error || !data?.id) return;
-
-        // [2026-05-02] b) Enriquecimiento asíncrono con país/ciudad vía ipwho.is.
-        // El UPDATE solo prospera si la policy "Owner can patch geo within 5 minutes"
-        // y el trigger guard_page_views_update() lo permiten (sólo country/city).
-        getGeoData().then(({ country, city }) => {
-          if (!country) return;
-          supabase
-            .from('page_views')
-            .update({ country, city })
-            .eq('id', data.id)
-            .then(() => {
-              // silent — fallar aquí solo significa perder geo de esta visita
-            });
+        await supabase.from('page_views').insert({
+          session_id,
+          path,
+          referrer: document.referrer || null,
+          user_agent: navigator.userAgent || null,
+          source,
+          utm_source: utm.utm_source || null,
+          utm_medium: utm.utm_medium || null,
+          utm_campaign: utm.utm_campaign || null,
+          country: geo.country,
+          city: geo.city,
         });
       } catch {
         // Silent fail — analytics nunca debe romper la app.

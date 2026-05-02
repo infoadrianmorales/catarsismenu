@@ -1,36 +1,67 @@
 ## Objetivo
-Agregar comentarios fechados [2026-05-02] en los archivos del paso anterior, sin tocar lógica.
 
-## Estado actual
-- `src/hooks/useVisitorTracker.ts` — ya tiene header [2026-05-02] cubriendo `detectSource()`, `getGeoData()` e INSERT+UPDATE en background. **Se ampliarán comentarios inline** sobre cada bloque (detectSource, getGeoData, flujo INSERT/UPDATE) para mayor trazabilidad.
-- `supabase/config.toml` — ya comentado.
-- `supabase/migrations/20260502172217_...sql` — **falta** el bloque de cabecera fechado describiendo policy + trigger de 5 minutos.
+Eliminar el UPDATE post-INSERT (bloqueado por RLS de sesión anónima) y resolver país/ciudad **antes** del INSERT, con timeout duro de 3s. Si la geo falla o tarda más de 3s, se inserta igual con `country = null` y `city = null`.
 
-## Cambios (solo comentarios, cero lógica)
+## Cambio único: `src/hooks/useVisitorTracker.ts`
 
-### 1. `supabase/migrations/20260502172217_5e8ab3ac-5005-4f79-b097-e954ef08e84e.sql`
-Agregar al inicio:
+### 1. Reemplazar el bloque del `setTimeout` (líneas 99-142)
+
+Nuevo flujo dentro del `setTimeout(async () => { ... }, 1000)`:
+
+```ts
+// [2026-05-02] FIX: geo incluida en INSERT directo con timeout 3s
+// Razón: UPDATE post-INSERT bloqueado por RLS policy de sesión anónima
+lastTrackedPath.current = path;
+
+try {
+  const session_id = getSessionId();
+  const utm = captureUtm();
+  const source = detectSource();
+
+  // Esperar geo con timeout duro de 3s — nunca bloquea más de eso.
+  const geo = await Promise.race([
+    getGeoData(),
+    new Promise<{ country: null; city: null }>((resolve) =>
+      setTimeout(() => resolve({ country: null, city: null }), 3000)
+    ),
+  ]);
+
+  await supabase.from('page_views').insert({
+    session_id,
+    path,
+    referrer: document.referrer || null,
+    user_agent: navigator.userAgent || null,
+    source,
+    utm_source: utm.utm_source || null,
+    utm_medium: utm.utm_medium || null,
+    utm_campaign: utm.utm_campaign || null,
+    country: geo.country,
+    city: geo.city,
+  });
+} catch {
+  // Silent fail — analytics nunca debe romper la app.
+}
 ```
--- [2026-05-02] CATARSIS — migración geo-patch page_views
--- Propósito: Permitir que el visitante anónimo enriquezca su propio page_view
---            con country/city dentro de los primeros 5 minutos.
--- Modificaciones:
---   * Función guard_page_views_update(): bloquea cambios en cualquier columna
---     que no sea country/city.
---   * Trigger BEFORE UPDATE asociado a public.page_views.
---   * Policy "Owner can patch geo within 5 minutes": UPDATE permitido solo si
---     session_id == get_client_session_id() y created_at > now() - 5 min.
-```
 
-### 2. `src/hooks/useVisitorTracker.ts`
-Mantener el header existente y agregar/normalizar comentarios fechados sobre:
-- bloque `detectSource()`
-- bloque `getGeoData()`
-- bloque INSERT inmediato
-- bloque UPDATE asíncrono de geo
+### 2. Cambios derivados
 
-Formato uniforme `// [2026-05-02] ...`. Sin cambios de código.
+- **Eliminar** el bloque `getGeoData().then(({ country, city }) => { ... UPDATE ... })` completo.
+- **Eliminar** el `.select('id').single()` y la rama `if (error || !data?.id) return;` (ya no se necesita el id porque no hay UPDATE).
+- **Mantener** `setSupabaseSessionHeader(sessionId)` dentro de `getSessionId()` (no estorba; queda como defensa en profundidad por si en el futuro algo necesita el header).
+- **Mantener** `detectSource()`, `captureUtm()` y `getGeoData()` sin cambios de lógica.
 
-## Fuera de alcance
-- Cualquier cambio de lógica, RLS, nombres o flujos.
-- Modificar `config.toml` o archivos no tocados en el paso anterior.
+### 3. API de geolocalización
+
+Se mantiene `https://ipwho.is/`. Con el timeout de 3s, si tarda demasiado o cae, el INSERT igual ocurre con geo nula. Si en pruebas posteriores `ipwho.is` no responde de forma consistente, se puede sustituir por `https://ipapi.co/json/` (campos `country_name` y `city`) — fuera del alcance de este paso salvo que el usuario lo confirme.
+
+## No se toca
+
+- `supabase/migrations/20260502172217_*.sql` — la policy "Owner can patch geo within 5 minutes" y el trigger `guard_page_views_update()` quedan vigentes como defensa en profundidad, aunque ya no se usen desde el cliente.
+- Dashboards, RPCs, `VisitorsPanel`, `useVisitorAnalytics`.
+- `supabase/config.toml` ni ningún otro archivo.
+
+## Verificación post-cambio
+
+1. Navegar a `/` y revisar en `page_views` que el registro nuevo trae `country` y `city` poblados (no nulos) en el mismo INSERT.
+2. Confirmar en consola que no hay errores 401/403 de UPDATE (ya no se ejecuta).
+3. Simular latencia (DevTools throttling) y verificar que tras 3s el INSERT igual ocurre con `country = null`.
