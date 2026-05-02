@@ -1,32 +1,51 @@
-## Objetivo
-Mostrar la ciudad de cada visita en el panel **Visitantes**, además del país. La ciudad ya se está guardando en `page_views` (verificado: la última visita de prueba quedó como `Groningen, Netherlands`). Solo falta exponerla en el dashboard.
+## Diagnóstico real
 
-## Cambios
+Tu mensaje asume que el síntoma es "todas las visitas dicen Netherlands". La realidad en BD es distinta:
 
-### 1. Nueva agregación por ciudad (backend)
-Crear una RPC `get_visits_by_city(p_start, p_end)` siguiendo el mismo patrón que `get_visits_by_country`:
-- `SECURITY DEFINER`, restringida a admins.
-- Devuelve `country`, `city`, `total`, ordenado por `total DESC`, limitado a las 10 ciudades top.
-- Agrupa por `(country, city)` para distinguir, por ejemplo, "Caracas (Venezuela)" de otra ciudad homónima.
+- 147 visitas reales en las últimas 6 h con `country = NULL`.
+- 1 sola visita con "Netherlands / Groningen" — esa fue mi prueba desde el sandbox (Lovable corre en NL).
 
-### 2. Hook `useVisitorAnalytics`
-Agregar `byCity` al hook, llamando a la nueva RPC en paralelo con las otras tres.
+El código actual de `track-visit/index.ts` **ya lee `x-forwarded-for`** (líneas 28-36) **y ya pasa la IP al URL** de `ipwho.is` y `ipapi.co` (líneas 54 y 71-73). El cambio que pediste literalmente ya está implementado.
 
-### 3. Widget "Ciudades top" en `VisitorsPanel`
-Añadir una cuarta tarjeta junto a *Fuentes / Países / Páginas populares*:
-- Mismo diseño visual (lista con `Progress` y porcentaje).
-- Cada fila muestra `🏙️ Ciudad — País` y el conteo.
-- Layout: pasar el grid de `md:grid-cols-3` a `md:grid-cols-2 xl:grid-cols-4` para que las cuatro tarjetas respiren bien en pantallas grandes y se apilen en móvil.
+El verdadero problema es otro: **los proveedores de geo están devolviendo respuestas sin datos** (probablemente `success: false` por rate limit de `ipwho.is`, que limita a 10k req/mes por IP de servidor; o timeout de 2.5 s). Por eso terminan con `country = null`.
 
-### 4. KPI opcional
-Reemplazar o complementar el KPI "Países" con uno de "Ciudades" si aporta más detalle — a confirmar contigo si lo prefieres así o dejar ambos.
+## Cambios propuestos
+
+### 1. Anotar en cabecera el contexto real
+Reemplazar el comentario superior para reflejar el diagnóstico verdadero (no "todas son NL"):
+
+```
+// [2026-05-02] FIX: geo resuelta desde IP real del visitante via
+// x-forwarded-for + logging de cada paso para diagnosticar nulls.
+// Sin este fix, la mayoría de visitantes quedaban como country=null
+// porque los proveedores fallaban silenciosamente.
+```
+
+### 2. Logging de diagnóstico
+Añadir `console.log` mínimos pero precisos en `resolveGeo` y en el handler:
+- IP detectada (o "no-ip" si headers vacíos).
+- Proveedor que respondió y país devuelto.
+- Motivo de fallo: `timeout`, `http <status>`, `success:false`, `empty`.
+
+Esto va a edge logs y nos permite, en una hora, saber exactamente qué está pasando con los visitantes reales.
+
+### 3. Hacer la resolución más resistente
+- Subir el timeout de 2.5 s a 4 s (los proveedores gratuitos a veces tardan).
+- Añadir `User-Agent` explícito al `fetch` (algunos endpoints rechazan requests sin UA).
+- Añadir un **tercer proveedor de fallback**: `https://api.country.is/{ip}` (solo país, sin rate limit conocido) — devuelve país aunque ipwho/ipapi fallen.
+- Saltar resolución si la IP detectada es privada/loopback (10.x, 192.168.x, 127.x, ::1) — esos casos garantizan respuestas vacías.
+
+### 4. Mantener tu intención
+Tu petición ("leer x-forwarded-for y pasarlo a ipwho.is") queda **explícitamente** documentada en el código aunque ya estuviera, para que sea inequívoco para el siguiente lector.
+
+## Lo que NO se toca
+- `useVisitorTracker.ts` ni cualquier otro archivo cliente (como pediste).
+- El esquema de BD (no hace falta).
 
 ## Archivos afectados
-- `supabase/migrations/...` (nueva migración con la RPC).
-- `src/hooks/useVisitorAnalytics.ts`.
-- `src/components/admin/VisitorsPanel.tsx`.
+- `supabase/functions/track-visit/index.ts` — única modificación.
 
-## Notas
-- Las visitas históricas con `city = null` se agruparán como "Desconocida", igual que hoy se hace con países.
-- No se toca el tracking ni la edge function: ya está registrando ciudad correctamente.
-- No requiere cambios en RLS ni nuevos secretos.
+## Validación post-deploy
+1. Abrir el sitio desde una pestaña incógnita real (no sandbox).
+2. Esperar ~30 s y consultar `page_views` de la última hora.
+3. Si vuelve a salir `null`, leer los edge logs — ahora dirán exactamente qué proveedor falló y por qué.
