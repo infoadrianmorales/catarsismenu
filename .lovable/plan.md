@@ -1,67 +1,39 @@
 ## Objetivo
+Hacer que el país/ciudad de las visitas se registre de forma confiable en `page_views`, porque ahora las visitas sí se guardan pero están entrando como `null` y el panel muestra todo como `Desconocido`.
 
-Eliminar el UPDATE post-INSERT (bloqueado por RLS de sesión anónima) y resolver país/ciudad **antes** del INSERT, con timeout duro de 3s. Si la geo falla o tarda más de 3s, se inserta igual con `country = null` y `city = null`.
+## Hallazgos confirmados
+- El tracking sí inserta visitas en `page_views`.
+- En las visitas recientes, `country` y `city` están vacíos en todos los registros revisados.
+- El panel `Visitantes` solo refleja lo que ya existe en base; no es el origen del fallo.
+- La ruta `/auth` está excluida del tracking, así que probar allí no genera visitas.
+- La geolocalización actual depende de `fetch('https://ipwho.is/')` desde el navegador; si falla, el código hace fallback a `null` y aun así inserta la visita.
 
-## Cambio único: `src/hooks/useVisitorTracker.ts`
+## Plan
+### 1. Mover la resolución de geo al backend
+Crear una función backend pequeña para registrar la visita y resolver `country/city` del lado servidor usando la IP real del request.
 
-### 1. Reemplazar el bloque del `setTimeout` (líneas 99-142)
+### 2. Mantener la lógica de atribución en cliente
+Conservar en `useVisitorTracker.ts` la detección de `source`, `utm_source`, `utm_medium`, `utm_campaign`, `path`, `referrer` y `user_agent`, pero enviar esos datos a la función backend en vez de insertar directamente desde el cliente.
 
-Nuevo flujo dentro del `setTimeout(async () => { ... }, 1000)`:
+### 3. Añadir fallback de proveedor de geo
+Usar `ipwho.is` como primera opción y `ipapi.co/json/` como respaldo si el primero falla o no responde a tiempo, para evitar más visitas con geo vacía.
 
-```ts
-// [2026-05-02] FIX: geo incluida en INSERT directo con timeout 3s
-// Razón: UPDATE post-INSERT bloqueado por RLS policy de sesión anónima
-lastTrackedPath.current = path;
+### 4. Registrar en una sola escritura
+Hacer que la función backend inserte `country` y `city` directamente en el `INSERT` de `page_views`, sin `UPDATE` posterior.
 
-try {
-  const session_id = getSessionId();
-  const utm = captureUtm();
-  const source = detectSource();
+### 5. Verificar el panel existente
+Comprobar que `VisitorsPanel` y las RPC `get_visits_by_country`, `get_visits_by_source` y `get_visits_daily` sigan funcionando sin cambios visuales, mostrando países reales una vez entren nuevos datos.
 
-  // Esperar geo con timeout duro de 3s — nunca bloquea más de eso.
-  const geo = await Promise.race([
-    getGeoData(),
-    new Promise<{ country: null; city: null }>((resolve) =>
-      setTimeout(() => resolve({ country: null, city: null }), 3000)
-    ),
-  ]);
+## Archivos previstos
+- `src/hooks/useVisitorTracker.ts`
+- `supabase/functions/...` (nueva función backend para tracking)
+- `supabase/config.toml` solo si la función requiere configuración específica; si no, no se toca.
 
-  await supabase.from('page_views').insert({
-    session_id,
-    path,
-    referrer: document.referrer || null,
-    user_agent: navigator.userAgent || null,
-    source,
-    utm_source: utm.utm_source || null,
-    utm_medium: utm.utm_medium || null,
-    utm_campaign: utm.utm_campaign || null,
-    country: geo.country,
-    city: geo.city,
-  });
-} catch {
-  // Silent fail — analytics nunca debe romper la app.
-}
-```
+## Detalles técnicos
+- No hace falta cambiar la tabla `page_views` ni sus RPC actuales.
+- No hace falta tocar el panel admin salvo validación.
+- Las visitas históricas que ya están con `country = null` seguirán viéndose como `Desconocido`; el arreglo aplica a visitas nuevas.
+- También ajustaré los comentarios del hook para que reflejen el flujo real y no el flujo antiguo cliente-only.
 
-### 2. Cambios derivados
-
-- **Eliminar** el bloque `getGeoData().then(({ country, city }) => { ... UPDATE ... })` completo.
-- **Eliminar** el `.select('id').single()` y la rama `if (error || !data?.id) return;` (ya no se necesita el id porque no hay UPDATE).
-- **Mantener** `setSupabaseSessionHeader(sessionId)` dentro de `getSessionId()` (no estorba; queda como defensa en profundidad por si en el futuro algo necesita el header).
-- **Mantener** `detectSource()`, `captureUtm()` y `getGeoData()` sin cambios de lógica.
-
-### 3. API de geolocalización
-
-Se mantiene `https://ipwho.is/`. Con el timeout de 3s, si tarda demasiado o cae, el INSERT igual ocurre con geo nula. Si en pruebas posteriores `ipwho.is` no responde de forma consistente, se puede sustituir por `https://ipapi.co/json/` (campos `country_name` y `city`) — fuera del alcance de este paso salvo que el usuario lo confirme.
-
-## No se toca
-
-- `supabase/migrations/20260502172217_*.sql` — la policy "Owner can patch geo within 5 minutes" y el trigger `guard_page_views_update()` quedan vigentes como defensa en profundidad, aunque ya no se usen desde el cliente.
-- Dashboards, RPCs, `VisitorsPanel`, `useVisitorAnalytics`.
-- `supabase/config.toml` ni ningún otro archivo.
-
-## Verificación post-cambio
-
-1. Navegar a `/` y revisar en `page_views` que el registro nuevo trae `country` y `city` poblados (no nulos) en el mismo INSERT.
-2. Confirmar en consola que no hay errores 401/403 de UPDATE (ya no se ejecuta).
-3. Simular latencia (DevTools throttling) y verificar que tras 3s el INSERT igual ocurre con `country = null`.
+## Resultado esperado
+Después del cambio, una visita nueva a `/` o cualquier ruta trackeada deberá guardarse con país/ciudad poblados, y la pestaña `Visitantes` empezará a mostrar países reales en lugar de solo `Desconocido`.
