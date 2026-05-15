@@ -1,18 +1,13 @@
-## Plan: Actualizar favicon con nueva imagen
+## Plan: Favicon con el wordmark CATARSIS completo
 
-La imagen subida (`Diseño_sin_título.png`) es el logo horizontal "CATARSIS DRINKS & FOOD" en amarillo sobre fondo blanco/transparente. Como es horizontal, al reducirla a 32x32 px el texto será ilegible.
+Cambio de enfoque: en lugar de recortar solo la "C", usar el logo completo "CATARSIS" centrado en un cuadrado, como pediste.
 
 ### Pasos
 
-1. Copiar `user-uploads://Diseño_sin_título.png` a `public/favicon-source.png` como respaldo del original.
-2. Generar `public/favicon.png` (512x512) recortado/centrado a un cuadrado nítido. Dado que la imagen es horizontal con el wordmark "CATARSIS", recortar solo la **"C"** centrada para que sea legible en pestaña.
-3. Actualizar el cache-buster en `index.html` de `?v=catarsis-20260515` a `?v=catarsis-20260515b` en los 5 `<link>`/`<meta>` del favicon.
+1. Copiar `user-uploads://Diseño_sin_título-2.png` a `public/favicon-source.png` (sobrescribir respaldo).
+2. Generar `public/favicon.png` (512x512) tomando la imagen subida y centrándola en un canvas cuadrado con padding mínimo, fondo transparente, manteniendo el wordmark "CATARSIS" + "DRINKS & FOOD" visible y nítido.
+3. Actualizar el cache-buster en `index.html` de `?v=catarsis-20260515b` a `?v=catarsis-20260515c` en los 5 tags del favicon.
 
-### Nota importante
+### Nota sobre legibilidad
 
-El logo completo "CATARSIS DRINKS & FOOD" no se verá legible a 32x32 px (tamaño real de pestaña). Dos opciones:
-
-- **A — Solo la "C"** (recomendado): máxima legibilidad, igual que el favicon anterior pero con la tipografía exacta del nuevo logo.
-- **B — Logo completo cuadrado**: se verá como una mancha amarilla borrosa en pestañas pequeñas, pero conserva el wordmark.
-
-Procedo con la **opción A** salvo que indiques lo contrario.
+A 32x32 px (tamaño real de pestaña) el texto "DRINKS & FOOD" se verá como una línea fina debajo de "CATARSIS", y "CATARSIS" se leerá como una mancha amarilla con forma de palabra. Es lo esperado al usar el wordmark completo — confirmas que prefieres esto sobre solo la "C".
