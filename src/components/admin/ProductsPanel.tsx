@@ -42,6 +42,9 @@ const CATEGORIES = [
   { value: 'ensaladas', label: 'Ensaladas' },
   { value: 'cocteleria', label: 'Coctelería' },
   { value: 'postres', label: 'Postres' },
+  // [2026-05-15] Bebidas se muestra en el filtro aunque la categoría esté
+  // desactivada en "Secciones", para poder gestionar sus productos desde el admin.
+  { value: 'bebidas', label: 'Bebidas' },
 ];
 
 export const ProductsPanel = () => {
