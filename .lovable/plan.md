@@ -1,26 +1,34 @@
-## Plan: Renombrar Coca-Cola "Menos Azúcar" → "Sabor Original"
+## Reordenar productos de Bebidas
 
-Unificar los nombres quitando "Menos Azúcar" de los 3 productos que lo tienen, dejándolos como "Sabor Original".
+Agrupar por tipo y tamaño (de mayor a menor) actualizando el campo `orden` en la tabla `products`.
 
-### Cambios en `nombre` (UPDATE en `products`)
+### Nuevo orden propuesto
 
-| Slug | Nombre actual | Nombre nuevo |
-|---|---|---|
-| `coca-cola-menos-azucar-1-5l` | Coca-Cola Sabor Original Menos Azúcar 1.5L | Coca-Cola Sabor Original 1.5L |
-| `coca-cola-menos-azucar-2l` | Coca-Cola Sabor Original Menos Azúcar 2L | Coca-Cola Sabor Original 2L |
-| `coca-cola-menos-azucar-1l` | Coca-Cola Sabor Original Menos Azúcar 1L | Coca-Cola Sabor Original 1L |
-| `coca-cola-original-1l` | Coca-Cola Original 1L | Coca-Cola Sabor Original 1L *(unificar wording)* |
+| # | Producto | Tamaño |
+|---|----------|--------|
+| 0 | Coca-Cola Sabor Original 2L | 2L |
+| 1 | Coca-Cola Sabor Original 1.5L | 1.5L |
+| 2 | Coca-Cola Sabor Original 1L | 1L |
+| 3 | Coca-Cola Sabor Original 600ml | 600ml |
+| 4 | Coca-Cola Sin Azúcar 2L | 2L |
+| 5 | Coca-Cola Sin Azúcar 1L | 1L |
+| 6 | Coca-Cola Zero 500ml | 500ml |
+| 7 | Agua Mineral Nevada 600ml | 600ml |
+| 8 | Cerveza Polar Light 250ml | 250ml |
+| 9 | Cerveza Polar Pilsen 219ml | 219ml |
+| 10 | Cerveza Solera Classic 250ml | 250ml |
+| 11 | Cerveza Solera Light 250ml | 250ml |
 
-### Conflicto de nombre duplicado
+### Lógica de agrupación
 
-Quedan dos productos con el mismo nombre "Coca-Cola Sabor Original 1L":
-- `coca-cola-original-1l` (existente original)
-- `coca-cola-menos-azucar-1l` (la nueva foto subida con etiqueta "Menos Azúcar")
+1. **Coca-Cola Sabor Original** (todas juntas, mayor a menor)
+2. **Coca-Cola Sin Azúcar** (mayor a menor)
+3. **Coca-Cola Zero**
+4. **Agua**
+5. **Cervezas** agrupadas por marca (Polar, Solera), de mayor a menor tamaño
 
-Necesito decidir antes de ejecutar: ¿elimino uno, mantengo ambos con sufijo distinto, o dejo solo uno activo? Te pregunto.
+### Cambios técnicos
 
-### Lo que NO se toca
-
-- `descripcion_corta`, `tags`, `slug`, `imagen_url`, `precio_usd`, `activo` se mantienen.
-- Otros productos de Bebidas (Zero, Sin Azúcar, cervezas, agua) no cambian.
-- Sin cambios de UI ni código.
+- Un solo `UPDATE` por producto sobre `products.orden` (12 filas).
+- No se modifican nombres, precios, imágenes ni estado `activo`.
+- No hay cambios de código frontend.
