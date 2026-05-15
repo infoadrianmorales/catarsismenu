@@ -1,61 +1,35 @@
+## Reemplazo de imágenes en Bebidas (5 productos)
 
-## Objetivo
+Las 5 nuevas imágenes no coinciden 1:1 con los nombres actuales, así que actualizo imagen + nombre + slug + descripción para que cada producto refleje fielmente la etiqueta real del envase. Los otros 2 productos de Bebidas (Coca-Cola Original 1L, Agua Nevada 600ml) se quedan exactamente igual.
 
-Cargar las 8 imágenes recibidas como 7 productos nuevos en la categoría **Bebidas**, optimizadas para web (WebP en 3 tamaños), con precio temporal de $1 y la **categoría Bebidas desactivada** hasta que la actives manualmente desde el panel.
+### Mapeo
 
-No se modifica el diseño del sitio ni otras categorías.
+| Slug actual | → Nuevo nombre | Imagen subida | Slug nuevo |
+|---|---|---|---|
+| `coca-cola-sin-azucar-1l` | Coca-Cola Sabor Original Menos Azúcar 1.5L | gjpwcv (botella 1.5L) | `coca-cola-menos-azucar-1-5l` |
+| `coca-cola-sin-azucar-2l` | Coca-Cola Sabor Original Menos Azúcar 2L | ucba5a (botella 2L) | `coca-cola-menos-azucar-2l` |
+| `coca-cola-zero-500ml` | Coca-Cola Sabor Original 600ml | xejtlx (botella 600ml) | `coca-cola-original-600ml` |
+| `cerveza-polar-light-250ml` | Cerveza Polar Pilsen 219ml | i4u38j (lata Polar) | `cerveza-polar-pilsen-219ml` |
+| `cerveza-solera-classic-250ml` | Cerveza Solera Light 250ml | elc9m2 (lata Solera Light) | `cerveza-solera-light-250ml` |
 
-## Productos a crear
+### Procesamiento de imágenes
 
-| # | Slug | Nombre | Imagen origen |
-|---|------|--------|---------------|
-| 1 | `coca-cola-original-1l` | Coca-Cola Original 1L | jsyziq (etiqueta roja clásica) |
-| 2 | `coca-cola-sin-azucar-1l` | Coca-Cola Sin Azúcar 1L | 68slm6 |
-| 3 | `coca-cola-sin-azucar-2l` | Coca-Cola Sin Azúcar 2L | 4b1223 (im23fy queda como respaldo / descartado) |
-| 4 | `coca-cola-zero-500ml` | Coca-Cola Zero 500ml | 2f2z9a |
-| 5 | `agua-nevada-600ml` | Agua Mineral Nevada 600ml | k21pcr |
-| 6 | `cerveza-polar-light-250ml` | Cerveza Polar Light 250ml | akn2tt |
-| 7 | `cerveza-solera-classic-250ml` | Cerveza Solera Classic 250ml | ox9ras |
+1. Copiar las 5 imágenes a `/tmp/bebidas2/`.
+2. Con `sharp`: generar **WebP** en 3 tamaños (200, 400, 800 px de ancho, q=85), fondo blanco, formato 1:1 cuadrado (centrado con padding blanco) — siguiendo el estándar del proyecto.
+3. Subir a `product-images/products/{nuevo-slug}.webp` (versión 800px como principal). Las variantes 200/400 quedan disponibles con sufijo (`-sm`, `-md`).
 
-> Las dos imágenes de Coca-Cola Sin Azúcar 2L son casi idénticas; uso la más nítida (`4b1223`) y descarto `im23fy` para no duplicar.
+### Cambios en base de datos (solo `UPDATE`, sin migración)
 
-Los 4 productos genéricos actuales (Agua Mineral, Cerveza, Coca-Cola, Jugo Natural) se **desactivan** (`activo=false`) ya que quedan reemplazados por los nuevos específicos. No se borran para preservar histórico de órdenes.
+Para cada uno de los 5 productos: `UPDATE products SET slug=…, nombre=…, descripcion_corta=…, imagen_url=…, updated_at=now() WHERE slug=<slug actual>`.
 
-## Optimización de imágenes
+### Lo que NO se toca
 
-Para cada imagen genero 3 variantes WebP cuadradas 1:1 (estándar del proyecto):
-- `{slug}_200.webp` — thumb
-- `{slug}_400.webp` — card  
-- `{slug}.webp` — full 800px
+- Categoría `bebidas` permanece **desactivada** (`activo=false`) — sigue oculta del menú público hasta que se active manualmente.
+- Los 7 productos siguen con `precio_usd=1` y `activo=false`.
+- Los productos `coca-cola-original-1l` y `agua-nevada-600ml` no se modifican.
+- No se toca código de UI ni el diseño general.
+- Los 4 productos genéricos antiguos (`coca-cola`, `agua-mineral`, `cerveza`, `jugo-natural`) siguen desactivados como están.
 
-Calidad WebP 85, recorte centrado a cuadrado, fondo blanco preservado. Tamaño esperado: 8–25 KB por variante (vs 200–400 KB del JPG original). El componente `OptimizedImage` ya consume estas variantes vía `srcset` automáticamente.
+### Resultado
 
-## Pasos técnicos
-
-```text
-1. Copiar las 7 imágenes user-uploads:// a /tmp/
-2. Script Node con sharp:
-   - resize cover 1:1 → 200/400/800 px
-   - convertir a WebP q=85
-3. Subir 21 archivos al bucket product-images/products/
-4. INSERT de 7 productos en `products`:
-   - categoria='bebidas', precio_usd=1, activo=false,
-     is_orderable=true, imagen_url={url full webp}
-5. UPDATE products SET activo=false WHERE categoria='bebidas'
-   AND slug IN (4 genéricos actuales)
-6. UPDATE categories SET activo=false WHERE slug='bebidas'
-   → la sección Bebidas desaparece del menú público hasta activar
-```
-
-## Estado final
-
-- En el panel admin → Productos → filtro Bebidas verás los 7 productos nuevos listos para editar precio.
-- En el menú público la categoría Bebidas no aparece (apagada).
-- Para activar: panel admin → Secciones → activar "Bebidas" (un click).
-
-## Archivos afectados
-
-Ninguno de código fuente. Solo:
-- Storage `product-images/products/*.webp` (21 archivos nuevos)
-- Tabla `products` (7 inserts + 4 updates)
-- Tabla `categories` (1 update sobre bebidas)
+Cuando actives la categoría Bebidas, los 7 productos aparecerán con imágenes optimizadas y nombres correctos, listos para que solo ajustes el precio.
