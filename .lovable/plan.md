@@ -1,34 +1,9 @@
-## Reordenar productos de Bebidas
+## Plan: Actualizar favicon
 
-Agrupar por tipo y tamaño (de mayor a menor) actualizando el campo `orden` en la tabla `products`.
+1. Copiar la imagen subida (`Mesa_de_trabajo_2-2.png`) a `public/favicon.png`, sobrescribiendo el actual.
+2. Eliminar `public/favicon.ico` (si existe) para que no sobrescriba el nuevo PNG en el request por defecto del navegador.
+3. Subir el cache-buster de `index.html` (`?v=catarsis-20260325` → nuevo valor) para forzar a navegadores a recargar el favicon.
 
-### Nuevo orden propuesto
+No se requieren cambios adicionales — los `<link rel="icon">` ya apuntan a `/favicon.png`.
 
-| # | Producto | Tamaño |
-|---|----------|--------|
-| 0 | Coca-Cola Sabor Original 2L | 2L |
-| 1 | Coca-Cola Sabor Original 1.5L | 1.5L |
-| 2 | Coca-Cola Sabor Original 1L | 1L |
-| 3 | Coca-Cola Sabor Original 600ml | 600ml |
-| 4 | Coca-Cola Sin Azúcar 2L | 2L |
-| 5 | Coca-Cola Sin Azúcar 1L | 1L |
-| 6 | Coca-Cola Zero 500ml | 500ml |
-| 7 | Agua Mineral Nevada 600ml | 600ml |
-| 8 | Cerveza Polar Light 250ml | 250ml |
-| 9 | Cerveza Polar Pilsen 219ml | 219ml |
-| 10 | Cerveza Solera Classic 250ml | 250ml |
-| 11 | Cerveza Solera Light 250ml | 250ml |
-
-### Lógica de agrupación
-
-1. **Coca-Cola Sabor Original** (todas juntas, mayor a menor)
-2. **Coca-Cola Sin Azúcar** (mayor a menor)
-3. **Coca-Cola Zero**
-4. **Agua**
-5. **Cervezas** agrupadas por marca (Polar, Solera), de mayor a menor tamaño
-
-### Cambios técnicos
-
-- Un solo `UPDATE` por producto sobre `products.orden` (12 filas).
-- No se modifican nombres, precios, imágenes ni estado `activo`.
-- No hay cambios de código frontend.
+**Nota:** El logo es horizontal (1920x1080 con mucho espacio en blanco). En tamaño favicon (32x32) el texto "CATARSIS" se verá muy pequeño/ilegible. ¿Quieres que use la imagen tal cual, o prefieres que recorte/ajuste a un cuadrado más legible (por ejemplo solo la "C" en amarillo sobre fondo Rich Black)?
