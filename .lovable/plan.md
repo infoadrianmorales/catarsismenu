@@ -1,18 +1,31 @@
 ## Problema
 
-En la sección "Productos Destacados" los botones "Agregar al carrito" quedan a distintas alturas porque las descripciones tienen diferente número de líneas (algunas con "Ver más", otras sin él). El botón debe quedar siempre alineado al fondo de cada tarjeta.
+En desktop (`/cart`), la grilla `lg:grid-cols-3` coloca:
+- Items (col-span-2) | UpsellSuggestions (col-span-1, default) | Resumen (col-span-1)
 
-## Cambio en `src/components/MenuCard.tsx`
+Como suman 4 columnas en un grid de 3, las sugerencias caen a la derecha de los items, no debajo.
 
-- Card raíz: agregar `h-full flex flex-col` para que cada tarjeta ocupe toda la altura del grid.
-- `CardContent`: convertirlo en `flex flex-col flex-1` (estructura vertical full-height).
-- Contenedor de contenido (padding interno): `flex flex-col flex-1`.
-- Bloque de prices + CTA: agregar `mt-auto` para empujarlo al fondo, independientemente del largo de la descripción.
+## Cambio (1 línea en `src/pages/Cart.tsx`)
 
-Resultado: imágenes alineadas arriba, descripciones variables en el medio, precios + botón siempre clavados al fondo → simetría perfecta en toda la fila.
+En el wrapper de `UpsellSuggestions` (línea ~274), añadir `lg:col-span-2` para que ocupe el mismo ancho de la columna izquierda y se ubique **debajo** de los productos, dejando el resumen sticky a la derecha intacto.
 
-## Lo que NO se toca
+```diff
+- <div className="mt-6">
++ <div className="lg:col-span-2 mt-6">
+    <UpsellSuggestions maxItems={10} />
+  </div>
+```
 
-- Estilo del botón CTA (ya tiene la forma Dynamic v2 con underline amarilla).
-- `CompactProductCard` (ya usa `h-full flex flex-col` con `mt-auto`).
-- Lógica, datos, precios.
+## Resultado
+
+```text
+Desktop (lg+):
+┌──────────────────────┬──────────┐
+│ Productos            │ Resumen  │
+│                      │ (sticky) │
+├──────────────────────┤          │
+│ Sugerencias (full L) │          │
+└──────────────────────┴──────────┘
+```
+
+Mobile sin cambios (la rama `isMobile` ya las renderiza fuera del grid).

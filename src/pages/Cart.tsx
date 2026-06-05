@@ -271,7 +271,7 @@ const Cart = () => {
 
           {/* [2026-04-10] Sugerencias — flex-shrink-0 para que no se comprima, overflow-hidden para aislar scroll horizontal */}
           {isMobile ? null : (
-            <div className="mt-6">
+            <div className="lg:col-span-2 mt-6">
               <UpsellSuggestions maxItems={10} />
             </div>
           )}
