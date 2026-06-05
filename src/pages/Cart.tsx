@@ -422,6 +422,31 @@ const Cart = () => {
           {/* [2026-04-10] Área expandida con desglose — solo visible si summaryExpanded */}
           {summaryExpanded && (
             <div className="px-4 pt-3 pb-1 border-b border-border/40 animate-in slide-in-from-bottom-2 duration-200">
+              {/* [2026-06-05] Lista breve de items también en mobile (igual que desktop) */}
+              <div className="max-h-40 overflow-y-auto pr-1 space-y-1.5 border-b border-border/40 pb-2 mb-2">
+                {items.map((item) => {
+                  const extrasTotal = (item.extras || []).reduce((s, e) => s + e.precio_usd, 0);
+                  const lineTotal = (item.precio_usd + extrasTotal) * item.quantity;
+                  return (
+                    <div key={item.id} className="text-xs">
+                      <div className="flex justify-between gap-2 items-baseline">
+                        <span className="text-foreground truncate flex-1 min-w-0">
+                          <span className="font-bold text-secondary tabular-nums">{item.quantity}×</span>{' '}
+                          {item.nombre}
+                        </span>
+                        <span className="text-foreground font-medium tabular-nums flex-shrink-0">
+                          {formatPrice(lineTotal)}
+                        </span>
+                      </div>
+                      {(item.extras || []).length > 0 && (
+                        <p className="text-[10px] text-muted-foreground truncate pl-4 mt-0.5">
+                          + {item.extras!.map(e => e.nombre).join(', ')}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
               <div className="flex justify-between text-sm mb-2">
                 <span className="text-muted-foreground">Subtotal ({totalItems} {totalItems === 1 ? 'item' : 'items'})</span>
                 <span>{formatPrice(subtotal)}</span>
