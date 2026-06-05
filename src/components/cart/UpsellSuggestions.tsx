@@ -121,7 +121,7 @@ const SuggestionCarousel = ({
             </div>
             {/* [2026-04-10] Info: nombre + precio + botón */}
             <div className="p-1.5">
-              <p className="font-medium truncate text-[#F7F8F9] text-[11px]">
+              <p className="font-medium text-[#F7F8F9] text-[10px] md:text-[11px] leading-tight line-clamp-2 min-h-[24px]">
                 {product.nombre}
               </p>
               <div className="flex items-center justify-between mt-1">
