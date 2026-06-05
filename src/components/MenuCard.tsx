@@ -88,10 +88,10 @@ export const MenuCard = ({ item, currency, displayMode = 'ambas', source = 'menu
             />
           </div>
           
-          {/* Prices and Add to Cart */}
-          <div className="flex items-center justify-between gap-2">
+          {/* Prices and Add to Cart - layout vertical para CTA full-width */}
+          <div className="flex flex-col gap-3">
             {renderPrices()}
-            {!isLocalMode && <AddToCartButton product={item} variant="compact" source={source} />}
+            {!isLocalMode && <AddToCartButton product={item} variant="default" source={source} />}
           </div>
         </div>
       </CardContent>

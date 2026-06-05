@@ -55,32 +55,22 @@ export const AddToCartButton = ({ product, variant = 'default', source = 'menu' 
   };
 
   if (quantity === 0) {
-    if (variant === 'icon') {
-      return (
-        // ACCESIBILIDAD [ARIA]: aria-label describe la acción para lectores de pantalla
-        <Button
-          size="icon"
-          onClick={handleAdd}
-          className="h-8 w-8 bg-primary hover:bg-primary/90 shrink-0"
-          data-meta-event="AddToCart"
-          id={`add-to-cart-${product.id}`}
-          aria-label={`Agregar ${product.nombre} al carrito`}
-        >
-          <Plus className="h-4 w-4" />
-        </Button>
-      );
-    }
-    
+    // [2026-06-05] CTA UNIFICADO: mismo lenguaje visual que el botón grande
+    // de ProductPage. Pill raspberry full-width con ícono + texto, hover
+    // con lift + sombra raspberry + glow xanthous. La variante 'icon'
+    // (cards compactas grid 2-col mobile) usa texto corto 'Agregar' para
+    // que entre; 'default'/'compact' (cards grandes) usan 'Agregar al carrito'.
+    const isCompactLabel = variant === 'icon' || variant === 'compact';
     return (
       <Button
-        size={variant === 'compact' ? 'sm' : 'default'}
         onClick={handleAdd}
-        className="gap-2 bg-primary hover:bg-primary/90"
+        className="group relative w-full h-10 gap-2 rounded-full bg-primary px-3 font-display font-bold uppercase tracking-tight text-primary-foreground text-xs sm:text-sm transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-[0_8px_20px_-8px_hsl(var(--primary)/0.6),0_0_16px_3px_hsl(var(--secondary)/0.25)] active:scale-[0.98]"
         data-meta-event="AddToCart"
         id={`add-to-cart-${product.id}`}
+        aria-label={`Agregar ${product.nombre} al carrito`}
       >
-        <ShoppingCart className="h-4 w-4" />
-        {variant !== 'compact' && <span>Agregar</span>}
+        <ShoppingCart className="h-4 w-4 transition-transform duration-300 group-hover:scale-110" />
+        <span>{isCompactLabel ? 'Agregar' : 'Agregar al carrito'}</span>
       </Button>
     );
   }
