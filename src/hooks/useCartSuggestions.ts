@@ -109,10 +109,6 @@ export const useCartSuggestions = (maxItems: number = 6): CartSuggestionsResult 
     const shuffledA = seededShuffle(poolAFallback, daySeed);
     const shuffledB = seededShuffle(poolB, daySeed + 1);
 
-    // [2026-04-08] REGLAS DE MEZCLA CONTEXTUAL
-    let foodSuggestions: MenuItem[] = [];
-    let beverageSuggestions: MenuItem[] = [];
-
     // [2026-06-05] Cada sección rellena hasta maxItems de forma independiente.
     // Antes se hacía split 60/40 que limitaba a 4 comidas — ahora el carrusel
     // muestra hasta maxItems por sección y se encarga del scroll horizontal.
