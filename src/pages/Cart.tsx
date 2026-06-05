@@ -112,7 +112,7 @@ const Cart = () => {
 
         <div className={`${isMobile ? 'flex-1 flex flex-col overflow-hidden min-h-0' : 'grid lg:grid-cols-3 gap-8'}`}>
           {/* [2026-04-10] Items List — en mobile ocupa flex-1 con scroll interno */}
-          <div className={`${isMobile ? 'flex-1 overflow-y-auto min-h-0 pr-1' : 'lg:col-span-2'}`}>
+          <div className={`${isMobile ? 'flex-1 overflow-y-auto min-h-0 pr-1' : 'lg:col-span-2 space-y-6'}`}>
             <div className="space-y-2 md:space-y-3">
               {items.map((item, index) => {
                 const isNotesExpanded = expandedNotes[item.id] || !!item.notes;
@@ -267,14 +267,11 @@ const Cart = () => {
               })}
             </div>
 
+            {/* [2026-06-05] Sugerencias dentro de la columna izquierda, debajo de los productos.
+                Antes estaba como sibling del grid, lo que empujaba el resumen sticky abajo. */}
+            {!isMobile && <UpsellSuggestions maxItems={10} />}
           </div>
 
-          {/* [2026-04-10] Sugerencias — flex-shrink-0 para que no se comprima, overflow-hidden para aislar scroll horizontal */}
-          {isMobile ? null : (
-            <div className="lg:col-span-2 mt-6">
-              <UpsellSuggestions maxItems={10} />
-            </div>
-          )}
 
           {/* [2026-04-10] Desktop: resumen sticky con top que respeta el header */}
           <div className="lg:col-span-1 hidden lg:block">
