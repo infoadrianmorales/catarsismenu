@@ -305,13 +305,16 @@ const Cart = () => {
                   )}
                 </div>
 
-                <Button 
-                  className="w-full gap-2 bg-secondary hover:bg-secondary/90 text-secondary-foreground font-bold text-base h-12 hover:scale-[1.02] transition-transform animate-checkout-glow" 
-                  size="lg"
+                {/* [2026-06-05] CTA UNIFICADO checkout desktop. */}
+                <Button
+                  className="w-full animate-checkout-glow"
+                  variant="cta"
+                  size="cta"
                   onClick={() => navigate('/checkout')}
                 >
-                  <ShoppingBag className="h-5 w-5" />
+                  <ShoppingBag className="transition-transform duration-300 group-hover:scale-110" />
                   Finalizar Compra
+                  <span className="pointer-events-none absolute bottom-2 left-1/2 h-1 w-12 -translate-x-1/2 rounded-full bg-secondary opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                 </Button>
                 
                 <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
