@@ -68,13 +68,15 @@ const Cart = () => {
           <p className="text-muted-foreground mb-10 max-w-sm">
             Explora nuestro menú y agrega tus platos favoritos para comenzar tu pedido
           </p>
-          <Button 
-            onClick={() => navigate('/')} 
-            size="lg"
-            className="gap-2 bg-secondary hover:bg-secondary/90 text-secondary-foreground font-bold px-8 hover:scale-105 transition-transform"
+          {/* [2026-06-05] CTA UNIFICADO empty state. */}
+          <Button
+            onClick={() => navigate('/')}
+            variant="cta"
+            size="cta"
           >
-            <ArrowLeft className="h-5 w-5" />
+            <ArrowLeft className="transition-transform duration-300 group-hover:-translate-x-1" />
             Explorar menú
+            <span className="pointer-events-none absolute bottom-2 left-1/2 h-1 w-12 -translate-x-1/2 rounded-full bg-secondary opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
           </Button>
         </div>
         
@@ -303,13 +305,16 @@ const Cart = () => {
                   )}
                 </div>
 
-                <Button 
-                  className="w-full gap-2 bg-secondary hover:bg-secondary/90 text-secondary-foreground font-bold text-base h-12 hover:scale-[1.02] transition-transform animate-checkout-glow" 
-                  size="lg"
+                {/* [2026-06-05] CTA UNIFICADO checkout desktop. */}
+                <Button
+                  className="w-full animate-checkout-glow"
+                  variant="cta"
+                  size="cta"
                   onClick={() => navigate('/checkout')}
                 >
-                  <ShoppingBag className="h-5 w-5" />
+                  <ShoppingBag className="transition-transform duration-300 group-hover:scale-110" />
                   Finalizar Compra
+                  <span className="pointer-events-none absolute bottom-2 left-1/2 h-1 w-12 -translate-x-1/2 rounded-full bg-secondary opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                 </Button>
                 
                 <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
@@ -383,11 +388,14 @@ const Cart = () => {
                 </div>
               </button>
 
-              <Button 
-                className="gap-2 bg-secondary hover:bg-secondary/90 text-secondary-foreground font-bold h-11 px-6 animate-checkout-glow flex-shrink-0" 
+              {/* [2026-06-05] CTA UNIFICADO checkout mobile sticky. */}
+              <Button
+                variant="cta"
+                size="ctaSm"
+                className="flex-shrink-0 animate-checkout-glow"
                 onClick={() => navigate('/checkout')}
               >
-                <ShoppingBag className="h-4 w-4" />
+                <ShoppingBag />
                 Finalizar
               </Button>
             </div>

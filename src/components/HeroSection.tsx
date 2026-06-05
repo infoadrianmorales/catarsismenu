@@ -192,26 +192,28 @@ export const HeroSection = ({ mode = 'delivery' }: HeroSectionProps) => {
         <div className="hidden md:block relative z-10 container px-4 pb-16 pt-8 text-center">
           <div className="flex flex-row flex-wrap items-center justify-center gap-3">
             {!isLocalMode && (
-              <Button 
-                size="lg" 
+              /* [2026-06-05] CTA UNIFICADO en hero. */
+              <Button
+                variant="cta"
+                size="cta"
                 onClick={handleWhatsAppClick}
-                className="bg-accent hover:bg-accent/90 text-accent-foreground font-bold gap-2"
               >
-                <MessageCircle className="h-5 w-5" />
+                <MessageCircle className="transition-transform duration-300 group-hover:scale-110" />
                 Pedir por WhatsApp
+                <span className="pointer-events-none absolute bottom-2 left-1/2 h-1 w-12 -translate-x-1/2 rounded-full bg-secondary opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
               </Button>
             )}
-            <Button 
-              variant={isLocalMode ? "default" : "outline"}
-              size="lg"
+            <Button
+              variant={isLocalMode ? "cta" : "outline"}
+              size={isLocalMode ? "cta" : "lg"}
               asChild
-              className={isLocalMode 
-                ? "bg-secondary hover:bg-secondary/90 text-secondary-foreground font-bold gap-2"
-                : "border-border/50 hover:bg-primary hover:text-primary-foreground hover:border-primary gap-2"
+              className={isLocalMode
+                ? ""
+                : "border-border/50 hover:bg-primary hover:text-primary-foreground hover:border-primary gap-2 rounded-full"
               }
             >
               <a href={appConfig.instagram_url} target="_blank" rel="noopener noreferrer">
-                <Instagram className="h-5 w-5" />
+                <Instagram className={isLocalMode ? "transition-transform duration-300 group-hover:scale-110" : "h-5 w-5"} />
                 {isLocalMode ? 'Síguenos en Instagram' : 'Ver en Instagram'}
               </a>
             </Button>
