@@ -1,31 +1,51 @@
-# Plan: Agregar Extras a Hamburguesas
+## Cambios
 
-## Objetivo
-Insertar 6 nuevos extras/add-ons en la base de datos para que aparezcan únicamente cuando se agregan hamburguesas al carrito.
+### 1. Mantener visible la lista de bebidas aunque ya haya 1+
+**Archivo:** `src/hooks/useCartSuggestions.ts`
 
-## Datos a insertar
+Hoy las bebidas desaparecen del banner "¿Algo para tomar?" en cuanto el carrito tiene al menos una bebida (`!hasBeverages` en la línea 117). Esto impide pedir varias.
 
-| Nombre | Precio (USD) |
-|---|---|
-| Tocineta | 1.50 |
-| Queso facilita | 1.50 |
-| Pollo crispy | 2.50 |
-| Carne smash | 2.50 |
-| Cebollas caramelizadas | 0.50 |
-| Pepinillos | 1.00 |
+- Quitar la condición `!hasBeverages`.
+- Mantener únicamente: hay comida en el carrito + categoría bebidas activa.
+- El filtro base ya excluye las bebidas que ya están en el carrito (`cartIds`), por lo que la lista solo mostrará otras bebidas disponibles, sin duplicar las que el usuario ya agregó.
 
-## Detalles técnicos
+### 2. Extras como desplegable con llamada llamativa
+**Archivo:** `src/pages/Cart.tsx` (y opcionalmente refinamiento visual en `ProductExtras.tsx`)
 
-- **Tabla**: `public.product_extras`
-- **categoria**: `hamburguesas`
-- **product_id**: `NULL` (aplica a toda la categoría de hamburguesas)
-- **activo**: `true`
-- **orden**: asignados secuencialmente del 2 al 7 (el orden 1 ya existe con "Extra de Carne")
+Hoy los extras se renderizan siempre abiertos debajo de cada producto del carrito (líneas 211-227), lo que alarga mucho la tarjeta.
 
-## Verificación existente
+- Envolver `<ProductExtras />` en un botón colapsable (estado local `expandedExtras: Record<string, boolean>`, análogo a `expandedNotes`).
+- Botón siempre visible con:
+  - Ícono `Sparkles` (o `Plus` en círculo) en color **secondary** (Xanthous).
+  - Frase llamativa en mayúsculas Phudu: **"✨ ¡HAZLO ÉPICO! AGREGA EXTRAS"** (texto editable).
+  - Contador si ya hay extras seleccionados: `(2 agregados)` en color secundario.
+  - Chevron up/down a la derecha.
+- Por defecto **colapsado**. Si el item ya tiene extras seleccionados (regresa al carrito), se abre automáticamente.
+- Mantener el mismo componente `<ProductExtras />` interno; solo cambia el wrapper.
 
-Ya se revisó la tabla: existe un extra previo "Extra de Carne" ($1.50) en orden 1, actualmente **inactivo**. Ninguno de los 6 nuevos nombres coincide con él, por lo que no habrá duplicados.
+### 3. Resumen breve del pedido en la columna derecha (desktop)
+**Archivo:** `src/pages/Cart.tsx` (bloque `lg:col-span-1 hidden lg:block`, líneas 277-327)
 
-## Resultado esperado
+Hoy el resumen solo muestra subtotal y total. Agregar una lista compacta de los items entre el título "Resumen del pedido" y el subtotal:
 
-Los clientes verán estos 6 extras como opciones seleccionables al momento de agregar cualquier hamburguesa al carrito.
+```
+RESUMEN DEL PEDIDO
+─────────────────────────
+2× Hot Honey            $19.00
+1× Coca-Cola Sin Azúcar  $3.50
+3× Pepinillos (extras)   $3.00
+─────────────────────────
+Subtotal (3 items)      $25.99
+TOTAL                   $25.99
+```
+
+Detalles:
+- Lista con scroll interno si supera ~5 items (`max-h-48 overflow-y-auto`).
+- Cada línea: `cantidad × nombre` truncado + precio de línea (incluye extras).
+- Si el item tiene extras, mostrar sub-línea muy pequeña tipo `+ Tocineta, Pepinillos` en `text-[10px] text-muted-foreground`.
+- Tipografía pequeña (`text-xs`), separadores sutiles, no compite visualmente con el Total.
+- Solo aplica a desktop (mobile ya tiene el desglose expandible inferior, no se toca).
+
+## Fuera de alcance
+- No se tocan precios, lógica de carrito, ni base de datos.
+- No se tocan los extras a nivel mobile más allá del cambio compartido en `Cart.tsx` (al estar en el mismo componente, el desplegable aplicará también en mobile, lo que ayuda a compactar la vista).
