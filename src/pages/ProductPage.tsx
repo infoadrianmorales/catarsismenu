@@ -226,17 +226,15 @@ const ProductPage = () => {
             {isOrderable ? (
               <div className="mt-auto space-y-4">
                 {quantity === 0 ? (
-                  /* [2026-06-05] CTA REDISEÑADO: botón pill más grande, Phudu uppercase,
-                     hover con lift + sombra raspberry + glow xanthous y línea de acento
-                     amarilla para reforzar la acción principal del producto. */
+                  /* [2026-06-05] CTA UNIFICADO: usa variante `cta` del Button. */
                   <Button
-                    size="lg"
-                    className="group relative w-full gap-3 rounded-full bg-primary px-8 py-7 text-xl font-display font-bold uppercase tracking-tight text-primary-foreground transition-all duration-300 hover:-translate-y-1 hover:bg-primary/90 hover:shadow-[0_10px_30px_-10px_hsl(var(--primary)/0.6),0_0_24px_4px_hsl(var(--secondary)/0.25)] active:scale-[0.98] [&_svg]:size-6"
+                    variant="cta"
+                    size="cta"
+                    className="w-full"
                     onClick={handleAddToCart}
                   >
                     <ShoppingCart className="transition-transform duration-300 group-hover:scale-110" />
                     Agregar al carrito
-                    {/* Acento Xanthous: aparece sutilmente en hover */}
                     <span className="pointer-events-none absolute bottom-2 left-1/2 h-1 w-12 -translate-x-1/2 rounded-full bg-secondary opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                   </Button>
                 ) : (
