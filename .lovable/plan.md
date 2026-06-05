@@ -1,33 +1,27 @@
-Reemplazar el botón cuadrado de ícono en las tarjetas del menú por un CTA pill con ícono de carrito + texto "Agregar al carrito", reutilizando el mismo estilo del botón grande de la página de producto (Raspberry, Phudu uppercase, hover lift + sombra raspberry + glow xanthous).
+## Cambios en `src/components/cart/AddToCartButton.tsx` (variantes `default`, `compact`, `icon`)
 
-## Archivos a modificar
+Reemplazar el pill actual por el estilo Dynamic CTA v2:
 
-### 1. `src/components/cart/AddToCartButton.tsx`
-- Cambiar la variante `icon` (usada por `CompactProductCard`) para que renderice un **botón ancho full-width**:
-  - `w-full rounded-full bg-primary text-primary-foreground`
-  - Texto `Agregar` (corto, para que quepa en grid mobile de 2 columnas) con `font-display font-bold uppercase tracking-tight text-xs sm:text-sm`
-  - Ícono `ShoppingCart` `h-4 w-4` con `group-hover:scale-110`
-  - Altura mínima `h-10` (cumple touch target accesibilidad)
-  - Hover: `hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-[0_8px_20px_-8px_hsl(var(--primary)/0.6),0_0_16px_3px_hsl(var(--secondary)/0.25)]`
-  - `active:scale-[0.98]`, `transition-all duration-300`
-- Cambiar la variante `default`/`compact` para que use el mismo estilo pill con texto completo `Agregar al carrito` (tarjetas grandes `MenuCard`).
-- Mantener intacta la lógica de cantidades (estado +/- cuando `quantity > 0`) y los handlers existentes.
+- **Botón**: `group relative w-full rounded-full bg-primary px-4 py-3 flex items-center justify-center gap-2 shadow-[0_0_20px_hsl(var(--primary)/0.2)] hover:shadow-[0_0_30px_hsl(var(--primary)/0.4)] hover:brightness-110 active:scale-95 transition-all duration-300`
+- **Ícono `ShoppingCart`** (lucide): `h-3.5 w-3.5` con `stroke="hsl(var(--secondary))"` (amarillo Xanthous) + animación `spring-bounce` al hover (keyframes en `index.css` o `tailwind.config.ts`).
+- **Texto**: `font-display font-bold uppercase tracking-widest text-[10px] text-primary-foreground select-none`. Se mantiene "Agregar al carrito" en todas las variantes (cabe porque la letra baja a 10px).
+- **Underline amarilla animada**: `<span>` absoluto `-bottom-2 left-1/2 -translate-x-1/2 h-[2px] w-0 rounded-full bg-secondary opacity-0 transition-all duration-300 group-hover:w-16 group-hover:opacity-100 group-active:w-24 group-active:bg-white`.
+- **Pulse hover sutil**: capa absoluta `inset-0 rounded-full bg-secondary/10 opacity-0 group-hover:opacity-100`.
+- Eliminar la prop `isCompactLabel` (texto unificado).
+- Cambiar contenedor del botón a `relative pb-2` para dar espacio a la línea inferior sin recortarla.
 
-### 2. `src/components/CompactProductCard.tsx`
-- Cambiar el contenedor del precio + botón de `flex items-end justify-between` a un layout en columna:
-  - Precio arriba (mantiene formato actual)
-  - Botón debajo, full-width
-- Quitar el `gap` lateral; agregar `gap-2` vertical.
+## Animación spring-bounce
 
-### 3. `src/components/MenuCard.tsx`
-- Pasar `variant="default"` al `AddToCartButton` (en lugar de `compact`) o ajustar el contenedor para que el botón se vea full-width debajo del precio, consistente con la tarjeta compacta.
+Agregar a `tailwind.config.ts` (extend.keyframes + animation) un keyframe `cart-spring` equivalente al prototipo (translate + scale + rotate) con duración 0.6s, aplicado al ícono cuando el grupo está en hover via `group-hover:animate-[cart-spring_0.6s_cubic-bezier(0.25,1,0.5,1)_forwards]`.
 
 ## Lo que NO se toca
-- `ProductPage.tsx` (ya tiene el CTA grande aplicado).
-- Lógica de carrito, tracking, toasts, `CartContext`.
-- Estado de cantidades (+/-) que aparece después de agregar.
-- Caso `!isOrderable` (mantiene "Solo en el local").
+
+- Layout de `MenuCard.tsx` y `CompactProductCard.tsx` (siguen con CTA full-width vertical bajo el precio).
+- Lógica de carrito, estado de cantidades +/-, `!isOrderable`, tracking Meta Pixel, toasts.
+- `ProductPage.tsx`.
 
 ## Notas técnicas
-- Los grids actuales en mobile son de 2 columnas, por eso en `icon` se usa texto corto "Agregar" y en `default` (tarjetas grandes) texto completo "Agregar al carrito".
-- Se mantiene la accesibilidad: `aria-label`, touch target ≥40px, `data-meta-event="AddToCart"`.
+
+- Se usan tokens del design system (`bg-primary`, `bg-secondary`, `text-primary-foreground`) en vez de hex literales del prototipo.
+- La línea amarilla queda dentro del card porque el contenedor padre tiene `gap-3`/`gap-2` suficiente.
+- El touch target sigue ≥40px (py-3 ≈ 44px total).

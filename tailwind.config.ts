@@ -88,11 +88,21 @@ export default {
             height: "0",
           },
         },
+        // [2026-06-05] CTA del menú: spring-bounce del ícono del carrito
+        "cart-spring": {
+          "0%": { transform: "translateY(0) scale(1) rotate(0deg)" },
+          "35%": { transform: "translateY(-4px) scale(1.1, 0.9) rotate(-12deg)" },
+          "60%": { transform: "translateY(-1px) scale(0.95, 1.05) rotate(-6deg)" },
+          "85%": { transform: "translateY(-2.5px) scale(1.02, 0.98) rotate(-9deg)" },
+          "100%": { transform: "translateY(-2px) scale(1) rotate(-8deg)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "cart-spring": "cart-spring 0.6s cubic-bezier(0.25, 1, 0.5, 1) forwards",
       },
+
     },
   },
   plugins: [require("tailwindcss-animate")],

@@ -55,25 +55,34 @@ export const AddToCartButton = ({ product, variant = 'default', source = 'menu' 
   };
 
   if (quantity === 0) {
-    // [2026-06-05] CTA UNIFICADO: mismo lenguaje visual que el botón grande
-    // de ProductPage. Pill raspberry full-width con ícono + texto, hover
-    // con lift + sombra raspberry + glow xanthous. La variante 'icon'
-    // (cards compactas grid 2-col mobile) usa texto corto 'Agregar' para
-    // que entre; 'default'/'compact' (cards grandes) usan 'Agregar al carrito'.
-    const isCompactLabel = variant === 'icon' || variant === 'compact';
+    // [2026-06-05] CTA DYNAMIC v2: pill raspberry con ícono Xanthous,
+    // texto pequeño Phudu uppercase tracking-widest, animación spring
+    // del carrito al hover, underline amarilla animada bajo el pill y
+    // pulse sutil de fondo. Tokens del design system (no hex literales).
     return (
-      <Button
-        onClick={handleAdd}
-        className="group relative w-full h-10 gap-2 rounded-full bg-primary px-3 font-display font-bold uppercase tracking-tight text-primary-foreground text-xs sm:text-sm transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-[0_8px_20px_-8px_hsl(var(--primary)/0.6),0_0_16px_3px_hsl(var(--secondary)/0.25)] active:scale-[0.98]"
-        data-meta-event="AddToCart"
-        id={`add-to-cart-${product.id}`}
-        aria-label={`Agregar ${product.nombre} al carrito`}
-      >
-        <ShoppingCart className="h-4 w-4 transition-transform duration-300 group-hover:scale-110" />
-        <span>{isCompactLabel ? 'Agregar' : 'Agregar al carrito'}</span>
-      </Button>
+      <div className="relative w-full pb-2">
+        <Button
+          onClick={handleAdd}
+          className="group relative w-full h-11 gap-2 rounded-full bg-primary px-4 py-3 font-display font-bold uppercase tracking-widest text-primary-foreground text-[10px] shadow-[0_0_20px_hsl(var(--primary)/0.2)] transition-all duration-300 hover:bg-primary hover:brightness-110 hover:shadow-[0_0_30px_hsl(var(--primary)/0.4)] active:scale-95"
+          data-meta-event="AddToCart"
+          id={`add-to-cart-${product.id}`}
+          aria-label={`Agregar ${product.nombre} al carrito`}
+        >
+          {/* Pulse amarillo sutil al hover */}
+          <span className="pointer-events-none absolute inset-0 rounded-full bg-secondary/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+          {/* Ícono carrito Xanthous con spring-bounce */}
+          <ShoppingCart
+            className="relative h-3.5 w-3.5 text-secondary group-hover:animate-cart-spring"
+            strokeWidth={2.5}
+          />
+          <span className="relative select-none">Agregar al carrito</span>
+          {/* Underline amarilla animada */}
+          <span className="pointer-events-none absolute -bottom-2 left-1/2 h-[2px] w-0 -translate-x-1/2 rounded-full bg-secondary opacity-0 transition-all duration-300 ease-out group-hover:w-16 group-hover:opacity-100 group-active:w-24 group-active:bg-white" />
+        </Button>
+      </div>
     );
   }
+
 
   return (
     <div className="flex items-center gap-2 bg-muted rounded-lg p-1">
