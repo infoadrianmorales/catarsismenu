@@ -37,16 +37,22 @@ export const useProductExtras = () => {
   });
 
   // Obtener extras aplicables a un producto específico
+  // [2026-06-05] BUGFIX: Normalizar categoría (trim + lowercase) para evitar
+  // mismatches por mayúsculas/acentos entre product.categoria y product_extras.categoria.
+  const normalize = (s: string) => (s || '').trim().toLowerCase();
+
   const getExtrasForProduct = (productId: string, categoria: string): ProductExtra[] => {
+    const cat = normalize(categoria);
     return allExtras.filter(extra =>
-      extra.categoria === categoria &&
+      normalize(extra.categoria) === cat &&
       (extra.product_id === null || extra.product_id === productId)
     );
   };
 
   // Verificar si una categoría tiene extras disponibles
   const categoryHasExtras = (categoria: string): boolean => {
-    return allExtras.some(extra => extra.categoria === categoria);
+    const cat = normalize(categoria);
+    return allExtras.some(extra => normalize(extra.categoria) === cat);
   };
 
   return {
