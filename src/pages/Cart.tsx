@@ -23,6 +23,9 @@ const Cart = () => {
   const { items, removeFromCart, clearCart, subtotal, totalItems, updateQuantity, updateItemNotes, addExtra, removeExtra } = useCart();
   const { currency, toggleCurrency, displayMode, getPrices } = useCurrency();
   const [expandedNotes, setExpandedNotes] = useState<Record<string, boolean>>({});
+  // [2026-06-05] EXTRAS DROPDOWN: estado para colapsar/expandir extras por item.
+  // Se inicializa abierto si el item ya tiene extras seleccionados.
+  const [expandedExtras, setExpandedExtras] = useState<Record<string, boolean>>({});
   const isMobile = useIsMobile();
   // FEATURE [EXTRAS]: cargar extras disponibles
   const { getExtrasForProduct, categoryHasExtras } = useProductExtras();
