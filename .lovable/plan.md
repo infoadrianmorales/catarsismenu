@@ -1,13 +1,16 @@
-## Plan: Favicon con el wordmark CATARSIS completo
+Cambiar el botón "Agregar al carrito" en la página de producto para que sea más grande, con mejor contraste y efectos de hover que inviten al clic.
 
-Cambio de enfoque: en lugar de recortar solo la "C", usar el logo completo "CATARSIS" centrado en un cuadrado, como pediste.
+## Cambios en `src/pages/ProductPage.tsx`
 
-### Pasos
+Reemplazar el botón CTA actual (líneas ~229-236) por una versión con:
+- Forma **pill/redonda completa** (`rounded-full`)
+- Fondo **Raspberry sólido** (`bg-primary`) con texto blanco
+- **Texto más grande** en Phudu (`text-xl`, `font-display`, `font-bold`, `uppercase`, `tracking-tight`)
+- **Icono de carrito más grande** (`h-6 w-6`) con animación de escala en hover (`group-hover:scale-110`)
+- **Hover efecto**: levantamiento sutil (`-translate-y-1`), sombra rosa (`shadow-[...]`) y glow amarillo tenue (`shadow-[...]`) para destacar la acción
+- **Línea de acento amarilla** (`bg-secondary`) que aparece en la parte inferior del botón al hacer hover
+- Estado active con leve reducción de escala (`active:scale-[0.98]`)
 
-1. Copiar `user-uploads://Diseño_sin_título-2.png` a `public/favicon-source.png` (sobrescribir respaldo).
-2. Generar `public/favicon.png` (512x512) tomando la imagen subida y centrándola en un canvas cuadrado con padding mínimo, fondo transparente, manteniendo el wordmark "CATARSIS" + "DRINKS & FOOD" visible y nítido.
-3. Actualizar el cache-buster en `index.html` de `?v=catarsis-20260515b` a `?v=catarsis-20260515c` en los 5 tags del favicon.
+No se toca lógica de negocio (onClick, quantity, etc.) — solo estilos y clases Tailwind.
 
-### Nota sobre legibilidad
-
-A 32x32 px (tamaño real de pestaña) el texto "DRINKS & FOOD" se verá como una línea fina debajo de "CATARSIS", y "CATARSIS" se leerá como una mancha amarilla con forma de palabra. Es lo esperado al usar el wordmark completo — confirmas que prefieres esto sobre solo la "C".
+No se requieren cambios en otros archivos ni nuevas dependencias.
