@@ -109,23 +109,14 @@ export const useCartSuggestions = (maxItems: number = 6): CartSuggestionsResult 
     const shuffledA = seededShuffle(poolAFallback, daySeed);
     const shuffledB = seededShuffle(poolB, daySeed + 1);
 
-    // [2026-04-08] REGLAS DE MEZCLA CONTEXTUAL
-    let foodSuggestions: MenuItem[] = [];
-    let beverageSuggestions: MenuItem[] = [];
-
-    if (hasFoodItems && bebidasActive && !hasBeverages) {
-      // Comida + bebidas activa + sin bebidas en carrito → 60% bebidas + 40% comida
-      const beverageCount = Math.ceil(maxItems * 0.6);
-      const foodCount = maxItems - beverageCount;
-      beverageSuggestions = shuffledB.slice(0, beverageCount);
-      foodSuggestions = shuffledA.slice(0, foodCount);
-    } else if (hasFoodItems) {
-      // Comida + (bebidas inactiva O ya tiene bebidas) → 100% complementos
-      foodSuggestions = shuffledA.slice(0, maxItems);
-    } else {
-      // Solo bebidas en carrito → sugerir comida
-      foodSuggestions = shuffledA.slice(0, maxItems);
-    }
+    // [2026-06-05] Cada sección rellena hasta maxItems de forma independiente.
+    // Antes se hacía split 60/40 que limitaba a 4 comidas — ahora el carrusel
+    // muestra hasta maxItems por sección y se encarga del scroll horizontal.
+    const foodSuggestions: MenuItem[] = shuffledA.slice(0, maxItems);
+    const beverageSuggestions: MenuItem[] =
+      hasFoodItems && bebidasActive && !hasBeverages
+        ? shuffledB.slice(0, maxItems)
+        : [];
 
     return { foodSuggestions, beverageSuggestions, isLoading };
   }, [items, products, bestSellers, categories, maxItems, productsLoading, categoriesLoading]);
