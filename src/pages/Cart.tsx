@@ -388,11 +388,14 @@ const Cart = () => {
                 </div>
               </button>
 
-              <Button 
-                className="gap-2 bg-secondary hover:bg-secondary/90 text-secondary-foreground font-bold h-11 px-6 animate-checkout-glow flex-shrink-0" 
+              {/* [2026-06-05] CTA UNIFICADO checkout mobile sticky. */}
+              <Button
+                variant="cta"
+                size="ctaSm"
+                className="flex-shrink-0 animate-checkout-glow"
                 onClick={() => navigate('/checkout')}
               >
-                <ShoppingBag className="h-4 w-4" />
+                <ShoppingBag />
                 Finalizar
               </Button>
             </div>
