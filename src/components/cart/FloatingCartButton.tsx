@@ -26,31 +26,34 @@ export const FloatingCartButton = () => {
 
   return (
     <div className="fixed bottom-[72px] left-4 right-4 z-40 md:hidden">
-      {/* [2026-06-05] CTA UNIFICADO botón flotante carrito mobile. */}
       <Button
         onClick={() => navigate('/carrito')}
-        variant="cta"
-        size="ctaSm"
-        className="w-full h-14 justify-between px-4 animate-fade-in"
+        className={cn(
+          "w-full h-14 justify-between px-4",
+          "bg-secondary hover:bg-secondary/90 text-secondary-foreground",
+          "shadow-lg rounded-xl",
+          "animate-fade-in"
+        )}
         data-meta-event="ViewCart"
         id="floating-cart-btn"
+        // ACCESIBILIDAD [ARIA]: aria-label para lectores de pantalla
         aria-label="Abrir carrito"
       >
         <div className="flex items-center gap-3">
           <div className="relative">
             <ShoppingCart className="h-5 w-5" />
-            <Badge className="absolute -top-2 -right-2 h-4 min-w-4 p-0 flex items-center justify-center text-[10px] bg-secondary text-secondary-foreground">
+            <Badge className="absolute -top-2 -right-2 h-4 min-w-4 p-0 flex items-center justify-center text-[10px] bg-primary text-primary-foreground">
               {totalItems}
             </Badge>
           </div>
-          <span className="font-bold normal-case tracking-normal">
+          <span className="font-medium">
             {totalItems} {totalItems === 1 ? 'producto' : 'productos'}
           </span>
         </div>
-
+        
         <div className="flex items-center gap-2">
           <span className="font-bold">{formattedPrice}</span>
-          <span className="text-sm opacity-80 normal-case">Ver →</span>
+          <span className="text-sm opacity-80">Ver →</span>
         </div>
       </Button>
     </div>

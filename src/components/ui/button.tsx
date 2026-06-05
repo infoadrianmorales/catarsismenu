@@ -15,20 +15,12 @@ const buttonVariants = cva(
         secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
-        // [2026-06-05] CTA UNIFICADO: variante de acción primaria reutilizable.
-        // Pill Raspberry, Phudu uppercase, lift + glow Xanthous en hover.
-        // Usar en hero, sticky bar, drawer, checkout y página de producto.
-        cta: "group relative rounded-full bg-primary text-primary-foreground font-display font-bold uppercase tracking-tight transition-all duration-300 hover:-translate-y-1 hover:bg-primary/90 hover:shadow-[0_10px_30px_-10px_hsl(var(--primary)/0.6),0_0_24px_4px_hsl(var(--secondary)/0.25)] active:scale-[0.98]",
       },
       size: {
         default: "h-10 px-4 py-2",
         sm: "h-9 rounded-md px-3",
         lg: "h-11 rounded-md px-8",
         icon: "h-10 w-10",
-        // Tamaño grande para CTA primario (matches product page button).
-        cta: "h-auto py-5 px-8 text-xl gap-3 [&_svg]:size-6",
-        // Tamaño compacto para CTA en barras / drawers.
-        ctaSm: "h-12 py-3 px-5 text-sm gap-2 [&_svg]:size-4",
       },
     },
     defaultVariants: {

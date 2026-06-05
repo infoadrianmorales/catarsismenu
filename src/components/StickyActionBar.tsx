@@ -113,14 +113,14 @@ export const StickyActionBar = ({ currency, onCurrencyToggle, displayMode = 'amb
               <MessageCircle className="h-4 w-4" />
             </Button>
             
-            {/* [2026-06-05] CTA UNIFICADO en sticky bar mobile. */}
             <Button
-              variant={totalItems > 0 ? "cta" : "ghost"}
-              size={totalItems > 0 ? "ctaSm" : "sm"}
+              size="sm"
               onClick={() => navigate(totalItems > 0 ? '/carrito' : '/')}
               className={cn(
-                "relative",
-                totalItems === 0 && "bg-muted text-muted-foreground"
+                "font-bold gap-2 relative",
+                totalItems > 0
+                  ? "bg-secondary hover:bg-secondary/90 text-secondary-foreground"
+                  : "bg-muted text-muted-foreground"
               )}
               data-meta-event="ViewCart"
               id="sticky-cart-btn"
@@ -129,7 +129,7 @@ export const StickyActionBar = ({ currency, onCurrencyToggle, displayMode = 'amb
               {totalItems > 0 ? (
                 <>
                   Carrito
-                  <Badge className="h-5 min-w-5 flex items-center justify-center p-0 px-1 text-[10px] bg-secondary text-secondary-foreground">
+                  <Badge className="h-5 min-w-5 flex items-center justify-center p-0 px-1 text-[10px] bg-primary text-primary-foreground">
                     {totalItems}
                   </Badge>
                 </>

@@ -435,23 +435,20 @@ export const CartDrawer = ({ variant = 'header' }: CartDrawerProps) => {
 
               {/* Actions */}
               <div className="grid gap-2">
-                {/* [2026-06-05] CTA UNIFICADO checkout drawer. */}
-                <Button
+                <Button 
                   id="checkout-btn"
                   data-meta-event="InitiateCheckout"
-                  variant="cta"
-                  size="ctaSm"
-                  className="w-full"
+                  className="w-full gap-2" 
+                  size="lg"
                   onClick={handleCheckout}
                 >
-                  <ShoppingBag />
+                  <ShoppingBag className="h-5 w-5" />
                   Finalizar Compra
-                  <span className="pointer-events-none absolute bottom-1.5 left-1/2 h-1 w-10 -translate-x-1/2 rounded-full bg-secondary opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                 </Button>
               <SheetClose asChild>
                 <Button 
                   variant="outline" 
-                  className="w-full rounded-full"
+                  className="w-full"
                 >
                   Seguir comprando
                 </Button>
