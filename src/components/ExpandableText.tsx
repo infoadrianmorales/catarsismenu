@@ -45,7 +45,8 @@ export const ExpandableText = memo(({ text, maxLines = 2, className }: Expandabl
       >
         {text}
       </p>
-      {isTruncated && (
+      {/* [2026-06-05] ALINEACIÓN: reservar siempre el espacio de "Ver más" para igualar alturas entre tarjetas */}
+      {isTruncated ? (
         <button
           type="button"
           onClick={(e) => {
@@ -58,6 +59,10 @@ export const ExpandableText = memo(({ text, maxLines = 2, className }: Expandabl
         >
           {isExpanded ? 'Ver menos' : 'Ver más'}
         </button>
+      ) : (
+        <span className="block text-xs font-medium opacity-0 select-none" aria-hidden="true">
+          Ver más
+        </span>
       )}
     </div>
   );
