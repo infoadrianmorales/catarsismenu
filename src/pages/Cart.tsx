@@ -68,13 +68,15 @@ const Cart = () => {
           <p className="text-muted-foreground mb-10 max-w-sm">
             Explora nuestro menú y agrega tus platos favoritos para comenzar tu pedido
           </p>
-          <Button 
-            onClick={() => navigate('/')} 
-            size="lg"
-            className="gap-2 bg-secondary hover:bg-secondary/90 text-secondary-foreground font-bold px-8 hover:scale-105 transition-transform"
+          {/* [2026-06-05] CTA UNIFICADO empty state. */}
+          <Button
+            onClick={() => navigate('/')}
+            variant="cta"
+            size="cta"
           >
-            <ArrowLeft className="h-5 w-5" />
+            <ArrowLeft className="transition-transform duration-300 group-hover:-translate-x-1" />
             Explorar menú
+            <span className="pointer-events-none absolute bottom-2 left-1/2 h-1 w-12 -translate-x-1/2 rounded-full bg-secondary opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
           </Button>
         </div>
         
