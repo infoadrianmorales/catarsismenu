@@ -76,7 +76,7 @@ export const CompactProductCard = memo(({ item, currency, displayMode = 'ambas',
             <ExpandableText text={item.descripcion_corta || ''} maxLines={2} />
           </div>
           
-          <div className="mt-auto flex items-end justify-between gap-1 pt-1">
+          <div className="mt-auto flex flex-col gap-2 pt-1">
             {renderPrice()}
             {!isLocalMode && <AddToCartButton product={item} variant="icon" source={source} />}
           </div>
