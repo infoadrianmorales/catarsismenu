@@ -313,13 +313,43 @@ const Cart = () => {
             <Card className="sticky top-24 bg-gradient-to-br from-card to-muted/30 border-border/50 shadow-[0_0_20px_hsl(var(--primary)/0.08)]">
               <CardContent className="p-6 space-y-5">
                 <h2 className="text-lg font-display font-bold">Resumen del pedido</h2>
-                
+
+                {/* [2026-06-05] LISTADO BREVE DE ITEMS en el panel derecho desktop.
+                    Permite al usuario revisar de un vistazo qué pidió sin
+                    scrollear toda la columna izquierda. Scroll interno si supera
+                    la altura máxima. Incluye extras como sub-línea. */}
+                <div className="max-h-56 overflow-y-auto pr-1 space-y-2 border-b border-border/40 pb-3">
+                  {items.map((item) => {
+                    const extrasTotal = (item.extras || []).reduce((s, e) => s + e.precio_usd, 0);
+                    const lineTotal = (item.precio_usd + extrasTotal) * item.quantity;
+                    return (
+                      <div key={item.id} className="text-xs">
+                        <div className="flex justify-between gap-2 items-baseline">
+                          <span className="text-foreground truncate flex-1 min-w-0">
+                            <span className="font-bold text-secondary tabular-nums">{item.quantity}×</span>{' '}
+                            {item.nombre}
+                          </span>
+                          <span className="text-foreground font-medium tabular-nums flex-shrink-0">
+                            {formatPrice(lineTotal)}
+                          </span>
+                        </div>
+                        {(item.extras || []).length > 0 && (
+                          <p className="text-[10px] text-muted-foreground truncate pl-4 mt-0.5">
+                            + {item.extras!.map(e => e.nombre).join(', ')}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Subtotal ({totalItems} {totalItems === 1 ? 'item' : 'items'})</span>
                     <span>{formatPrice(subtotal)}</span>
                   </div>
                 </div>
+                
                 
                 <div className="border-t border-border/50 pt-4">
                   <div className="flex justify-between items-center mb-1">
