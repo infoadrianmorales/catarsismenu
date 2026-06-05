@@ -78,7 +78,8 @@ export const MenuCard = ({ item, currency, displayMode = 'ambas', source = 'menu
         {/* Content — flex column full height para empujar CTA al fondo */}
         <div className="p-4 pt-2 flex flex-col flex-1 space-y-3">
           <div className="space-y-1">
-            <h3 className="font-display text-lg font-bold leading-tight group-hover:text-primary transition-colors">
+            {/* [2026-06-05] ALINEACIÓN: line-clamp-2 + min-h reserva 2 líneas siempre para igualar altura entre tarjetas */}
+            <h3 className="font-display text-lg font-bold leading-tight group-hover:text-primary transition-colors line-clamp-2 min-h-[2.5rem]">
               {item.nombre}
             </h3>
             <ExpandableText 
