@@ -1,18 +1,18 @@
-Activar los 12 productos de la categoría **Bebidas** que actualmente están inactivos:
+## Problema
 
-- Agua Mineral Nevada 600ml
-- Cerveza Polar Light 250ml
-- Cerveza Polar Pilsen 219ml
-- Cerveza Solera Classic 250ml
-- Cerveza Solera Light 250ml
-- Coca-Cola Sabor Original 355ml / 1L / 1.5L / 2L
-- Coca-Cola Sin Azúcar 1L / 2L
-- Coca-Cola Zero 355ml
+En la sección "Productos Destacados" los botones "Agregar al carrito" quedan a distintas alturas porque las descripciones tienen diferente número de líneas (algunas con "Ver más", otras sin él). El botón debe quedar siempre alineado al fondo de cada tarjeta.
 
-## Cambio
+## Cambio en `src/components/MenuCard.tsx`
 
-Una sola operación en la base de datos: marcar `activo = true` en todos los productos cuya categoría sea `bebidas`. Esto los hace visibles en el menú público.
+- Card raíz: agregar `h-full flex flex-col` para que cada tarjeta ocupe toda la altura del grid.
+- `CardContent`: convertirlo en `flex flex-col flex-1` (estructura vertical full-height).
+- Contenedor de contenido (padding interno): `flex flex-col flex-1`.
+- Bloque de prices + CTA: agregar `mt-auto` para empujarlo al fondo, independientemente del largo de la descripción.
+
+Resultado: imágenes alineadas arriba, descripciones variables en el medio, precios + botón siempre clavados al fondo → simetría perfecta en toda la fila.
 
 ## Lo que NO se toca
 
-Precios, imágenes, descripciones, orden ni configuración de la categoría.
+- Estilo del botón CTA (ya tiene la forma Dynamic v2 con underline amarilla).
+- `CompactProductCard` (ya usa `h-full flex flex-col` con `mt-auto`).
+- Lógica, datos, precios.
