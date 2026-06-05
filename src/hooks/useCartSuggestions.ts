@@ -110,11 +110,13 @@ export const useCartSuggestions = (maxItems: number = 6): CartSuggestionsResult 
     const shuffledB = seededShuffle(poolB, daySeed + 1);
 
     // [2026-06-05] Cada sección rellena hasta maxItems de forma independiente.
-    // Antes se hacía split 60/40 que limitaba a 4 comidas — ahora el carrusel
-    // muestra hasta maxItems por sección y se encarga del scroll horizontal.
+    // [2026-06-05] FIX: Mantener bebidas visibles aunque el carrito ya tenga 1+.
+    // El filtro base ya excluye las bebidas que están en el carrito (cartIds),
+    // por lo que solo se sugieren OTRAS bebidas. Antes se ocultaba todo el
+    // banner al detectar !hasBeverages → impedía pedir varias bebidas.
     const foodSuggestions: MenuItem[] = shuffledA.slice(0, maxItems);
     const beverageSuggestions: MenuItem[] =
-      hasFoodItems && bebidasActive && !hasBeverages
+      hasFoodItems && bebidasActive
         ? shuffledB.slice(0, maxItems)
         : [];
 

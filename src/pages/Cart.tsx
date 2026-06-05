@@ -5,7 +5,7 @@
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShoppingCart, Trash2, ArrowLeft, ShoppingBag, MessageSquare, ChevronDown, ChevronUp, Minus, Plus, Shield } from 'lucide-react';
+import { ShoppingCart, Trash2, ArrowLeft, ShoppingBag, MessageSquare, ChevronDown, ChevronUp, Minus, Plus, Shield, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -23,6 +23,9 @@ const Cart = () => {
   const { items, removeFromCart, clearCart, subtotal, totalItems, updateQuantity, updateItemNotes, addExtra, removeExtra } = useCart();
   const { currency, toggleCurrency, displayMode, getPrices } = useCurrency();
   const [expandedNotes, setExpandedNotes] = useState<Record<string, boolean>>({});
+  // [2026-06-05] EXTRAS DROPDOWN: estado para colapsar/expandir extras por item.
+  // Se inicializa abierto si el item ya tiene extras seleccionados.
+  const [expandedExtras, setExpandedExtras] = useState<Record<string, boolean>>({});
   const isMobile = useIsMobile();
   // FEATURE [EXTRAS]: cargar extras disponibles
   const { getExtrasForProduct, categoryHasExtras } = useProductExtras();
@@ -208,23 +211,55 @@ const Cart = () => {
                         </div>
                       </div>
 
-                      {/* FEATURE [EXTRAS]: Sección de extras si la categoría tiene disponibles */}
-                      {categoryHasExtras(item.categoria) && (
-                        <div className="mt-2 px-1">
-                          <ProductExtras
-                            extras={getExtrasForProduct(item.id, item.categoria)}
-                            selectedExtras={item.extras || []}
-                            onToggleExtra={(extra) => {
-                              const isSelected = (item.extras || []).some(e => e.extraId === extra.id);
-                              if (isSelected) {
-                                removeExtra(item.id, extra.id);
-                              } else {
-                                addExtra(item.id, { extraId: extra.id, nombre: extra.nombre, precio_usd: extra.precio_usd });
-                              }
-                            }}
-                          />
-                        </div>
-                      )}
+                      {/* [2026-06-05] EXTRAS COMO DESPLEGABLE con CTA llamativa.
+                          Antes los extras se mostraban siempre abiertos, alargando
+                          mucho la tarjeta. Ahora colapsado por defecto y se abre
+                          automáticamente si el item ya trae extras seleccionados. */}
+                      {categoryHasExtras(item.categoria) && (() => {
+                        const selectedCount = (item.extras || []).length;
+                        const isOpen = expandedExtras[item.id] ?? selectedCount > 0;
+                        return (
+                          <div className="mt-2 px-1">
+                            <button
+                              type="button"
+                              onClick={() => setExpandedExtras(prev => ({ ...prev, [item.id]: !isOpen }))}
+                              className="group flex items-center gap-2 w-full rounded-lg border border-secondary/40 bg-secondary/5 hover:bg-secondary/10 hover:border-secondary transition-colors px-3 py-2"
+                              aria-expanded={isOpen}
+                            >
+                              <Sparkles className="h-4 w-4 text-secondary group-hover:animate-cart-spring flex-shrink-0" />
+                              <span className="flex-1 text-left font-display font-bold uppercase tracking-wider text-[11px] md:text-xs text-foreground">
+                                ¡Hazlo épico! Agrega extras
+                              </span>
+                              {selectedCount > 0 && (
+                                <span className="text-[10px] md:text-[11px] font-bold text-secondary bg-secondary/15 px-2 py-0.5 rounded-full">
+                                  {selectedCount} agregado{selectedCount > 1 ? 's' : ''}
+                                </span>
+                              )}
+                              {isOpen ? (
+                                <ChevronUp className="h-4 w-4 text-secondary flex-shrink-0" />
+                              ) : (
+                                <ChevronDown className="h-4 w-4 text-secondary flex-shrink-0" />
+                              )}
+                            </button>
+                            {isOpen && (
+                              <div className="animate-in slide-in-from-top-2 duration-200">
+                                <ProductExtras
+                                  extras={getExtrasForProduct(item.id, item.categoria)}
+                                  selectedExtras={item.extras || []}
+                                  onToggleExtra={(extra) => {
+                                    const isSelected = (item.extras || []).some(e => e.extraId === extra.id);
+                                    if (isSelected) {
+                                      removeExtra(item.id, extra.id);
+                                    } else {
+                                      addExtra(item.id, { extraId: extra.id, nombre: extra.nombre, precio_usd: extra.precio_usd });
+                                    }
+                                  }}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
                       
                       {/* [2026-04-10] Notes Section — menos espacio vertical en mobile */}
                       <div className="mt-2 md:mt-3 pt-2 md:pt-3 border-t border-border/40">
@@ -278,13 +313,43 @@ const Cart = () => {
             <Card className="sticky top-24 bg-gradient-to-br from-card to-muted/30 border-border/50 shadow-[0_0_20px_hsl(var(--primary)/0.08)]">
               <CardContent className="p-6 space-y-5">
                 <h2 className="text-lg font-display font-bold">Resumen del pedido</h2>
-                
+
+                {/* [2026-06-05] LISTADO BREVE DE ITEMS en el panel derecho desktop.
+                    Permite al usuario revisar de un vistazo qué pidió sin
+                    scrollear toda la columna izquierda. Scroll interno si supera
+                    la altura máxima. Incluye extras como sub-línea. */}
+                <div className="max-h-56 overflow-y-auto pr-1 space-y-2 border-b border-border/40 pb-3">
+                  {items.map((item) => {
+                    const extrasTotal = (item.extras || []).reduce((s, e) => s + e.precio_usd, 0);
+                    const lineTotal = (item.precio_usd + extrasTotal) * item.quantity;
+                    return (
+                      <div key={item.id} className="text-xs">
+                        <div className="flex justify-between gap-2 items-baseline">
+                          <span className="text-foreground truncate flex-1 min-w-0">
+                            <span className="font-bold text-secondary tabular-nums">{item.quantity}×</span>{' '}
+                            {item.nombre}
+                          </span>
+                          <span className="text-foreground font-medium tabular-nums flex-shrink-0">
+                            {formatPrice(lineTotal)}
+                          </span>
+                        </div>
+                        {(item.extras || []).length > 0 && (
+                          <p className="text-[10px] text-muted-foreground truncate pl-4 mt-0.5">
+                            + {item.extras!.map(e => e.nombre).join(', ')}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Subtotal ({totalItems} {totalItems === 1 ? 'item' : 'items'})</span>
                     <span>{formatPrice(subtotal)}</span>
                   </div>
                 </div>
+                
                 
                 <div className="border-t border-border/50 pt-4">
                   <div className="flex justify-between items-center mb-1">
