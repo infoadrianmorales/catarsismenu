@@ -57,8 +57,8 @@ export const MenuCard = ({ item, currency, displayMode = 'ambas', source = 'menu
      tarde y empuja el contenido hacia abajo — afecta la
      experiencia del usuario y el score de Google PageSpeed. */
   return (
-    <Card className="group overflow-hidden border-border/40 bg-card hover:border-primary/50 transition-all duration-200 hover:shadow-glow hover:-translate-y-1" data-meta-event="ViewContent" id={`product-card-${item.id}`} onMouseEnter={() => { const img = new Image(); img.src = item.imagen; }} onTouchStart={() => { const img = new Image(); img.src = item.imagen; }}>
-      <CardContent className="p-0">
+    <Card className="group h-full flex flex-col overflow-hidden border-border/40 bg-card hover:border-primary/50 transition-all duration-200 hover:shadow-glow hover:-translate-y-1" data-meta-event="ViewContent" id={`product-card-${item.id}`} onMouseEnter={() => { const img = new Image(); img.src = item.imagen; }} onTouchStart={() => { const img = new Image(); img.src = item.imagen; }}>
+      <CardContent className="p-0 flex flex-col flex-1">
         {/* White-background image container - zoom only on desktop */}
         <div className="relative p-1.5 sm:p-2">
           <div className="relative aspect-square overflow-hidden rounded-lg bg-white border border-foreground/10 shadow-md sm:transition-transform sm:duration-300 sm:ease-out sm:group-hover:scale-105">
@@ -75,8 +75,8 @@ export const MenuCard = ({ item, currency, displayMode = 'ambas', source = 'menu
           </div>
         </div>
         
-        {/* Content */}
-        <div className="p-4 pt-2 space-y-3">
+        {/* Content — flex column full height para empujar CTA al fondo */}
+        <div className="p-4 pt-2 flex flex-col flex-1 space-y-3">
           <div className="space-y-1">
             <h3 className="font-display text-lg font-bold leading-tight group-hover:text-primary transition-colors">
               {item.nombre}
@@ -88,8 +88,8 @@ export const MenuCard = ({ item, currency, displayMode = 'ambas', source = 'menu
             />
           </div>
           
-          {/* Prices and Add to Cart - layout vertical para CTA full-width */}
-          <div className="flex flex-col gap-3">
+          {/* Precio + CTA: mt-auto los clava al fondo para simetría entre tarjetas */}
+          <div className="mt-auto flex flex-col gap-3">
             {renderPrices()}
             {!isLocalMode && <AddToCartButton product={item} variant="default" source={source} />}
           </div>
@@ -98,3 +98,4 @@ export const MenuCard = ({ item, currency, displayMode = 'ambas', source = 'menu
     </Card>
   );
 };
+
