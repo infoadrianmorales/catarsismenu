@@ -222,8 +222,11 @@ const Cart = () => {
                           <div className="mt-2 px-1">
                             <button
                               type="button"
-                              onClick={() => setExpandedExtras(prev => ({ ...prev, [item.id]: !isOpen }))}
-                              className="group flex items-center gap-2 w-full rounded-lg border border-secondary/40 bg-secondary/5 hover:bg-secondary/10 hover:border-secondary transition-colors px-3 py-2"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setExpandedExtras(prev => ({ ...prev, [item.id]: !isOpen }));
+                              }}
+                              className="group flex items-center gap-2 w-full rounded-lg border border-secondary/40 bg-secondary/5 hover:bg-secondary/10 active:bg-secondary/15 hover:border-secondary transition-colors px-3 py-2 min-h-[44px]"
                               aria-expanded={isOpen}
                             >
                               <Sparkles className="h-4 w-4 text-secondary group-hover:animate-cart-spring flex-shrink-0" />
@@ -241,22 +244,35 @@ const Cart = () => {
                                 <ChevronDown className="h-4 w-4 text-secondary flex-shrink-0" />
                               )}
                             </button>
-                            {isOpen && (
-                              <div className="animate-in slide-in-from-top-2 duration-200">
-                                <ProductExtras
-                                  extras={getExtrasForProduct(item.id, item.categoria)}
-                                  selectedExtras={item.extras || []}
-                                  onToggleExtra={(extra) => {
-                                    const isSelected = (item.extras || []).some(e => e.extraId === extra.id);
-                                    if (isSelected) {
-                                      removeExtra(item.id, extra.id);
-                                    } else {
-                                      addExtra(item.id, { extraId: extra.id, nombre: extra.nombre, precio_usd: extra.precio_usd });
-                                    }
-                                  }}
-                                />
-                              </div>
-                            )}
+                            {/* [2026-06-05] BUGFIX MOBILE: sin animate-in (algunos
+                                navegadores móviles dejaban opacity:0). Fallback
+                                visible si la lista viene vacía para que el tap
+                                siempre tenga respuesta visual. */}
+                            {isOpen && (() => {
+                              const productExtras = getExtrasForProduct(item.id, item.categoria);
+                              return (
+                                <div className="mt-2">
+                                  {productExtras.length > 0 ? (
+                                    <ProductExtras
+                                      extras={productExtras}
+                                      selectedExtras={item.extras || []}
+                                      onToggleExtra={(extra) => {
+                                        const isSelected = (item.extras || []).some(e => e.extraId === extra.id);
+                                        if (isSelected) {
+                                          removeExtra(item.id, extra.id);
+                                        } else {
+                                          addExtra(item.id, { extraId: extra.id, nombre: extra.nombre, precio_usd: extra.precio_usd });
+                                        }
+                                      }}
+                                    />
+                                  ) : (
+                                    <p className="text-xs text-muted-foreground italic px-2 py-2">
+                                      No hay extras disponibles para este producto.
+                                    </p>
+                                  )}
+                                </div>
+                              );
+                            })()}
                           </div>
                         );
                       })()}
