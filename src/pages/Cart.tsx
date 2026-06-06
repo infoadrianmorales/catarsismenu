@@ -5,7 +5,7 @@
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShoppingCart, Trash2, ArrowLeft, ShoppingBag, MessageSquare, ChevronDown, ChevronUp, Minus, Plus, Shield, Sparkles } from 'lucide-react';
+import { ShoppingCart, Trash2, ArrowLeft, ShoppingBag, MessageSquare, ChevronDown, ChevronUp, Minus, Plus, Shield, Sparkles, Plus as PlusIcon, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
