@@ -1,42 +1,27 @@
-## Rediseño móvil del Carrito — Dirección "Carruseles compactos v3"
+## Reubicar y destacar el toggle "Complementar pedido"
 
-Aligerar la página `/cart` en móvil aplicando la dirección seleccionada, manteniendo TODA la funcionalidad actual (items, extras, nota, sugerencias de comida y bebida, total fijo, finalizar por WhatsApp, modo local oculta cart). Sin tocar la versión desktop.
+Actualmente el módulo aparece al final, casi pegado a la barra de Finalizar, en gris discreto. Se pierde.
 
-### Cambios visuales
+### Cambios (solo móvil, `src/pages/Cart.tsx`)
 
-1. **Item del carrito (más denso)**
-   - Imagen 80x80 con `rounded-xl`
-   - Stepper de cantidad en pill `bg-white/5` + border `border-white/10`, símbolos `-` / `+` en Raspberry
-   - Botón "Personalizar" como toggle minimal a la derecha del stepper (en vez de bloques abiertos de extras y nota)
-   - Extras y nota colapsados por defecto, se despliegan al tocar "Personalizar" (animación `max-h` 300ms)
-   - Extras como chips compactos `text-[9px]`, nota como `textarea` pequeño
+1. **Mover el toggle arriba**
+   - Sacarlo de su posición actual (después del scroll de items) y colocarlo justo **debajo del header "TU CARRITO"** y **antes** del listado de items.
+   - Queda como `flex-shrink-0`, siempre visible al abrir el carrito.
 
-2. **Sugerencias unificadas en un solo módulo colapsable**
-   - Reemplazar los dos bloques apilados ("Complementa tu pedido" + "¿Algo para tomar?") por un único toggle "COMPLEMENTAR PEDIDO" con botón circular `+` que rota a `×` al abrir
-   - Al expandir, muestra dos sub-secciones horizontales scrolleables:
-     - "Snacks & Entradas" (cards 112px ancho)
-     - "Bebidas Frías" (cards 96px ancho, más compactas)
-   - Cards mini: imagen + nombre truncado + precio Xanthous + botón circular `+` Raspberry (5x5)
-   - Colapsado por defecto → primera vista del carrito se siente vacía y ordenada
+2. **Rediseño más llamativo**
+   - Banner pill full-width con fondo `bg-gradient-to-r from-secondary/15 via-secondary/10 to-transparent` + borde `border-secondary/40`.
+   - Icono `Sparkles` Xanthous a la izquierda con micro-animación `animate-cart-spring` al hover.
+   - Texto: "COMPLEMENTAR PEDIDO" en Phudu uppercase tracking-wide, color `text-foreground` (no muted).
+   - Sub-label opcional `text-[10px] text-muted-foreground`: "Snacks, bebidas y más".
+   - Botón circular derecho: cuando cerrado → `bg-secondary text-secondary-foreground` (amarillo lleno, no outline gris), con `+`. Cuando abierto → rota 45° a `×`.
+   - Altura mínima 56px (más presencia, target táctil cómodo).
 
-3. **Barra fija de checkout rediseñada**
-   - Subtotal arriba a la izquierda con label `text-[10px]` uppercase + "Impuestos incluidos"
-   - Monto grande en Phudu `text-2xl` a la derecha
-   - Botón "FINALIZAR PEDIDO" full-width `rounded-2xl` con sombra Raspberry, separador vertical interno entre label y monto
-   - `backdrop-blur-xl` sobre `bg-[#010C23]/95`
-
-4. **Header**
-   - Título "TU CARRITO" en Phudu, botón "CERRAR" como pill outline a la derecha
+3. **Comportamiento**
+   - Mismo estado `suggestionsOpen`, misma animación `max-h` 500ms.
+   - Al abrir, el panel de sugerencias se despliega **hacia abajo empujando los items** (que siguen scrolleables en su contenedor flex-1).
+   - Colapsado por defecto.
 
 ### Lo que NO cambia
-- Lógica de carrito, hooks (`useCartSuggestions`, `useProductExtras`), conversión USD/VES, WhatsApp redirect, modo local, equivalente VES, cálculo de extras
-- Desktop layout (solo aplica a `md:hidden` / breakpoint móvil)
-- Resumen móvil expandible existente al final (subtotal + items + equivalente) se mantiene
-
-### Archivos a editar
-- `src/pages/Cart.tsx` — refactor de la sección `md:hidden` (items, sugerencias, barra fija)
-- `.lovable/plan.md` — actualizar registro
-
-### Tokens (ya existen en el design system)
-- `bg-background` (#010C23), `text-primary` (Raspberry), `text-accent` (Xanthous), Phudu/DM Sans
-- Usar tokens semánticos, no hex directos
+- Componente `UpsellSuggestions` (mismas dos sub-secciones comida + bebida).
+- Items, extras, nota, barra fija inferior, lógica de carrito.
+- Versión desktop.
