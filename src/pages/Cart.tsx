@@ -5,7 +5,7 @@
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShoppingCart, Trash2, ArrowLeft, ShoppingBag, MessageSquare, ChevronDown, ChevronUp, Minus, Plus, Shield, Sparkles } from 'lucide-react';
+import { ShoppingCart, Trash2, ArrowLeft, ShoppingBag, MessageSquare, ChevronDown, ChevronUp, Minus, Plus, Shield, Sparkles, Plus as PlusIcon, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -32,6 +32,11 @@ const Cart = () => {
 
   // [2026-04-10] Estado para expandir/colapsar resumen en mobile
   const [summaryExpanded, setSummaryExpanded] = useState(false);
+  // [2026-06-06] REDISEÑO MOBILE: módulo unificado de sugerencias colapsable.
+  // Antes se mostraban dos bloques apilados (comida + bebida) siempre visibles,
+  // saturando el viewport. Ahora colapsado por defecto y el usuario lo abre
+  // con un único toggle, dejando el carrito limpio.
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
 
   const toggleNotesExpanded = (itemId: string) => {
     setExpandedNotes(prev => ({ ...prev, [itemId]: !prev[itemId] }));
@@ -408,10 +413,41 @@ const Cart = () => {
           </div>
         </div>
 
-        {/* [2026-04-10] Mobile: Sugerencias fuera del scroll vertical, dentro del flex column */}
+        {/* [2026-06-06] Mobile: módulo unificado y colapsable de sugerencias.
+            Header tipo toggle con icono circular (+ / ×) que rota al abrir.
+            Reemplaza los dos bloques apilados de comida + bebida por una sola
+            sección que se despliega bajo demanda. */}
         {isMobile && (
-          <div className="flex-shrink-0 overflow-hidden">
-            <UpsellSuggestions maxItems={10} />
+          <div className="flex-shrink-0 overflow-hidden border-t border-border/40">
+            <button
+              type="button"
+              onClick={() => setSuggestionsOpen(prev => !prev)}
+              className="w-full flex items-center justify-between px-4 py-3 group"
+              aria-expanded={suggestionsOpen}
+              aria-label="Complementar pedido"
+            >
+              <span className="font-display text-[11px] font-bold uppercase tracking-[0.15em] text-muted-foreground group-hover:text-foreground transition-colors">
+                Complementar pedido
+              </span>
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center border transition-all duration-300 ${
+                  suggestionsOpen
+                    ? 'bg-secondary border-secondary text-secondary-foreground rotate-45'
+                    : 'bg-muted/30 border-border text-muted-foreground'
+                }`}
+              >
+                <PlusIcon className="h-4 w-4" strokeWidth={2.5} />
+              </div>
+            </button>
+            <div
+              className={`overflow-hidden transition-[max-height] duration-500 ease-out ${
+                suggestionsOpen ? 'max-h-[520px]' : 'max-h-0'
+              }`}
+            >
+              <div className="pb-2">
+                <UpsellSuggestions maxItems={10} />
+              </div>
+            </div>
           </div>
         )}
       </div>
