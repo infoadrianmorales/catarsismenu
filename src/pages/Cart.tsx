@@ -324,8 +324,51 @@ const Cart = () => {
               })}
             </div>
 
-            {/* [2026-06-05] Sugerencias dentro de la columna izquierda, debajo de los productos.
-                Antes estaba como sibling del grid, lo que empujaba el resumen sticky abajo. */}
+            {/* [2026-06-06] Mobile: toggle "Complementar pedido" debajo de los items.
+                Pill llamativa con gradiente Xanthous, icono Sparkles y CTA circular. */}
+            {isMobile && (
+              <div className="mt-3 mb-2">
+                <button
+                  type="button"
+                  onClick={() => setSuggestionsOpen(prev => !prev)}
+                  className="w-full flex items-center gap-3 px-4 py-3 min-h-[56px] rounded-2xl border border-secondary/40 bg-gradient-to-r from-secondary/15 via-secondary/10 to-transparent hover:from-secondary/20 hover:via-secondary/15 active:scale-[0.99] transition-all duration-200 group"
+                  aria-expanded={suggestionsOpen}
+                  aria-label="Complementar pedido"
+                >
+                  <div className="flex-shrink-0 w-9 h-9 rounded-full bg-secondary/20 flex items-center justify-center group-hover:bg-secondary/30 transition-colors">
+                    <Sparkles className="h-4 w-4 text-secondary" strokeWidth={2.5} />
+                  </div>
+                  <div className="flex-1 text-left min-w-0">
+                    <p className="font-display text-sm font-bold uppercase tracking-wide text-foreground leading-tight">
+                      Complementar pedido
+                    </p>
+                    <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">
+                      Snacks, bebidas y más
+                    </p>
+                  </div>
+                  <div
+                    className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center bg-secondary text-secondary-foreground transition-all duration-300 ${
+                      suggestionsOpen
+                        ? 'rotate-45 shadow-[0_0_12px_hsl(var(--secondary)/0.4)]'
+                        : 'shadow-[0_0_8px_hsl(var(--secondary)/0.3)]'
+                    }`}
+                  >
+                    <PlusIcon className="h-5 w-5" strokeWidth={2.5} />
+                  </div>
+                </button>
+                <div
+                  className={`overflow-hidden transition-[max-height] duration-500 ease-out ${
+                    suggestionsOpen ? 'max-h-[520px]' : 'max-h-0'
+                  }`}
+                >
+                  <div className="pt-2">
+                    <UpsellSuggestions maxItems={10} />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* [2026-06-05] Sugerencias desktop debajo de los productos. */}
             {!isMobile && <UpsellSuggestions maxItems={10} />}
           </div>
 
