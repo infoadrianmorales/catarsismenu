@@ -32,6 +32,11 @@ const Cart = () => {
 
   // [2026-04-10] Estado para expandir/colapsar resumen en mobile
   const [summaryExpanded, setSummaryExpanded] = useState(false);
+  // [2026-06-06] REDISEÑO MOBILE: módulo unificado de sugerencias colapsable.
+  // Antes se mostraban dos bloques apilados (comida + bebida) siempre visibles,
+  // saturando el viewport. Ahora colapsado por defecto y el usuario lo abre
+  // con un único toggle, dejando el carrito limpio.
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
 
   const toggleNotesExpanded = (itemId: string) => {
     setExpandedNotes(prev => ({ ...prev, [itemId]: !prev[itemId] }));
