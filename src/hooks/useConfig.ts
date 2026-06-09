@@ -48,6 +48,9 @@ const defaultConfig: Config = {
   custom_head_scripts: '',
   custom_body_scripts: '',
   custom_scripts_enabled: false,
+  gtm_head_snippet: '',
+  gtm_body_snippet: '',
+  gtm_custom_enabled: false,
 };
 
 const STRING_KEYS = [
@@ -63,6 +66,8 @@ const STRING_KEYS = [
   'google_site_verification',
   'custom_head_scripts',
   'custom_body_scripts',
+  'gtm_head_snippet',
+  'gtm_body_snippet',
 ];
 const BOOL_KEYS = [
   'meta_pixel_enabled',
@@ -70,6 +75,7 @@ const BOOL_KEYS = [
   'ga4_enabled',
   'gads_enabled',
   'custom_scripts_enabled',
+  'gtm_custom_enabled',
 ];
 
 // Fetch all config from Supabase
