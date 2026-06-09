@@ -1,43 +1,50 @@
-## Cargar extras por categoría
+## Problema
 
-Voy a insertar/actualizar los extras en la tabla `product_extras` en un solo lote, agrupados por categoría. Los extras "Carne 150gr" y "Carne 75gr" para hamburguesas tienen reglas especiales y se cargan ligados a productos específicos (`product_id`); el resto son extras de categoría (`product_id = NULL`).
+Hoy el panel de Extras muestra todos los extras en una lista plana vertical, uno debajo de otro. Cuando hay 30+ extras (hamburguesas, pizzas, emparedados, etc.) se ve "regado" y cuesta encontrar lo que se busca.
 
-### Hamburguesas — extras de categoría (`product_id = NULL`)
-| Nombre | Precio |
-|---|---|
-| Tocineta | 1.50 |
-| Pollo | 2.50 |
-| Pepinillos | 1.00 |
-| Jalapeños | 1.00 |
-| Queso facilista | 1.50 |
-| Cebolla caramelizada | 1.00 |
+## Propuesta: agrupar por categoría con secciones colapsables
 
-### Hamburguesas — extras por producto
-- **Carne 150gr — $3.00** → ligado a todas las hamburguesas **excepto** Double Cheesy y Thousand Cheesy.
-- **Carne 75gr — $1.50** → ligado **solo** a Double Cheesy y Thousand Cheesy.
+Reorganizar la vista en **acordeones por categoría** (Hamburguesas, Pizzas, Emparedados…), con un **grid de tarjetas compactas** dentro de cada sección. Es el patrón más claro porque coincide con cómo el cliente ve los extras en el carrito (filtrados por categoría del producto).
 
-### Pizzas — extras de categoría
-Jalapeño 1.50, Jamón ahumado 1.50, Tocineta 1.50, Pepperoni 1.50, Queso mozarella 3.00, Maíz 1.50, Aceitunas negras 1.50, Champiñones 1.50, Pimentón ahumado 1.50, Tomate seco 1.50, Cebolla caramelizada 1.50, Anchoas 1.50, Miel picante 1.00, Pesto 1.00.
+### Estructura visual
 
-### Emparedados — extras de categoría
-Tocineta 1.50, Pollo 2.50, Pepinillos 1.00, Jalapeños 1.00, Queso facilista 1.50, Cebolla caramelizada 1.00.
+```text
+┌─ Toolbar ──────────────────────────────────────────────────┐
+│ [Buscar nombre…]   [Filtro categoría ▾]   [+ Nuevo Extra]  │
+└────────────────────────────────────────────────────────────┘
 
-### Reglas para evitar duplicados
-En `hamburguesas` ya existen algunos extras similares. Manejo así:
-- **"Tocineta" ($1.50)** → ya existe igual, se omite.
-- **"Queso facilita" ($1.50)** → se renombra a "Queso facilista" (typo corregido en tu pedido).
-- **"Pepinillos" ($1.00)** → ya existe, se omite.
-- **"Cebollas caramelizadas" ($0.50)** → se actualiza a "Cebolla caramelizada" $1.00.
-- Los extras existentes que no están en tu lista (Pollo crispy $2.50, Carne smash $2.50, Extra de Carne inactivo) **se dejan tal cual** — no los borro a menos que me lo indiques.
-- Se agrega "Pollo $2.50" como extra nuevo (no es el mismo que "Pollo crispy").
+▼ Hamburguesas              8 extras · 7 activos
+  ┌──────────────┬──────────────┬──────────────┐
+  │ Tocineta     │ Carne 150gr  │ Pollo        │
+  │ +$1.50  ●    │ +$3.00  ●    │ +$2.50  ●    │
+  │ Toda categ.  │ 9 productos  │ Toda categ.  │
+  │ ✎  🗑         │ ✎  🗑         │ ✎  🗑         │
+  └──────────────┴──────────────┴──────────────┘
 
-### Implementación
-Una sola migración (o `INSERT` masivo) con:
-1. `UPDATE` de los duplicados a renombrar / actualizar.
-2. `INSERT` de los extras de categoría faltantes (hamburguesas, pizzas, emparedados).
-3. `INSERT` por producto para las dos variantes de carne en hamburguesas, usando subqueries `WHERE nombre IN (...)`.
+▶ Pizzas                   14 extras · 14 activos
+▶ Emparedados               6 extras · 6 activos
+▶ Entradas                  0 extras
+```
 
-El campo `orden` se asignará secuencialmente dentro de cada categoría comenzando desde el siguiente disponible.
+### Cambios concretos
 
-### Verificación
-Después de aplicar, consulto `product_extras` filtrado por las 3 categorías para confirmar el resultado.
+1. **Agrupación por categoría**: reemplazar la lista plana por `Accordion` (shadcn) con una sección por categoría que tenga extras. Categorías sin extras quedan colapsadas al final en gris.
+2. **Header de cada sección**: nombre de categoría + badge con conteo (`8 extras · 7 activos`) + total acumulado opcional.
+3. **Grid de tarjetas compactas** dentro de cada sección: `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3`. Cada tarjeta muestra: nombre, precio en grande, alcance ("Toda la categoría" o "N productos"), switch activo, editar, borrar.
+4. **Hamburguesas → caso especial**: cuando un extra tenga el mismo nombre y precio pero esté ligado a varios `product_id` (ej. "Carne 150gr" en 9 hamburguesas), seguir agrupando en **una sola tarjeta** que diga "9 productos" y al hacer click expanda la lista de productos asignados (popover o expand interno). Hoy ya se agrupa por `nombre+categoria+precio`, se mantiene esa lógica.
+5. **Buscador por nombre**: input de texto arriba que filtra dentro de las secciones abiertas.
+6. **Filtro de categoría**: se mantiene; si se elige una, solo abre esa sección y oculta el resto.
+7. **Orden por defecto**: dentro de cada sección, ordenar por `orden ASC, nombre ASC` (ya viene así del query).
+8. **Apertura inicial**: la primera categoría con extras abierta; las demás cerradas para evitar scroll infinito.
+
+### Archivos a modificar
+
+- `src/components/admin/ExtrasPanel.tsx` — refactor de la sección de listado (de `div.grid gap-3` plano a `Accordion` + grid interno). El diálogo de crear/editar y las mutaciones no cambian.
+- Reutiliza `Accordion` de `src/components/ui/accordion.tsx` (ya existe).
+
+### Lo que NO cambia
+
+- Esquema de base de datos.
+- Lógica de creación/edición/eliminación.
+- Hook `useProductExtras` que usa el carrito.
+- Lógica de agrupación por `nombre+categoria+precio`.

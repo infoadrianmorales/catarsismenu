@@ -1,10 +1,10 @@
 // FEATURE [EXTRAS-ADMIN]: Panel CRUD de extras/add-ons en el admin.
-// Permite crear, editar, eliminar y activar/desactivar extras.
-// Los extras se asignan a una categoría del enum product_category
-// y opcionalmente a uno o varios productos específicos.
-// Al crear con múltiples productos, se insertan N filas (una por producto).
+// [2026-06-09] REFACTOR: vista agrupada por categoría con acordeones + grid
+// de tarjetas compactas + buscador. Reemplaza la lista plana que se veía
+// "regada" cuando hay 30+ extras. Lógica de mutaciones y agrupación
+// (nombre+categoria+precio) no cambia.
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -13,10 +13,22 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, Loader2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Loader2, Search, Users } from 'lucide-react';
 import { Constants } from '@/integrations/supabase/types';
 
 const CATEGORIES = Constants.public.Enums.product_category;
@@ -25,9 +37,7 @@ interface ExtraForm {
   nombre: string;
   precio_usd: string;
   categoria: string;
-  // CAMBIO: array de IDs para multi-select de productos
   product_ids: string[];
-  // Flag: true = aplica a toda la categoría (product_id = null)
   allCategory: boolean;
   activo: boolean;
   orden: string;
@@ -43,14 +53,16 @@ const defaultForm: ExtraForm = {
   orden: '0',
 };
 
+const formatCat = (c: string) => c.charAt(0).toUpperCase() + c.slice(1);
+
 export const ExtrasPanel = () => {
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<ExtraForm>(defaultForm);
   const [filterCategory, setFilterCategory] = useState<string>('all');
+  const [searchTerm, setSearchTerm] = useState('');
 
-  // Fetch all extras (admin sees all including inactive)
   const { data: extras = [], isLoading } = useQuery({
     queryKey: ['admin-product-extras'],
     queryFn: async () => {
@@ -64,7 +76,6 @@ export const ExtrasPanel = () => {
     },
   });
 
-  // Fetch products for the product selector
   const { data: products = [] } = useQuery({
     queryKey: ['admin-products-list'],
     queryFn: async () => {
@@ -78,7 +89,6 @@ export const ExtrasPanel = () => {
     },
   });
 
-  // Productos filtrados por la categoría seleccionada en el form
   const filteredProducts = products.filter(p => p.categoria === form.categoria);
 
   const saveMutation = useMutation({
@@ -92,22 +102,18 @@ export const ExtrasPanel = () => {
       };
 
       if (editingId) {
-        // EDICIÓN: solo edita la fila individual, mantiene su product_id
         const { error } = await supabase
           .from('product_extras')
           .update(basePayload)
           .eq('id', editingId);
         if (error) throw error;
       } else {
-        // CREACIÓN: si allCategory o no hay IDs → 1 fila con product_id null
-        // Si hay IDs seleccionados → N filas (una por producto)
         if (data.allCategory || data.product_ids.length === 0) {
           const { error } = await supabase
             .from('product_extras')
             .insert({ ...basePayload, product_id: null });
           if (error) throw error;
         } else {
-          // Insertar una fila por cada producto seleccionado
           const rows = data.product_ids.map(pid => ({
             ...basePayload,
             product_id: pid,
@@ -148,12 +154,43 @@ export const ExtrasPanel = () => {
     },
   });
 
+  const deleteGroupMutation = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const { error } = await supabase
+        .from('product_extras')
+        .delete()
+        .in('id', ids);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-product-extras'] });
+      queryClient.invalidateQueries({ queryKey: ['product-extras'] });
+      toast.success('Extra eliminado');
+    },
+    onError: (error: any) => toast.error(`Error: ${error.message}`),
+  });
+
   const toggleActiveMutation = useMutation({
     mutationFn: async ({ id, activo }: { id: string; activo: boolean }) => {
       const { error } = await supabase
         .from('product_extras')
         .update({ activo })
         .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-product-extras'] });
+      queryClient.invalidateQueries({ queryKey: ['product-extras'] });
+    },
+  });
+
+  // Toggle todo el grupo (todas las filas con mismo nombre+cat+precio)
+  const toggleGroupActiveMutation = useMutation({
+    mutationFn: async ({ ids, activo }: { ids: string[]; activo: boolean }) => {
+      const { error } = await supabase
+        .from('product_extras')
+        .update({ activo })
+        .in('id', ids);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -173,7 +210,6 @@ export const ExtrasPanel = () => {
       nombre: extra.nombre,
       precio_usd: String(extra.precio_usd),
       categoria: extra.categoria,
-      // En edición, mostramos el product_id actual (si existe)
       product_ids: extra.product_id ? [extra.product_id] : [],
       allCategory: !extra.product_id,
       activo: extra.activo,
@@ -191,7 +227,6 @@ export const ExtrasPanel = () => {
     saveMutation.mutate(form);
   };
 
-  // Toggle un producto en la selección múltiple
   const toggleProduct = (productId: string) => {
     setForm(prev => {
       const isSelected = prev.product_ids.includes(productId);
@@ -200,13 +235,11 @@ export const ExtrasPanel = () => {
         product_ids: isSelected
           ? prev.product_ids.filter(id => id !== productId)
           : [...prev.product_ids, productId],
-        // Si seleccionan un producto, desactivar "toda la categoría"
         allCategory: false,
       };
     });
   };
 
-  // Toggle "toda la categoría" — desselecciona productos individuales
   const toggleAllCategory = (checked: boolean) => {
     setForm(prev => ({
       ...prev,
@@ -215,23 +248,50 @@ export const ExtrasPanel = () => {
     }));
   };
 
-  // Helper: buscar nombre de producto por ID
   const getProductName = (productId: string) => {
     const p = products.find(pr => pr.id === productId);
     return p?.nombre || 'Producto desconocido';
   };
 
-  const filteredExtras = filterCategory === 'all'
-    ? extras
-    : extras.filter(e => e.categoria === filterCategory);
+  // Aplicar filtros (categoría + búsqueda por nombre)
+  const filteredExtras = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    return extras.filter(e => {
+      if (filterCategory !== 'all' && e.categoria !== filterCategory) return false;
+      if (term && !e.nombre.toLowerCase().includes(term)) return false;
+      return true;
+    });
+  }, [extras, filterCategory, searchTerm]);
 
-  // Agrupar extras por nombre+categoría para mostrar productos asignados
-  const groupedExtras = filteredExtras.reduce<Record<string, any[]>>((acc, extra) => {
-    const key = `${extra.nombre}__${extra.categoria}__${extra.precio_usd}`;
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(extra);
-    return acc;
-  }, {});
+  // Agrupar por categoría → luego por nombre+precio
+  const byCategory = useMemo(() => {
+    const out: Record<string, Record<string, any[]>> = {};
+    for (const extra of filteredExtras) {
+      const cat = extra.categoria;
+      if (!out[cat]) out[cat] = {};
+      const key = `${extra.nombre}__${extra.precio_usd}`;
+      if (!out[cat][key]) out[cat][key] = [];
+      out[cat][key].push(extra);
+    }
+    return out;
+  }, [filteredExtras]);
+
+  // Ordenar categorías: con extras primero (siguiendo orden del enum), luego vacías
+  const categoryList = useMemo(() => {
+    const withExtras: string[] = [];
+    for (const cat of CATEGORIES) {
+      if (byCategory[cat] && Object.keys(byCategory[cat]).length > 0) {
+        withExtras.push(cat);
+      }
+    }
+    return withExtras;
+  }, [byCategory]);
+
+  // Default: primera categoría con extras abierta; si filtran, abre esa
+  const defaultOpen = useMemo(() => {
+    if (filterCategory !== 'all') return [filterCategory];
+    return categoryList.length > 0 ? [categoryList[0]] : [];
+  }, [filterCategory, categoryList]);
 
   if (isLoading) {
     return (
@@ -243,7 +303,7 @@ export const ExtrasPanel = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h2 className="text-xl font-display font-bold">Extras / Add-ons</h2>
           <p className="text-sm text-muted-foreground">
@@ -291,20 +351,16 @@ export const ExtrasPanel = () => {
                   <SelectTrigger><SelectValue placeholder="Seleccionar categoría" /></SelectTrigger>
                   <SelectContent>
                     {CATEGORIES.map(cat => (
-                      <SelectItem key={cat} value={cat}>
-                        {cat.charAt(0).toUpperCase() + cat.slice(1)}
-                      </SelectItem>
+                      <SelectItem key={cat} value={cat}>{formatCat(cat)}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
-              {/* MULTI-SELECT: Productos de la categoría */}
               {form.categoria && (
                 <div>
                   <Label className="mb-2 block">Aplica a:</Label>
                   <div className="space-y-2 max-h-48 overflow-y-auto border rounded-md p-3">
-                    {/* Opción: toda la categoría */}
                     <div className="flex items-center gap-2">
                       <Checkbox
                         id="all-category"
@@ -373,96 +429,177 @@ export const ExtrasPanel = () => {
         </Dialog>
       </div>
 
-      {/* Filtro por categoría */}
-      <div className="flex items-center gap-2">
-        <Label className="text-sm">Filtrar:</Label>
+      {/* Toolbar: buscador + filtro categoría */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar extra por nombre…"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-9"
+          />
+        </div>
         <Select value={filterCategory} onValueChange={setFilterCategory}>
-          <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-full sm:w-[220px]"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todas las categorías</SelectItem>
             {CATEGORIES.map(cat => (
-              <SelectItem key={cat} value={cat}>
-                {cat.charAt(0).toUpperCase() + cat.slice(1)}
-              </SelectItem>
+              <SelectItem key={cat} value={cat}>{formatCat(cat)}</SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
 
-      {/* Lista de extras agrupados */}
-      {Object.keys(groupedExtras).length === 0 ? (
+      {/* Lista agrupada por categoría */}
+      {categoryList.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
-            No hay extras configurados{filterCategory !== 'all' ? ` para ${filterCategory}` : ''}. Crea uno para empezar.
+            {searchTerm || filterCategory !== 'all'
+              ? 'No hay extras que coincidan con los filtros.'
+              : 'No hay extras configurados. Crea uno para empezar.'}
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-3">
-          {Object.entries(groupedExtras).map(([key, group]) => {
-            // Si el grupo tiene múltiples filas, mostrar agrupado
-            const first = group[0];
-            const hasMultiple = group.length > 1;
-            const allActive = group.every(e => e.activo);
-            const someActive = group.some(e => e.activo);
+        <Accordion type="multiple" defaultValue={defaultOpen} className="space-y-3">
+          {categoryList.map(cat => {
+            const groups = Object.values(byCategory[cat]);
+            const totalRows = groups.reduce((sum, g) => sum + g.length, 0);
+            const activeRows = groups.reduce(
+              (sum, g) => sum + g.filter((e: any) => e.activo).length,
+              0
+            );
 
             return (
-              <Card key={key} className={!someActive ? 'opacity-60' : ''}>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-4">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm">{first.nombre}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {first.categoria} • Orden: {first.orden}
-                      </p>
-                      {/* Mostrar productos asignados */}
-                      <div className="text-xs text-muted-foreground mt-1">
-                        {group.some(e => !e.product_id) ? (
-                          <span className="text-primary font-medium">Toda la categoría</span>
-                        ) : (
-                          <span>
-                            Productos: {group.map(e => getProductName(e.product_id)).join(', ')}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <span className="font-bold text-secondary text-sm">
-                      +${Number(first.precio_usd).toFixed(2)}
+              <AccordionItem
+                key={cat}
+                value={cat}
+                className="border rounded-lg bg-card px-4"
+              >
+                <AccordionTrigger className="hover:no-underline">
+                  <div className="flex items-center gap-3 flex-1">
+                    <span className="font-display font-bold text-base">
+                      {formatCat(cat)}
+                    </span>
+                    <Badge variant="secondary" className="text-xs">
+                      {groups.length} {groups.length === 1 ? 'extra' : 'extras'}
+                    </Badge>
+                    <span className="text-xs text-muted-foreground">
+                      {activeRows}/{totalRows} activos
                     </span>
                   </div>
+                </AccordionTrigger>
+                <AccordionContent>
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 pt-2 pb-3">
+                    {groups.map((group: any[]) => {
+                      const first = group[0];
+                      const allActive = group.every(e => e.activo);
+                      const someActive = group.some(e => e.activo);
+                      const isCategoryWide = group.some(e => !e.product_id);
+                      const productCount = group.filter(e => e.product_id).length;
+                      const groupIds = group.map(e => e.id);
+                      const groupKey = `${first.nombre}__${first.precio_usd}`;
 
-                  {/* Filas individuales para editar/eliminar */}
-                  <div className="mt-2 space-y-1">
-                    {group.map(extra => (
-                      <div key={extra.id} className="flex items-center gap-2 pl-2 border-l-2 border-muted">
-                        <Switch
-                          checked={extra.activo}
-                          onCheckedChange={activo => toggleActiveMutation.mutate({ id: extra.id, activo })}
-                          className="scale-75"
-                        />
-                        <span className="text-xs flex-1 text-muted-foreground">
-                          {extra.product_id ? getProductName(extra.product_id) : 'Toda la categoría'}
-                        </span>
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(extra)}>
-                          <Pencil className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 text-destructive hover:text-destructive"
-                          onClick={() => {
-                            if (confirm('¿Eliminar este extra?')) deleteMutation.mutate(extra.id);
-                          }}
+                      return (
+                        <Card
+                          key={groupKey}
+                          className={`relative ${!someActive ? 'opacity-60' : ''}`}
                         >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    ))}
+                          <CardContent className="p-3 space-y-2">
+                            <div className="flex items-start justify-between gap-2">
+                              <p className="font-semibold text-sm leading-tight flex-1">
+                                {first.nombre}
+                              </p>
+                              <span className="font-bold text-secondary text-sm whitespace-nowrap">
+                                +${Number(first.precio_usd).toFixed(2)}
+                              </span>
+                            </div>
+
+                            {/* Alcance */}
+                            <div className="text-xs">
+                              {isCategoryWide ? (
+                                <span className="inline-flex items-center gap-1 text-primary font-medium">
+                                  Toda la categoría
+                                </span>
+                              ) : (
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <button className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors">
+                                      <Users className="h-3 w-3" />
+                                      {productCount}{' '}
+                                      {productCount === 1 ? 'producto' : 'productos'}
+                                    </button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-64 text-xs">
+                                    <p className="font-medium mb-2">Aplica a:</p>
+                                    <ul className="space-y-1 max-h-48 overflow-y-auto">
+                                      {group.map(e => (
+                                        <li key={e.id} className="text-muted-foreground">
+                                          • {getProductName(e.product_id)}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </PopoverContent>
+                                </Popover>
+                              )}
+                            </div>
+
+                            {/* Footer: switch + acciones */}
+                            <div className="flex items-center justify-between pt-2 border-t">
+                              <div className="flex items-center gap-2">
+                                <Switch
+                                  checked={allActive}
+                                  onCheckedChange={(activo) =>
+                                    toggleGroupActiveMutation.mutate({ ids: groupIds, activo })
+                                  }
+                                  className="scale-90"
+                                />
+                                <span className="text-xs text-muted-foreground">
+                                  {allActive ? 'Activo' : someActive ? 'Parcial' : 'Inactivo'}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7"
+                                  onClick={() => handleEdit(first)}
+                                  title="Editar"
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 text-destructive hover:text-destructive"
+                                  onClick={() => {
+                                    const msg = group.length > 1
+                                      ? `¿Eliminar este extra de ${group.length} productos?`
+                                      : '¿Eliminar este extra?';
+                                    if (confirm(msg)) {
+                                      if (group.length > 1) {
+                                        deleteGroupMutation.mutate(groupIds);
+                                      } else {
+                                        deleteMutation.mutate(first.id);
+                                      }
+                                    }
+                                  }}
+                                  title="Eliminar"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
                   </div>
-                </CardContent>
-              </Card>
+                </AccordionContent>
+              </AccordionItem>
             );
           })}
-        </div>
+        </Accordion>
       )}
     </div>
   );
