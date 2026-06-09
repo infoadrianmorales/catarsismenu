@@ -23,6 +23,10 @@ interface Config {
   custom_head_scripts: string;
   custom_body_scripts: string;
   custom_scripts_enabled: boolean;
+  // [MARKETING-PANEL] GTM snippets editables (reemplazan el hardcode de index.html)
+  gtm_head_snippet: string;
+  gtm_body_snippet: string;
+  gtm_custom_enabled: boolean;
 }
 
 const defaultConfig: Config = {
