@@ -13,6 +13,7 @@ import { Loader2, Save, BarChart3, Tag, Target, ShieldCheck, ExternalLink } from
 import { toast } from 'sonner';
 import { useConfig } from '@/hooks/useConfig';
 import { CustomScriptsCard } from './CustomScriptsCard';
+import { GtmSnippetsCard } from './GtmSnippetsCard';
 
 const GTM_RX = /^GTM-[A-Z0-9]+$/i;
 const GA4_RX = /^G-[A-Z0-9]+$/i;
