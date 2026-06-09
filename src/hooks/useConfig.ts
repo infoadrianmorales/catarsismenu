@@ -19,10 +19,6 @@ interface Config {
   gads_conversion_label: string;
   gads_enabled: boolean;
   google_site_verification: string;
-  // [MARKETING-PANEL] Custom raw scripts (head/body) editable from admin
-  custom_head_scripts: string;
-  custom_body_scripts: string;
-  custom_scripts_enabled: boolean;
   // [MARKETING-PANEL] GTM snippets editables (reemplazan el hardcode de index.html)
   gtm_head_snippet: string;
   gtm_body_snippet: string;
@@ -45,9 +41,6 @@ const defaultConfig: Config = {
   gads_conversion_label: '',
   gads_enabled: false,
   google_site_verification: '',
-  custom_head_scripts: '',
-  custom_body_scripts: '',
-  custom_scripts_enabled: false,
   gtm_head_snippet: '',
   gtm_body_snippet: '',
   gtm_custom_enabled: false,
@@ -64,8 +57,6 @@ const STRING_KEYS = [
   'gads_conversion_id',
   'gads_conversion_label',
   'google_site_verification',
-  'custom_head_scripts',
-  'custom_body_scripts',
   'gtm_head_snippet',
   'gtm_body_snippet',
 ];
@@ -74,7 +65,6 @@ const BOOL_KEYS = [
   'gtm_enabled',
   'ga4_enabled',
   'gads_enabled',
-  'custom_scripts_enabled',
   'gtm_custom_enabled',
 ];
 
