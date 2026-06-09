@@ -4,15 +4,37 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <!-- Google Tag Manager — hardcodeado para máxima prioridad de carga.
-         ID también vive en `config.gtm_id` y el GoogleTagsProvider lo
-         detecta para NO inyectarlo dos veces. -->
-    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-    })(window,document,'script','dataLayer','GTM-K8BSZWCM');</script>
-    <!-- End Google Tag Manager -->
+    <!-- Google Tag Manager — Bootstrap.
+         Los snippets reales se editan desde el panel Admin (Marketing → Google).
+         Para preservar carga temprana en visitas recurrentes, cacheamos el
+         último snippet del head en localStorage y lo inyectamos aquí antes de
+         que React monte. En la primera visita, el GoogleTagsProvider lo
+         inyecta cuando se lee la config. -->
+    <script>
+      (function () {
+        try {
+          var head = localStorage.getItem('__gtm_head_cache');
+          if (head) {
+            var tpl = document.createElement('template');
+            tpl.innerHTML = head;
+            tpl.content.querySelectorAll('script').forEach(function (oldS) {
+              var s = document.createElement('script');
+              for (var i = 0; i < oldS.attributes.length; i++) {
+                s.setAttribute(oldS.attributes[i].name, oldS.attributes[i].value);
+              }
+              s.text = oldS.textContent || '';
+              oldS.replaceWith(s);
+            });
+            Array.from(tpl.content.childNodes).forEach(function (n) {
+              if (n.nodeType === 1) n.setAttribute('data-gtm-bootstrap', 'head');
+            });
+            document.head.appendChild(tpl.content);
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <!-- End Google Tag Manager Bootstrap -->
+
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png?v=catarsis-20260516a" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon.png?v=catarsis-20260516a" />
     <link rel="shortcut icon" href="/favicon.png?v=catarsis-20260516a" />
