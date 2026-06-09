@@ -85,7 +85,11 @@ export const GoogleTab = () => {
             Google Tag Manager
           </CardTitle>
           <CardDescription>
-            Inyecta automáticamente el contenedor GTM en el sitio público. Si lo activas, GA4 directo se desactiva para evitar doble conteo (puedes manejar GA4 desde dentro de GTM).
+            Inyecta el contenedor GTM en el sitio. El snippet del container
+            <code className="mx-1 text-xs">GTM-K8BSZWCM</code> ya está hardcodeado
+            en <code className="text-xs">index.html</code> para máxima prioridad —
+            cambiar el ID aquí solo afecta la inyección dinámica. Si activas GTM,
+            GA4 directo se desactiva para evitar doble conteo.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

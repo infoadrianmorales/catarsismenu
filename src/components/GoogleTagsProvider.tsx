@@ -53,17 +53,29 @@ export const GoogleTagsProvider = () => {
     }
 
     // --- GTM ---
-    if (config.gtm_enabled && /^GTM-[A-Z0-9]+$/i.test(config.gtm_id) && !document.getElementById(GTM_SCRIPT_ID)) {
+    // Detecta si el mismo container ya fue cargado por index.html (hardcoded)
+    // para evitar doble inyección. En ese caso solo aseguramos dataLayer.
+    if (config.gtm_enabled && /^GTM-[A-Z0-9]+$/i.test(config.gtm_id)) {
       const id = config.gtm_id;
-      const s = document.createElement('script');
-      s.id = GTM_SCRIPT_ID;
-      s.innerHTML = `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start': new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','${id}');`;
-      document.head.appendChild(s);
+      const alreadyLoaded =
+        !!document.querySelector(`script[src*="googletagmanager.com/gtm.js?id=${id}"]`) ||
+        // @ts-expect-error global injected by GTM runtime
+        !!(window.google_tag_manager && window.google_tag_manager[id]);
 
-      const ns = document.createElement('noscript');
-      ns.id = GTM_NOSCRIPT_ID;
-      ns.innerHTML = `<iframe src="https://www.googletagmanager.com/ns.html?id=${id}" height="0" width="0" style="display:none;visibility:hidden"></iframe>`;
-      document.body.insertBefore(ns, document.body.firstChild);
+      if (!alreadyLoaded && !document.getElementById(GTM_SCRIPT_ID)) {
+        const s = document.createElement('script');
+        s.id = GTM_SCRIPT_ID;
+        s.innerHTML = `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start': new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','${id}');`;
+        document.head.appendChild(s);
+
+        const ns = document.createElement('noscript');
+        ns.id = GTM_NOSCRIPT_ID;
+        ns.innerHTML = `<iframe src="https://www.googletagmanager.com/ns.html?id=${id}" height="0" width="0" style="display:none;visibility:hidden"></iframe>`;
+        document.body.insertBefore(ns, document.body.firstChild);
+      } else {
+        // Aseguramos dataLayer existe para los pushes de pageview
+        window.dataLayer = window.dataLayer || [];
+      }
     }
 
     // --- GA4 directo (solo si GTM NO está activo, para evitar doble carga) ---
