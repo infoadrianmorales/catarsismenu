@@ -13,6 +13,8 @@ import { FloatingCart } from "./components/FloatingCart";
 import { MetaPixelProvider } from "./components/MetaPixelProvider";
 import { ScrollToTop } from "./components/ScrollToTop";
 import { MetricoolProvider } from "./components/MetricoolProvider";
+// [MARKETING-PANEL] Inyecta GTM, GA4, Google Ads y Search Console según config
+import { GoogleTagsProvider } from "./components/GoogleTagsProvider";
 import { useVisitorTracker } from "./hooks/useVisitorTracker";
 
 // Lazy load non-critical pages
@@ -59,6 +61,7 @@ const AppContent = () => {
       <MetaPixelProvider>
         <ScrollToTop />
         <MetricoolProvider />
+        <GoogleTagsProvider />
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/" element={<Index />} />
