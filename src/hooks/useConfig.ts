@@ -19,6 +19,10 @@ interface Config {
   gads_conversion_label: string;
   gads_enabled: boolean;
   google_site_verification: string;
+  // [MARKETING-PANEL] Custom raw scripts (head/body) editable from admin
+  custom_head_scripts: string;
+  custom_body_scripts: string;
+  custom_scripts_enabled: boolean;
 }
 
 const defaultConfig: Config = {
@@ -37,6 +41,9 @@ const defaultConfig: Config = {
   gads_conversion_label: '',
   gads_enabled: false,
   google_site_verification: '',
+  custom_head_scripts: '',
+  custom_body_scripts: '',
+  custom_scripts_enabled: false,
 };
 
 const STRING_KEYS = [
@@ -50,8 +57,16 @@ const STRING_KEYS = [
   'gads_conversion_id',
   'gads_conversion_label',
   'google_site_verification',
+  'custom_head_scripts',
+  'custom_body_scripts',
 ];
-const BOOL_KEYS = ['meta_pixel_enabled', 'gtm_enabled', 'ga4_enabled', 'gads_enabled'];
+const BOOL_KEYS = [
+  'meta_pixel_enabled',
+  'gtm_enabled',
+  'ga4_enabled',
+  'gads_enabled',
+  'custom_scripts_enabled',
+];
 
 // Fetch all config from Supabase
 const fetchConfig = async (): Promise<Config> => {
