@@ -606,6 +606,51 @@ export type Database = {
         }
         Relationships: []
       }
+      utm_links: {
+        Row: {
+          base_path: string
+          created_at: string
+          created_by: string | null
+          full_url: string
+          id: string
+          label: string
+          updated_at: string
+          utm_campaign: string
+          utm_content: string | null
+          utm_medium: string
+          utm_source: string
+          utm_term: string | null
+        }
+        Insert: {
+          base_path?: string
+          created_at?: string
+          created_by?: string | null
+          full_url: string
+          id?: string
+          label: string
+          updated_at?: string
+          utm_campaign: string
+          utm_content?: string | null
+          utm_medium: string
+          utm_source: string
+          utm_term?: string | null
+        }
+        Update: {
+          base_path?: string
+          created_at?: string
+          created_by?: string | null
+          full_url?: string
+          id?: string
+          label?: string
+          updated_at?: string
+          utm_campaign?: string
+          utm_content?: string | null
+          utm_medium?: string
+          utm_source?: string
+          utm_term?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       best_sellers_food: {
@@ -789,6 +834,18 @@ export type Database = {
           source: string
           total_quantity: number
           total_revenue: number
+        }[]
+      }
+      get_utm_link_stats: {
+        Args: {
+          p_utm_campaign: string
+          p_utm_medium: string
+          p_utm_source: string
+        }
+        Returns: {
+          total_visits: number
+          unique_visitors: number
+          visits_7d: number
         }[]
       }
       get_visits_by_city: {

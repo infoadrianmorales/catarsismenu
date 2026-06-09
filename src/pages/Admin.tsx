@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Loader2, LogOut, Settings, Package, Users, Layers, ShoppingBag, UserCheck, Image, BarChart3, Store, PlusCircle, Globe } from 'lucide-react';
+import { Loader2, LogOut, Settings, Package, Users, Layers, ShoppingBag, UserCheck, Image, BarChart3, Megaphone, PlusCircle, Globe } from 'lucide-react';
 import { AnalyticsPanel } from '@/components/admin/AnalyticsPanel';
 import { ConfigPanel } from '@/components/admin/ConfigPanel';
 import { ProductsPanel } from '@/components/admin/ProductsPanel';
@@ -12,7 +12,8 @@ import { CategoriesPanel } from '@/components/admin/CategoriesPanel';
 import { OrdersPanel } from '@/components/admin/OrdersPanel';
 import { CustomersPanel } from '@/components/admin/CustomersPanel';
 import { HeroSlidesPanel } from '@/components/admin/HeroSlidesPanel';
-import { MetaCatalogPanel } from '@/components/admin/MetaCatalogPanel';
+// [MARKETING-PANEL] Pestaña unificada: Meta + Google + UTM Links
+import { MarketingPanel } from '@/components/admin/MarketingPanel';
 // FEATURE [EXTRAS-ADMIN]: Panel de gestión de extras/add-ons
 import { ExtrasPanel } from '@/components/admin/ExtrasPanel';
 // [2026-05-02] Panel de visitantes (geo + fuentes de tráfico)
@@ -115,9 +116,9 @@ const Admin = () => {
               <PlusCircle className="h-4 w-4" />
               <span className="hidden sm:inline">Extras</span>
             </TabsTrigger>
-            <TabsTrigger value="meta-catalog" className="gap-2">
-              <Store className="h-4 w-4" />
-              <span className="hidden sm:inline">Meta</span>
+            <TabsTrigger value="marketing" className="gap-2">
+              <Megaphone className="h-4 w-4" />
+              <span className="hidden sm:inline">Marketing</span>
             </TabsTrigger>
             <TabsTrigger value="users" className="gap-2">
               <Users className="h-4 w-4" />
@@ -161,8 +162,8 @@ const Admin = () => {
             <ExtrasPanel />
           </TabsContent>
 
-          <TabsContent value="meta-catalog">
-            <MetaCatalogPanel />
+          <TabsContent value="marketing">
+            <MarketingPanel />
           </TabsContent>
 
           <TabsContent value="users">
