@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { CheckCircle, ArrowLeft, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -13,6 +14,17 @@ const OrderConfirmed = () => {
   
   const orderId = location.state?.orderId;
   const orderNumber = location.state?.orderNumber || sessionStorage.getItem('lastOrderNumber');
+  const orderTotal = location.state?.total as number | undefined;
+
+  // [MARKETING-PANEL] Dispara conversión de Google Ads una sola vez
+  const firedRef = useRef(false);
+  useEffect(() => {
+    if (firedRef.current) return;
+    if (typeof window.trackAdsConversion === 'function') {
+      window.trackAdsConversion(orderTotal, 'USD', orderNumber || orderId);
+      firedRef.current = true;
+    }
+  }, [orderTotal, orderNumber, orderId]);
 
   return (
     <div className="min-h-screen bg-background">
