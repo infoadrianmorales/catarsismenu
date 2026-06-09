@@ -137,10 +137,25 @@
   </head>
 
   <body>
-    <!-- Google Tag Manager (noscript) — primer elemento del body -->
-    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-K8BSZWCM"
-    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-    <!-- End Google Tag Manager (noscript) -->
+    <!-- Google Tag Manager (noscript) — Bootstrap.
+         Inyecta el snippet body cacheado en localStorage como primer hijo del
+         body para que el iframe noscript esté disponible aun antes de React. -->
+    <script>
+      (function () {
+        try {
+          var body = localStorage.getItem('__gtm_body_cache');
+          if (body) {
+            var tpl = document.createElement('template');
+            tpl.innerHTML = body;
+            Array.from(tpl.content.childNodes).forEach(function (n) {
+              if (n.nodeType === 1) n.setAttribute('data-gtm-bootstrap', 'body');
+            });
+            document.body.insertBefore(tpl.content, document.body.firstChild);
+          }
+        } catch (e) {}
+      })();
+    </script>
+
 
     <!-- Meta Pixel noscript fallback -->
     <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=1428549534945171&ev=PageView&noscript=1" /></noscript>
