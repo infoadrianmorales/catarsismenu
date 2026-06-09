@@ -147,7 +147,9 @@ export const GoogleTagsProvider = () => {
 
     // --- GA4 directo (solo si GTM NO está activo, para evitar doble carga) ---
     const ga4Active =
-      config.ga4_enabled && /^G-[A-Z0-9]+$/i.test(config.ga4_id) && !(config.gtm_enabled && config.gtm_id);
+      config.ga4_enabled && /^G-[A-Z0-9]+$/i.test(config.ga4_id) &&
+      !config.gtm_custom_enabled &&
+      !(config.gtm_enabled && config.gtm_id);
     if (ga4Active && !document.getElementById(GA4_SCRIPT_ID)) {
       const s = document.createElement('script');
       s.id = GA4_SCRIPT_ID;
