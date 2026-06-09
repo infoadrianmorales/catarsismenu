@@ -85,9 +85,44 @@ export const GoogleTagsProvider = () => {
     }
 
     // --- GTM ---
-    // Detecta si el mismo container ya fue cargado por index.html (hardcoded)
-    // para evitar doble inyección. En ese caso solo aseguramos dataLayer.
-    if (config.gtm_enabled && /^GTM-[A-Z0-9]+$/i.test(config.gtm_id)) {
+    // Modo SNIPPETS PERSONALIZADOS: el admin pegó código completo en
+    // gtm_head_snippet / gtm_body_snippet. Se inyecta tal cual y se
+    // cachea en localStorage para que el bootstrap de index.html lo
+    // cargue en visitas siguientes antes que React.
+    if (config.gtm_custom_enabled) {
+      const headSnip = config.gtm_head_snippet || '';
+      const bodySnip = config.gtm_body_snippet || '';
+
+      try {
+        if (headSnip) localStorage.setItem('__gtm_head_cache', headSnip);
+        else localStorage.removeItem('__gtm_head_cache');
+        if (bodySnip) localStorage.setItem('__gtm_body_cache', bodySnip);
+        else localStorage.removeItem('__gtm_body_cache');
+      } catch {
+        /* storage no disponible */
+      }
+
+      const bootstrapLoadedHead = !!document.querySelector('[data-gtm-bootstrap="head"]');
+      const bootstrapLoadedBody = !!document.querySelector('[data-gtm-bootstrap="body"]');
+
+      if (headSnip && !bootstrapLoadedHead && !document.getElementById(GTM_SCRIPT_ID)) {
+        const marker = document.createElement('meta');
+        marker.id = GTM_SCRIPT_ID;
+        marker.setAttribute('data-gtm-marker', '1');
+        document.head.appendChild(marker);
+        injectHtmlInto(document.head, headSnip, 'data-gtm-runtime-head');
+      }
+      if (bodySnip && !bootstrapLoadedBody && !document.getElementById(GTM_NOSCRIPT_ID)) {
+        const marker = document.createElement('meta');
+        marker.id = GTM_NOSCRIPT_ID;
+        marker.setAttribute('data-gtm-marker', '1');
+        document.body.appendChild(marker);
+        injectHtmlInto(document.body, bodySnip, 'data-gtm-runtime-body');
+      }
+
+      window.dataLayer = window.dataLayer || [];
+    } else if (config.gtm_enabled && /^GTM-[A-Z0-9]+$/i.test(config.gtm_id)) {
+      // Modo CONTAINER ID: snippet generado a partir del ID configurado.
       const id = config.gtm_id;
       const alreadyLoaded =
         !!document.querySelector(`script[src*="googletagmanager.com/gtm.js?id=${id}"]`) ||
@@ -105,14 +140,16 @@ export const GoogleTagsProvider = () => {
         ns.innerHTML = `<iframe src="https://www.googletagmanager.com/ns.html?id=${id}" height="0" width="0" style="display:none;visibility:hidden"></iframe>`;
         document.body.insertBefore(ns, document.body.firstChild);
       } else {
-        // Aseguramos dataLayer existe para los pushes de pageview
         window.dataLayer = window.dataLayer || [];
       }
     }
 
+
     // --- GA4 directo (solo si GTM NO está activo, para evitar doble carga) ---
     const ga4Active =
-      config.ga4_enabled && /^G-[A-Z0-9]+$/i.test(config.ga4_id) && !(config.gtm_enabled && config.gtm_id);
+      config.ga4_enabled && /^G-[A-Z0-9]+$/i.test(config.ga4_id) &&
+      !config.gtm_custom_enabled &&
+      !(config.gtm_enabled && config.gtm_id);
     if (ga4Active && !document.getElementById(GA4_SCRIPT_ID)) {
       const s = document.createElement('script');
       s.id = GA4_SCRIPT_ID;
@@ -189,7 +226,8 @@ export const GoogleTagsProvider = () => {
     if (lastPath.current === location.pathname) return;
     const path = location.pathname + location.search;
 
-    if (config.gtm_enabled && config.gtm_id && window.dataLayer) {
+    const gtmActive = config.gtm_custom_enabled || (config.gtm_enabled && config.gtm_id);
+    if (gtmActive && window.dataLayer) {
       window.dataLayer.push({ event: 'pageview', page_path: path });
     } else if (config.ga4_enabled && config.ga4_id && typeof window.gtag === 'function') {
       window.gtag('event', 'page_view', { page_path: path });

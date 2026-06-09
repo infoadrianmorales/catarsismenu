@@ -13,6 +13,7 @@ import { Loader2, Save, BarChart3, Tag, Target, ShieldCheck, ExternalLink } from
 import { toast } from 'sonner';
 import { useConfig } from '@/hooks/useConfig';
 import { CustomScriptsCard } from './CustomScriptsCard';
+import { GtmSnippetsCard } from './GtmSnippetsCard';
 
 const GTM_RX = /^GTM-[A-Z0-9]+$/i;
 const GA4_RX = /^G-[A-Z0-9]+$/i;
@@ -78,19 +79,20 @@ export const GoogleTab = () => {
 
   return (
     <div className="space-y-6">
-      {/* GTM */}
+      {/* GTM — Snippets editables (modo avanzado, reemplaza el código completo) */}
+      <GtmSnippetsCard />
+
+      {/* GTM — Container ID simple */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Tag className="h-5 w-5 text-blue-500" />
-            Google Tag Manager
+            Google Tag Manager — Container ID
           </CardTitle>
           <CardDescription>
-            Inyecta el contenedor GTM en el sitio. El snippet del container
-            <code className="mx-1 text-xs">GTM-K8BSZWCM</code> ya está hardcodeado
-            en <code className="text-xs">index.html</code> para máxima prioridad —
-            cambiar el ID aquí solo afecta la inyección dinámica. Si activas GTM,
-            GA4 directo se desactiva para evitar doble conteo.
+            Modo simple: pega solo el ID del contenedor (ej. <code className="text-xs">GTM-XXXXXXX</code>)
+            y se genera el snippet automáticamente. Si arriba activaste "Snippets personalizados",
+            esta sección queda ignorada. Si activas GTM aquí, GA4 directo se desactiva para evitar doble conteo.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

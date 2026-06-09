@@ -1,63 +1,59 @@
-## Editor de Scripts Personalizados en el Admin
+## Objetivo
 
-Agregar una sección dentro de la pestaña **Marketing → Google** para pegar/editar scripts arbitrarios (head y body) que se inyectarán dinámicamente en runtime, sin tocar `index.html`. El snippet hardcodeado de `GTM-K8BSZWCM` se mantiene intacto para máxima velocidad de carga.
+Hoy el contenedor `GTM-K8BSZWCM` está fijo en `index.html` (head + noscript en body). Quieres poder **ver, editar y reemplazar ese snippet completo** desde el panel de administrador (pestaña Marketing → Google), manteniendo carga lo más temprana posible.
 
-### 1. Base de datos
+## Cómo va a quedar
 
-Agregar 3 claves nuevas a la tabla `config` (ya existente):
+### 1. Quitar el hardcode de `index.html`
+Se eliminan los bloques:
+- `<!-- Google Tag Manager -->` en `<head>`
+- `<!-- Google Tag Manager (noscript) -->` al inicio de `<body>`
 
-- `custom_head_scripts` (text) — HTML/JS que se inyecta en `<head>`
-- `custom_body_scripts` (text) — HTML/JS que se inyecta al final de `<body>`
-- `custom_scripts_enabled` (boolean) — switch maestro
+En su lugar, `index.html` queda con un pequeño script bootstrap inline que:
+- Lee de `localStorage` una copia cacheada del snippet GTM (`__gtm_head_cache` y `__gtm_body_cache`).
+- Si existe, la inyecta inmediatamente (head + noscript en body) antes de que React monte.
+- Esto preserva la carga temprana en visitas recurrentes.
 
-No requiere tabla nueva, solo seed inicial vacío vía `supabase--insert`.
+En la **primera visita** (sin cache), el snippet se inyecta cuando React lee la config — unos ms más tarde, pero solo una vez por dispositivo.
 
-### 2. Componente nuevo: `CustomScriptsCard.tsx`
+### 2. Nueva sección en el admin: "Google Tag Manager — Snippets"
+Dentro de `GoogleTab.tsx`, sobre la card actual de "Container ID", se añade una nueva card "Snippets GTM" con:
+- **Textarea 1**: snippet completo del `<head>` (precargado con el bloque actual `GTM-K8BSZWCM`).
+- **Textarea 2**: snippet completo `<noscript>` del `<body>` (precargado con el bloque actual).
+- **Switch** "Usar snippets personalizados" — si está OFF, vuelve al comportamiento por defecto (snippet generado desde el Container ID).
+- Botón **Guardar** que persiste en `config` y refresca el cache `localStorage` para que la próxima carga sea instantánea.
+- Botón **Restaurar default** que repone los bloques originales con `GTM-K8BSZWCM`.
 
-Ubicado en `src/components/admin/marketing/CustomScriptsCard.tsx`. Se renderiza dentro de `GoogleTab.tsx` debajo del card de GTM. Contiene:
+El campo "Container ID" actual se mantiene para el caso simple (sin snippet personalizado).
 
-- Switch para activar/desactivar la inyección.
-- Textarea grande para "Scripts del `<head>`" con monospace.
-- Textarea grande para "Scripts del `<body>`" con monospace.
-- Botón **Guardar**.
-- Advertencia visible: "Los scripts se ejecutan tal cual los pegues. Solo pega código de proveedores confiables."
-- Nota informativa: "El GTM principal (`GTM-K8BSZWCM`) ya está hardcodeado en `index.html` y no se modifica desde aquí. Esta área es para scripts ADICIONALES (GTM secundarios, Hotjar, Clarity, Pixel custom, etc.)."
+### 3. Inyección runtime
+`GoogleTagsProvider.tsx`:
+- Si `gtm_custom_enabled` está ON → inyecta `gtm_head_snippet` en `<head>` y `gtm_body_snippet` al inicio de `<body>` (ejecutando los `<script>` correctamente, como ya hace `injectHtmlInto`).
+- Si está OFF → comportamiento actual basado en `gtm_id`.
+- Sigue siendo idempotente (detecta si el bootstrap ya cargó el mismo snippet vía `data-gtm-bootstrap` y no duplica).
+- Excluido en `/local`.
 
-### 3. Inyector dinámico: extender `GoogleTagsProvider.tsx`
+### 4. Base de datos
+Tres nuevas claves en `config` (seed con los valores actuales hardcodeados):
+- `gtm_head_snippet` (text)
+- `gtm_body_snippet` (text)
+- `gtm_custom_enabled` (boolean, default `true` para mantener exactamente el comportamiento actual)
 
-Agregar un `useEffect` adicional que:
+### 5. Tipos y hook
+`useConfig.ts`: agregar las 3 claves a `Config`, `defaultConfig`, `STRING_KEYS`, `BOOL_KEYS`.
 
-1. Lee `custom_scripts_enabled`, `custom_head_scripts`, `custom_body_scripts` del config.
-2. Si está activado, parsea cada bloque y crea los `<script>` / `<noscript>` correspondientes usando `document.createRange().createContextualFragment(html)` para soportar HTML completo (no solo JS puro).
-3. Inserta los del head en `document.head` y los del body en `document.body`.
-4. Idempotente: marca cada nodo inyectado con un atributo `data-custom-injected="head|body"` y los elimina antes de re-inyectar cuando cambia el config.
-5. Cleanup en unmount.
+## Archivos a tocar
 
-### 4. Hook `useConfig.ts`
+- `index.html` — quitar GTM hardcode, añadir bootstrap inline que lee `localStorage`.
+- `src/components/GoogleTagsProvider.tsx` — branch para snippets personalizados + sync a `localStorage`.
+- `src/components/admin/marketing/GoogleTab.tsx` — nueva card con los dos textareas, switch y botón restaurar.
+- `src/hooks/useConfig.ts` — 3 claves nuevas.
+- Migración/seed en `config` con los snippets actuales de `GTM-K8BSZWCM`.
 
-Añadir las 3 nuevas claves a los tipos (`gtm_id | ga4_id | ... | custom_head_scripts | custom_body_scripts | custom_scripts_enabled`) para que el upsert funcione sin cambios adicionales.
+## Notas importantes
 
-### 5. Memoria
+- **Trade-off de velocidad**: en la primerísima visita de cada dispositivo, GTM tarda ~unos ms más en cargar (espera a leer la config). A partir de la segunda visita es idéntico al hardcode actual gracias al cache en `localStorage`.
+- El switch maestro de "Scripts personalizados (head/body)" que ya existe queda para **otras** etiquetas (Hotjar, Clarity, etc.). El nuevo bloque es exclusivo para GTM.
+- En modo `/local` no se inyecta nada, igual que hoy.
 
-Actualizar `mem://features/admin/marketing-panel` agregando: "Marketing → Google incluye editor de scripts custom (head/body) inyectados en runtime. GTM-K8BSZWCM permanece hardcodeado en index.html."
-
-### Detalles técnicos
-
-```text
-runtime flow:
-  config (Supabase)
-    └─> useConfig hook
-         └─> GoogleTagsProvider
-              ├─ inyecta GTM dinámico (si gtm_id distinto al hardcoded)
-              ├─ inyecta GA4/Ads/GSC
-              └─ inyecta custom_head_scripts + custom_body_scripts  ← NUEVO
-```
-
-Seguridad: los scripts solo se editan desde el admin (tabla `config` ya tiene RLS admin-only para escritura), pero la lectura es pública para poder inyectarlos en el cliente — esto es igual que cualquier `<script>` en `index.html` y no expone datos sensibles.
-
-### Archivos afectados
-
-- **Migración + insert**: 3 nuevas filas en `config`.
-- **Crear**: `src/components/admin/marketing/CustomScriptsCard.tsx`.
-- **Editar**: `src/components/admin/marketing/GoogleTab.tsx` (montar el card), `src/components/GoogleTagsProvider.tsx` (inyección dinámica), `src/hooks/useConfig.ts` (tipos).
-- **Memoria**: actualizar `mem://features/admin/marketing-panel`.
+¿Procedo con esta implementación?
