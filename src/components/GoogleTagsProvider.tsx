@@ -22,8 +22,6 @@ const GTM_NOSCRIPT_ID = 'gtm-noscript';
 const GA4_SCRIPT_ID = 'ga4-script';
 const GADS_SCRIPT_ID = 'gads-script';
 const GSC_META_ID = 'google-site-verification-meta';
-const CUSTOM_HEAD_ATTR = 'data-custom-injected-head';
-const CUSTOM_BODY_ATTR = 'data-custom-injected-body';
 
 // Inyecta HTML arbitrario en un nodo padre, ejecutando los <script> que contenga.
 // El parser HTML5 marca como inertes los <script> insertados vía innerHTML; por eso
@@ -189,36 +187,8 @@ export const GoogleTagsProvider = () => {
     }
   }, [loading, mode, config]);
 
-  // --- Custom user-provided scripts (head + body) ---
-  // Se ejecutan solo si el switch maestro está activo. Idempotente: limpia
-  // inyecciones previas antes de re-inyectar cuando cambia el contenido.
-  useEffect(() => {
-    if (loading) return;
-    if (mode === 'local') return;
 
-    removeInjected(CUSTOM_HEAD_ATTR);
-    removeInjected(CUSTOM_BODY_ATTR);
 
-    if (!config.custom_scripts_enabled) return;
-
-    if (config.custom_head_scripts) {
-      injectHtmlInto(document.head, config.custom_head_scripts, CUSTOM_HEAD_ATTR);
-    }
-    if (config.custom_body_scripts) {
-      injectHtmlInto(document.body, config.custom_body_scripts, CUSTOM_BODY_ATTR);
-    }
-
-    return () => {
-      removeInjected(CUSTOM_HEAD_ATTR);
-      removeInjected(CUSTOM_BODY_ATTR);
-    };
-  }, [
-    loading,
-    mode,
-    config.custom_scripts_enabled,
-    config.custom_head_scripts,
-    config.custom_body_scripts,
-  ]);
 
   // Trackeo de pageview en cambios de ruta
   useEffect(() => {
