@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, Save, BarChart3, Tag, Target, ShieldCheck, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import { useConfig } from '@/hooks/useConfig';
+import { CustomScriptsCard } from './CustomScriptsCard';
 
 const GTM_RX = /^GTM-[A-Z0-9]+$/i;
 const GA4_RX = /^G-[A-Z0-9]+$/i;
@@ -297,6 +298,9 @@ export const GoogleTab = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Scripts personalizados (head/body) */}
+      <CustomScriptsCard />
     </div>
   );
 };

@@ -22,6 +22,38 @@ const GTM_NOSCRIPT_ID = 'gtm-noscript';
 const GA4_SCRIPT_ID = 'ga4-script';
 const GADS_SCRIPT_ID = 'gads-script';
 const GSC_META_ID = 'google-site-verification-meta';
+const CUSTOM_HEAD_ATTR = 'data-custom-injected-head';
+const CUSTOM_BODY_ATTR = 'data-custom-injected-body';
+
+// Inyecta HTML arbitrario en un nodo padre, ejecutando los <script> que contenga.
+// El parser HTML5 marca como inertes los <script> insertados vía innerHTML; por eso
+// recreamos cada <script> para forzar su ejecución.
+const injectHtmlInto = (parent: HTMLElement, html: string, marker: string) => {
+  if (!html.trim()) return;
+  const template = document.createElement('template');
+  template.innerHTML = html;
+  const frag = template.content;
+  frag.querySelectorAll('script').forEach((oldScript) => {
+    const newScript = document.createElement('script');
+    for (const attr of Array.from(oldScript.attributes)) {
+      newScript.setAttribute(attr.name, attr.value);
+    }
+    newScript.text = oldScript.textContent || '';
+    oldScript.replaceWith(newScript);
+  });
+  Array.from(frag.childNodes).forEach((node) => {
+    if (node instanceof HTMLElement) node.setAttribute(marker, 'true');
+  });
+  if (parent === document.body) {
+    parent.insertBefore(frag, parent.firstChild);
+  } else {
+    parent.appendChild(frag);
+  }
+};
+
+const removeInjected = (marker: string) => {
+  document.querySelectorAll(`[${marker}]`).forEach((n) => n.remove());
+};
 
 const ensureGtag = () => {
   window.dataLayer = window.dataLayer || [];
@@ -119,6 +151,37 @@ export const GoogleTagsProvider = () => {
       };
     }
   }, [loading, mode, config]);
+
+  // --- Custom user-provided scripts (head + body) ---
+  // Se ejecutan solo si el switch maestro está activo. Idempotente: limpia
+  // inyecciones previas antes de re-inyectar cuando cambia el contenido.
+  useEffect(() => {
+    if (loading) return;
+    if (mode === 'local') return;
+
+    removeInjected(CUSTOM_HEAD_ATTR);
+    removeInjected(CUSTOM_BODY_ATTR);
+
+    if (!config.custom_scripts_enabled) return;
+
+    if (config.custom_head_scripts) {
+      injectHtmlInto(document.head, config.custom_head_scripts, CUSTOM_HEAD_ATTR);
+    }
+    if (config.custom_body_scripts) {
+      injectHtmlInto(document.body, config.custom_body_scripts, CUSTOM_BODY_ATTR);
+    }
+
+    return () => {
+      removeInjected(CUSTOM_HEAD_ATTR);
+      removeInjected(CUSTOM_BODY_ATTR);
+    };
+  }, [
+    loading,
+    mode,
+    config.custom_scripts_enabled,
+    config.custom_head_scripts,
+    config.custom_body_scripts,
+  ]);
 
   // Trackeo de pageview en cambios de ruta
   useEffect(() => {
