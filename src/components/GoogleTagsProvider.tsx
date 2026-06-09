@@ -226,7 +226,8 @@ export const GoogleTagsProvider = () => {
     if (lastPath.current === location.pathname) return;
     const path = location.pathname + location.search;
 
-    if (config.gtm_enabled && config.gtm_id && window.dataLayer) {
+    const gtmActive = config.gtm_custom_enabled || (config.gtm_enabled && config.gtm_id);
+    if (gtmActive && window.dataLayer) {
       window.dataLayer.push({ event: 'pageview', page_path: path });
     } else if (config.ga4_enabled && config.ga4_id && typeof window.gtag === 'function') {
       window.gtag('event', 'page_view', { page_path: path });
