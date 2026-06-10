@@ -10,6 +10,9 @@ interface Config {
   maps_url: string;
   meta_pixel_id: string;
   meta_pixel_enabled: boolean;
+  // [2026-06-10] Lista de eventos que el admin tiene configurados en Meta Events Manager
+  // (declarativa, persistida como JSON string). La consume MetaPixelValidatorCard.
+  meta_pixel_configured_events: string[];
   // [MARKETING-PANEL] Google integrations
   gtm_id: string;
   gtm_enabled: boolean;
@@ -33,6 +36,7 @@ const defaultConfig: Config = {
   maps_url: '',
   meta_pixel_id: '',
   meta_pixel_enabled: false,
+  meta_pixel_configured_events: [],
   gtm_id: '',
   gtm_enabled: false,
   ga4_id: '',
@@ -67,6 +71,8 @@ const BOOL_KEYS = [
   'gads_enabled',
   'gtm_custom_enabled',
 ];
+// Keys cuyo valor en BD es un JSON serializado (array u objeto)
+const JSON_KEYS = ['meta_pixel_configured_events'];
 
 // Fetch all config from Supabase
 const fetchConfig = async (): Promise<Config> => {
@@ -84,6 +90,12 @@ const fetchConfig = async (): Promise<Config> => {
       (configObj as Record<string, string | number | boolean>)[item.key] = item.value;
     } else if (BOOL_KEYS.includes(item.key)) {
       (configObj as Record<string, string | number | boolean>)[item.key] = item.value === 'true';
+    } else if (JSON_KEYS.includes(item.key)) {
+      try {
+        (configObj as Record<string, unknown>)[item.key] = JSON.parse(item.value);
+      } catch {
+        (configObj as Record<string, unknown>)[item.key] = [];
+      }
     }
   });
 
