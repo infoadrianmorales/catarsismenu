@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { MessageCircle, Instagram, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useHeroSlides } from '@/hooks/useHeroSlides';
 import heroImageFallback from '@/assets/banner-hero.png';
-import { trackContact } from '@/lib/metaPixel';
+import { trackContact, trackLead } from '@/lib/metaPixel';
 import { ViewMode } from '@/contexts/ViewModeContext';
 
 interface HeroSectionProps {
@@ -79,6 +79,7 @@ export const HeroSection = ({ mode = 'delivery' }: HeroSectionProps) => {
     window.open(`https://wa.me/${appConfig.whatsapp}?text=${message}`, '_blank');
     
     trackContact('hero');
+    trackLead('hero');
     window.dispatchEvent(new CustomEvent('analytics', {
       detail: { event: 'click_whatsapp', source: 'hero' }
     }));

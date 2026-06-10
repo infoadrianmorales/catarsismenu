@@ -1,13 +1,14 @@
 import { MessageCircle } from 'lucide-react';
 import { appConfig } from '@/data/config';
-import { trackContact } from '@/lib/metaPixel';
+import { trackContact, trackLead } from '@/lib/metaPixel';
 
 export const FloatingWhatsApp = () => {
   const handleWhatsAppClick = () => {
     const message = encodeURIComponent('Hola, vengo del menú web de Catarsis. Quiero hacer un pedido.');
     window.open(`https://wa.me/${appConfig.whatsapp}?text=${message}`, '_blank');
-    
+
     trackContact('floating_button');
+    trackLead('floating_button');
     window.dispatchEvent(new CustomEvent('analytics', {
       detail: { event: 'click_whatsapp', source: 'floating_button' }
     }));

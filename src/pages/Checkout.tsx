@@ -15,7 +15,7 @@ import { toast } from 'sonner';
 import { MenuHeader } from '@/components/MenuHeader';
 import { Footer } from '@/components/Footer';
 import { z } from 'zod';
-import { trackInitiateCheckout, trackPurchase, trackContact, trackAddPaymentInfo } from '@/lib/metaPixel';
+import { trackInitiateCheckout, trackPurchase, trackContact, trackAddPaymentInfo, trackLead } from '@/lib/metaPixel';
 import { setSupabaseSessionHeader } from '@/lib/supabaseHeaders';
 // [2026-04-08] Sugerencias de último momento en checkout
 import { UpsellSuggestions } from '@/components/cart/UpsellSuggestions';
@@ -547,6 +547,7 @@ Correo: ${formData.email.toLowerCase()}`;
         cartItemsForTracking
       );
       trackContact('checkout_whatsapp');
+      trackLead('checkout_whatsapp');
       
       toast.success('¡Pedido enviado correctamente!');
       setStep('success');
