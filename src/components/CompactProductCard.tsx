@@ -1,5 +1,7 @@
 // [2026-04-08] SOURCE TRACKING: Acepta prop `source` y lo pasa a AddToCartButton.
-import { memo } from 'react';
+// [2026-06-10] PIXEL: dispara ViewContent en hover/touch sostenido (1 vez por
+// producto/sesión via Set global compartido).
+import { memo, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { MenuItem, Currency } from '@/types/menu';
 import { Card, CardContent } from '@/components/ui/card';
@@ -9,6 +11,9 @@ import { OptimizedImage } from '@/components/OptimizedImage';
 import { useViewMode } from '@/contexts/ViewModeContext';
 import { ExpandableText } from '@/components/ExpandableText';
 import { CartItemSource } from '@/contexts/CartContext';
+import { trackViewContent } from '@/lib/metaPixel';
+
+const viewedProductIds = new Set<string>();
 
 interface CompactProductCardProps {
   item: MenuItem;
@@ -43,11 +48,35 @@ export const CompactProductCard = memo(({ item, currency, displayMode = 'ambas',
     );
   };
 
+  const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const triggerViewContent = () => {
+    if (viewedProductIds.has(item.id)) return;
+    viewedProductIds.add(item.id);
+    trackViewContent({
+      id: item.id,
+      nombre: item.nombre,
+      categoria: item.categoria,
+      precio_usd: item.precio_usd,
+    });
+  };
+
+  const handleEnter = () => {
+    const img = new Image();
+    img.src = item.imagen;
+    if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+    hoverTimerRef.current = setTimeout(triggerViewContent, 600);
+  };
+
+  const handleLeave = () => {
+    if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+  };
+
   return (
     <Card className="group overflow-hidden border-border/40 bg-card hover:border-primary/50 transition-all duration-200 hover:shadow-glow h-full flex flex-col" data-meta-event="ViewContent" id={`product-card-${item.id}`}>
       <CardContent className="p-0 flex flex-col h-full">
         {/* Image - Clickable to product detail */}
-        <Link to={`/producto/${item.slug}`} className="block shrink-0" onMouseEnter={() => { const img = new Image(); img.src = item.imagen; }} onTouchStart={() => { const img = new Image(); img.src = item.imagen; }}>
+        <Link to={`/producto/${item.slug}`} className="block shrink-0" onMouseEnter={handleEnter} onMouseLeave={handleLeave} onTouchStart={handleEnter}>
           <div className="relative p-1 sm:p-1.5">
             {/* Zoom effect on container, only on desktop to avoid mobile rendering issues */}
             <div className="relative aspect-square overflow-hidden rounded-lg bg-white border border-foreground/10 shadow-sm sm:transition-transform sm:duration-300 sm:ease-out sm:group-hover:scale-105">
