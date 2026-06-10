@@ -30,9 +30,32 @@ const generateEventId = (): string => {
   return `evt_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
 };
 
+/**
+ * Telemetría local: registra cada evento que la app intenta disparar.
+ * Lo lee el validador del admin para confirmar en vivo qué eventos
+ * realmente salen del cliente vs. los que el usuario configuró en Meta.
+ */
+const logEventLocally = (args: unknown[]): void => {
+  try {
+    // args = ['track'|'trackCustom', 'EventName', params?, options?]
+    if (!Array.isArray(args) || args.length < 2) return;
+    const eventName = String(args[1] || '');
+    if (!eventName) return;
+    const raw = localStorage.getItem('__fb_event_log');
+    const log: Record<string, { lastFiredAt: number; count: number }> = raw ? JSON.parse(raw) : {};
+    const prev = log[eventName] || { lastFiredAt: 0, count: 0 };
+    log[eventName] = { lastFiredAt: Date.now(), count: prev.count + 1 };
+    localStorage.setItem('__fb_event_log', JSON.stringify(log));
+  } catch {
+    /* storage no disponible o JSON corrupto: ignorar */
+  }
+};
+
 /** Envío seguro: si no está listo, encola para reproducir tras init */
 const safeFbq = (...args: unknown[]): void => {
   if (typeof window === 'undefined') return;
+  // Loguea SIEMPRE (incluso si está encolado): el log refleja intención de disparo.
+  logEventLocally(args);
   if (!isInitialized || typeof window.fbq !== 'function') {
     queue.push(args);
     return;
