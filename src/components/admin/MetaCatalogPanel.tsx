@@ -10,6 +10,9 @@ import { ExternalLink, RefreshCw, Copy, CheckCircle2, AlertCircle, Loader2, Save
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useConfig } from '@/hooks/useConfig';
+// [2026-06-10] Validador que compara eventos del manifest vs. configurados en Meta
+import { MetaPixelValidatorCard } from '@/components/admin/marketing/MetaPixelValidatorCard';
+import { APP_PIXEL_EVENTS } from '@/lib/metaPixelManifest';
 
 const BASE_URL = 'https://www.catarsiszone.com';
 const FEED_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/meta-catalog-feed`;
@@ -171,19 +174,25 @@ export const MetaCatalogPanel = () => {
             ¿Cómo encuentro mi Pixel ID?
           </a>
 
-          {/* Events Info */}
+          {/* Events Info — leído del manifest (fuente única de verdad) */}
           <div className="p-3 rounded-lg bg-muted/50 border border-border">
-            <p className="text-sm font-medium mb-2">Eventos que se rastrean:</p>
+            <p className="text-sm font-medium mb-2">Eventos que se rastrean ({APP_PIXEL_EVENTS.length}):</p>
             <div className="flex flex-wrap gap-2">
-              {['PageView', 'ViewContent', 'AddToCart', 'RemoveFromCart', 'InitiateCheckout', 'Purchase', 'Contact', 'Search', 'AddPaymentInfo', 'ViewCategory'].map((event) => (
-                <Badge key={event} variant="secondary" className="text-xs">
-                  {event}
+              {APP_PIXEL_EVENTS.map((ev) => (
+                <Badge key={ev.name} variant={ev.standard ? 'secondary' : 'outline'} className="text-xs">
+                  {ev.name}
                 </Badge>
               ))}
             </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              Usa el "Validador de Eventos del Pixel" más abajo para detectar configuraciones huérfanas en Meta.
+            </p>
           </div>
         </CardContent>
       </Card>
+
+      {/* [2026-06-10] Validador app ↔ Meta */}
+      <MetaPixelValidatorCard />
 
       {/* Catalog Feed Section */}
       <Card>
