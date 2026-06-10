@@ -8,18 +8,20 @@ export const useSearch = (items: MenuItem[], bestSellers: MenuItem[] = []) => {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Track search with debounce
+  // [2026-06-10] Pixel Search: debounce 800ms + mínimo 3 chars (la
+  // validación de longitud también vive dentro de trackSearch).
   useEffect(() => {
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
     }
-    
-    if (searchQuery.trim()) {
+
+    const q = searchQuery.trim();
+    if (q.length >= 3) {
       searchTimeoutRef.current = setTimeout(() => {
-        trackSearch(searchQuery);
-      }, 500); // 500ms debounce
+        trackSearch(q);
+      }, 800);
     }
-    
+
     return () => {
       if (searchTimeoutRef.current) {
         clearTimeout(searchTimeoutRef.current);

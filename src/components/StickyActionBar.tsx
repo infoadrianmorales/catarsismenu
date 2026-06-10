@@ -6,7 +6,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { PriceDisplayMode } from '@/hooks/useCurrency';
-import { trackContact } from '@/lib/metaPixel';
+import { trackContact, trackLead } from '@/lib/metaPixel';
 import { useCart } from '@/contexts/CartContext';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -27,6 +27,7 @@ export const StickyActionBar = ({ currency, onCurrencyToggle, displayMode = 'amb
     window.open(`https://wa.me/${appConfig.whatsapp}?text=${message}`, '_blank');
     
     trackContact('sticky_bar');
+    trackLead('sticky_bar');
     window.dispatchEvent(new CustomEvent('analytics', {
       detail: { event: 'click_whatsapp', source: 'sticky_bar' }
     }));

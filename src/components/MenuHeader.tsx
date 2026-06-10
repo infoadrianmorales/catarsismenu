@@ -7,7 +7,7 @@ import { CartDrawer } from '@/components/cart/CartDrawer';
 import { useViewMode } from '@/contexts/ViewModeContext';
 import { appConfig } from '@/data/config';
 import { MessageCircle, Instagram, MapPin } from 'lucide-react';
-import { trackContact } from '@/lib/metaPixel';
+import { trackContact, trackLead } from '@/lib/metaPixel';
 import logoCatarsis from '@/assets/logo-catarsis.png';
 
 interface MenuHeaderProps {
@@ -96,6 +96,7 @@ export const MenuHeader = ({ currency, onCurrencyToggle, displayMode = 'ambas' }
                   const message = encodeURIComponent('Hola, vengo del menú web de Catarsis. Quiero hacer un pedido.');
                   window.open(`https://wa.me/${appConfig.whatsapp}?text=${message}`, '_blank');
                   trackContact('header');
+                  trackLead('header');
                 }}
                 aria-label="WhatsApp"
               >

@@ -22,6 +22,8 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { useProductExtras } from '@/hooks/useProductExtras';
 import { ProductExtras } from '@/components/cart/ProductExtras';
 import { UpsellSuggestions } from '@/components/cart/UpsellSuggestions';
+// [2026-06-10] PIXEL: ViewCart custom event al abrir el drawer.
+import { trackViewCart } from '@/lib/metaPixel';
 
 interface CartDrawerProps {
   variant?: 'header' | 'sticky' | 'floating';
@@ -240,7 +242,18 @@ export const CartDrawer = ({ variant = 'header' }: CartDrawerProps) => {
   );
 
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
+    <Sheet
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o);
+        if (o && items.length > 0) {
+          trackViewCart(
+            items.map((i) => ({ id: i.id, quantity: i.quantity })),
+            subtotal
+          );
+        }
+      }}
+    >
       <SheetTrigger asChild>
         {TriggerButton}
       </SheetTrigger>

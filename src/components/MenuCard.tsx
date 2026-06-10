@@ -1,4 +1,8 @@
 // [2026-04-08] SOURCE TRACKING: Acepta prop `source` y lo pasa a AddToCartButton.
+// [2026-06-10] PIXEL: dispara ViewContent en hover/touch sostenido (1 vez por
+// producto/sesión via Set global), reemplazando el atributo data-meta-event que no
+// hacía nada por sí solo.
+import { useRef } from 'react';
 import { MenuItem, Currency } from '@/types/menu';
 import { Card, CardContent } from '@/components/ui/card';
 import { useCurrency, PriceDisplayMode } from '@/hooks/useCurrency';
@@ -6,6 +10,10 @@ import { AddToCartButton } from '@/components/cart/AddToCartButton';
 import { useViewMode } from '@/contexts/ViewModeContext';
 import { ExpandableText } from '@/components/ExpandableText';
 import { CartItemSource } from '@/contexts/CartContext';
+import { trackViewContent } from '@/lib/metaPixel';
+
+// Set global para deduplicar ViewContent por sesión
+const viewedProductIds = new Set<string>();
 
 interface MenuCardProps {
   item: MenuItem;
@@ -56,8 +64,34 @@ export const MenuCard = ({ item, currency, displayMode = 'ambas', source = 'menu
      CLS (Cumulative Layout Shift): cuando una imagen carga
      tarde y empuja el contenido hacia abajo — afecta la
      experiencia del usuario y el score de Google PageSpeed. */
+  const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const triggerViewContent = () => {
+    if (viewedProductIds.has(item.id)) return;
+    viewedProductIds.add(item.id);
+    trackViewContent({
+      id: item.id,
+      nombre: item.nombre,
+      categoria: item.categoria,
+      precio_usd: item.precio_usd,
+    });
+  };
+
+  const handleEnter = () => {
+    // Precarga la imagen
+    const img = new Image();
+    img.src = item.imagen;
+    // ViewContent solo si el hover persiste 600ms (intención real)
+    if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+    hoverTimerRef.current = setTimeout(triggerViewContent, 600);
+  };
+
+  const handleLeave = () => {
+    if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+  };
+
   return (
-    <Card className="group h-full flex flex-col overflow-hidden border-border/40 bg-card hover:border-primary/50 transition-all duration-200 hover:shadow-glow hover:-translate-y-1" data-meta-event="ViewContent" id={`product-card-${item.id}`} onMouseEnter={() => { const img = new Image(); img.src = item.imagen; }} onTouchStart={() => { const img = new Image(); img.src = item.imagen; }}>
+    <Card className="group h-full flex flex-col overflow-hidden border-border/40 bg-card hover:border-primary/50 transition-all duration-200 hover:shadow-glow hover:-translate-y-1" data-meta-event="ViewContent" id={`product-card-${item.id}`} onMouseEnter={handleEnter} onMouseLeave={handleLeave} onTouchStart={handleEnter}>
       <CardContent className="p-0 flex flex-col flex-1">
         {/* White-background image container - zoom only on desktop */}
         <div className="relative p-1.5 sm:p-2">
