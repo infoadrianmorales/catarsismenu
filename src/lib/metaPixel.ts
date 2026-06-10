@@ -1,7 +1,15 @@
 /**
  * Meta Pixel (Facebook Pixel) Service
- * The pixel script is loaded in index.html.
- * Initialization (with the Pixel ID) is done dynamically from React via initMetaPixel().
+ *
+ * [2026-06-10] REFACTOR EVENTOS:
+ * - Solo eventos estándar de Meta + 1 custom (ViewCart) y Lead (estándar).
+ * - Cada track lleva `eventID` único → preparado para Conversions API sin doble conteo.
+ * - Cola de eventos previos a init: nada se pierde durante los primeros ms de la sesión.
+ * - PageView inicial NO se envía aquí: lo dispara MetaPixelProvider en cada ruta.
+ * - trackLead se dispara 1 vez por sesión (sessionStorage flag).
+ *
+ * El script base se carga en index.html. La inicialización con el Pixel ID
+ * la hace React vía initMetaPixel().
  */
 
 declare global {
@@ -11,9 +19,34 @@ declare global {
 }
 
 let isInitialized = false;
+type QueuedCall = unknown[];
+const queue: QueuedCall[] = [];
+
+/** UUID v4 corto para deduplicación CAPI ↔ Pixel */
+const generateEventId = (): string => {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+    return crypto.randomUUID();
+  }
+  return `evt_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+};
+
+/** Envío seguro: si no está listo, encola para reproducir tras init */
+const safeFbq = (...args: unknown[]): void => {
+  if (typeof window === 'undefined') return;
+  if (!isInitialized || typeof window.fbq !== 'function') {
+    queue.push(args);
+    return;
+  }
+  try {
+    (window.fbq as (...a: unknown[]) => void)(...args);
+  } catch (err) {
+    console.warn('[MetaPixel] track failed', err);
+  }
+};
 
 /**
  * Initialize Meta Pixel with a given ID. Safe to call multiple times — only runs once.
+ * NO dispara PageView (lo hace MetaPixelProvider en cada cambio de ruta, incluida la primera).
  */
 export const initMetaPixel = (pixelId: string): void => {
   if (isInitialized) return;
@@ -21,158 +54,187 @@ export const initMetaPixel = (pixelId: string): void => {
   if (!pixelId || !pixelId.trim()) return;
 
   window.fbq('init', pixelId);
-  window.fbq('track', 'PageView');
   isInitialized = true;
-};
 
-/**
- * Check if Pixel is ready to track
- */
-const canTrack = (): boolean => {
-  return isInitialized && typeof window !== 'undefined' && typeof window.fbq === 'function';
-};
-
-/**
- * Track PageView event with optional mode parameter
- */
-export const trackPageView = (mode?: 'delivery' | 'local'): void => {
-  if (!canTrack()) return;
-  if (mode) {
-    window.fbq('track', 'PageView', { content_category: mode });
-  } else {
-    window.fbq('track', 'PageView');
+  // Drena la cola de eventos previos a init
+  while (queue.length) {
+    const args = queue.shift();
+    if (args) {
+      try {
+        (window.fbq as (...a: unknown[]) => void)(...args);
+      } catch (err) {
+        console.warn('[MetaPixel] queued track failed', err);
+      }
+    }
   }
 };
 
-/**
- * Track ViewContent event (product page view)
- */
+/** True solo si el pixel está listo. Útil para gates externos. */
+const canTrack = (): boolean => isInitialized;
+
+// ============================================================
+// EVENTOS ESTÁNDAR
+// ============================================================
+
+/** PageView con modo opcional (delivery/local) */
+export const trackPageView = (mode?: 'delivery' | 'local'): void => {
+  const eventID = generateEventId();
+  if (mode) {
+    safeFbq('track', 'PageView', { content_category: mode }, { eventID });
+  } else {
+    safeFbq('track', 'PageView', {}, { eventID });
+  }
+};
+
+/** ViewContent — vista de producto */
 export const trackViewContent = (product: {
   id: string;
   nombre: string;
   categoria: string;
   precio_usd: number;
 }): void => {
-  if (!canTrack()) return;
-  window.fbq('track', 'ViewContent', {
-    content_ids: [product.id],
-    content_name: product.nombre,
-    content_category: product.categoria,
-    content_type: 'product',
-    value: product.precio_usd,
-    currency: 'USD',
-  });
+  if (!product?.id || typeof product.precio_usd !== 'number') return;
+  safeFbq(
+    'track',
+    'ViewContent',
+    {
+      content_ids: [product.id],
+      content_name: product.nombre,
+      content_category: product.categoria,
+      content_type: 'product',
+      value: product.precio_usd,
+      currency: 'USD',
+    },
+    { eventID: generateEventId() }
+  );
 };
 
-/**
- * Track AddToCart event
- */
-export const trackAddToCart = (product: {
-  id: string;
-  nombre: string;
-  precio_usd: number;
-}, quantity: number = 1): void => {
-  if (!canTrack()) return;
-  window.fbq('track', 'AddToCart', {
-    content_ids: [product.id],
-    content_name: product.nombre,
-    content_type: 'product',
-    value: product.precio_usd * quantity,
-    currency: 'USD',
-  });
+/** AddToCart */
+export const trackAddToCart = (
+  product: { id: string; nombre: string; precio_usd: number },
+  quantity: number = 1
+): void => {
+  if (!product?.id || typeof product.precio_usd !== 'number') return;
+  safeFbq(
+    'track',
+    'AddToCart',
+    {
+      content_ids: [product.id],
+      content_name: product.nombre,
+      content_type: 'product',
+      value: product.precio_usd * quantity,
+      currency: 'USD',
+    },
+    { eventID: generateEventId() }
+  );
 };
 
-/**
- * Track InitiateCheckout event
- */
-export const trackInitiateCheckout = (items: {
-  id: string;
-  precio_usd: number;
-  quantity: number;
-}[], subtotal: number): void => {
-  if (!canTrack()) return;
+/** InitiateCheckout */
+export const trackInitiateCheckout = (
+  items: { id: string; precio_usd: number; quantity: number }[],
+  subtotal: number
+): void => {
+  if (!items?.length) return;
   const numItems = items.reduce((sum, item) => sum + item.quantity, 0);
-  window.fbq('track', 'InitiateCheckout', {
-    content_ids: items.map(item => item.id),
-    num_items: numItems,
-    value: subtotal,
-    currency: 'USD',
-  });
+  safeFbq(
+    'track',
+    'InitiateCheckout',
+    {
+      content_ids: items.map((i) => i.id),
+      num_items: numItems,
+      value: subtotal,
+      currency: 'USD',
+    },
+    { eventID: generateEventId() }
+  );
 };
 
-/**
- * Track Purchase event
- */
+/** Purchase */
 export const trackPurchase = (
   orderId: string,
   value: number,
   items: { id: string; quantity: number }[]
 ): void => {
-  if (!canTrack()) return;
   const numItems = items.reduce((sum, item) => sum + item.quantity, 0);
-  window.fbq('track', 'Purchase', {
-    value,
-    currency: 'USD',
-    content_ids: items.map(item => item.id),
-    order_id: orderId,
-    num_items: numItems,
-  });
+  safeFbq(
+    'track',
+    'Purchase',
+    {
+      value,
+      currency: 'USD',
+      content_ids: items.map((i) => i.id),
+      order_id: orderId,
+      num_items: numItems,
+    },
+    { eventID: generateEventId() }
+  );
 };
 
-/**
- * Track Contact event (WhatsApp clicks)
- */
+/** Contact — click en WhatsApp desde cualquier surface */
 export const trackContact = (source: string): void => {
-  if (!canTrack()) return;
-  window.fbq('track', 'Contact', {
-    content_category: source,
-  });
+  safeFbq('track', 'Contact', { content_category: source }, { eventID: generateEventId() });
 };
 
-/**
- * Track Search event
- */
+/** Lead — primer click en WhatsApp de la sesión (1 vez por sessionStorage) */
+export const trackLead = (source: string): void => {
+  try {
+    if (sessionStorage.getItem('__fb_lead_sent') === '1') return;
+    sessionStorage.setItem('__fb_lead_sent', '1');
+  } catch {
+    /* storage no disponible: enviamos igualmente */
+  }
+  safeFbq('track', 'Lead', { content_category: source }, { eventID: generateEventId() });
+};
+
+/** Search con validaciones (debounce y min length en el caller) */
 export const trackSearch = (query: string): void => {
-  if (!canTrack() || !query.trim()) return;
-  window.fbq('track', 'Search', {
-    search_string: query,
-  });
+  const q = query?.trim();
+  if (!q || q.length < 3) return;
+  safeFbq('track', 'Search', { search_string: q }, { eventID: generateEventId() });
 };
 
-/**
- * Track AddPaymentInfo event
- */
-export const trackAddPaymentInfo = (method: string, value: number, currency: string = 'USD'): void => {
-  if (!canTrack()) return;
-  window.fbq('track', 'AddPaymentInfo', {
-    content_category: method,
-    value,
-    currency,
-  });
+/** AddPaymentInfo */
+export const trackAddPaymentInfo = (
+  method: string,
+  value: number,
+  currency: string = 'USD'
+): void => {
+  safeFbq(
+    'track',
+    'AddPaymentInfo',
+    { content_category: method, value, currency },
+    { eventID: generateEventId() }
+  );
 };
 
-/**
- * Track RemoveFromCart custom event
- */
-export const trackRemoveFromCart = (product: {
-  id: string;
-  nombre: string;
-  precio_usd: number;
-}): void => {
-  if (!canTrack()) return;
-  window.fbq('trackCustom', 'RemoveFromCart', {
-    content_ids: [product.id],
-    content_name: product.nombre,
-    content_type: 'product',
-    value: product.precio_usd,
-    currency: 'USD',
-  });
+// ============================================================
+// EVENTOS CUSTOM (1 solo, justificado)
+// ============================================================
+
+/** ViewCart — apertura del drawer del carrito (custom) */
+export const trackViewCart = (
+  items: { id: string; quantity: number }[],
+  value: number
+): void => {
+  if (!items?.length) return;
+  const numItems = items.reduce((sum, i) => sum + i.quantity, 0);
+  safeFbq(
+    'trackCustom',
+    'ViewCart',
+    {
+      content_ids: items.map((i) => i.id),
+      num_items: numItems,
+      value,
+      currency: 'USD',
+    },
+    { eventID: generateEventId() }
+  );
 };
 
-/**
- * Track custom event
- */
-export const trackCustomEvent = (eventName: string, params?: Record<string, unknown>): void => {
-  if (!canTrack()) return;
-  window.fbq('trackCustom', eventName, params);
+/** Custom genérico (uso restringido) */
+export const trackCustomEvent = (
+  eventName: string,
+  params?: Record<string, unknown>
+): void => {
+  safeFbq('trackCustom', eventName, params || {}, { eventID: generateEventId() });
 };
