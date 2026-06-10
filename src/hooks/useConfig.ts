@@ -90,6 +90,12 @@ const fetchConfig = async (): Promise<Config> => {
       (configObj as Record<string, string | number | boolean>)[item.key] = item.value;
     } else if (BOOL_KEYS.includes(item.key)) {
       (configObj as Record<string, string | number | boolean>)[item.key] = item.value === 'true';
+    } else if (JSON_KEYS.includes(item.key)) {
+      try {
+        (configObj as Record<string, unknown>)[item.key] = JSON.parse(item.value);
+      } catch {
+        (configObj as Record<string, unknown>)[item.key] = [];
+      }
     }
   });
 
