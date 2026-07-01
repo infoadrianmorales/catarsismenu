@@ -1,70 +1,57 @@
-# Validador de Eventos Meta Pixel en Admin
-
 ## Contexto
 
-La API pública de Meta no permite leer desde el browser los eventos configurados en Events Manager (requiere un token de Business + revisión de app). Por eso el validador funcionará con **dos fuentes** que ya tenemos a mano:
+El evento `Search` ya se dispara en dos puntos:
 
-1. **Manifest de la app** — fuente de verdad de qué eventos dispara realmente el código (`src/lib/metaPixel.ts`).
-2. **Lista declarada por el admin** — los eventos que el usuario ve hoy en Meta Events Manager (pegados o marcados manualmente, guardados en la tabla `config`).
+- `src/hooks/useSearch.ts` — debounce 800 ms cuando el usuario escribe (mín. 3 caracteres).
+- `src/components/SearchBar.tsx` — al enviar el formulario (submit).
 
-El diff entre ambos responde la pregunta "¿qué eventos están de más en Meta?".
+Ambos llaman a `trackSearch(query)` en `src/lib/metaPixel.ts`, que envía `fbq('track', 'Search', { search_string })` con `eventID` único y además registra el disparo en `localStorage.__fb_event_log`.
 
-## Componentes
+Si Meta Events Manager no lo está viendo, las causas más probables son:
 
-### 1. Manifest tipado en código
-Nuevo archivo `src/lib/metaPixelManifest.ts` con la lista canónica de los 10 eventos que la app dispara después del refactor anterior:
+1. El pixel aún no está inicializado cuando se dispara (queda encolado, pero si el usuario cierra la pestaña antes del init, se pierde).
+2. Un bloqueador de anuncios/DNS filtra `connect.facebook.net` o `www.facebook.com/tr`.
+3. Se está mirando la pestaña **Overview** (que tarda ~20 min y solo muestra volúmenes altos) en vez de **Test Events**.
+4. `Search` está desactivado o filtrado en la config del pixel en Meta.
 
-```ts
-export const APP_PIXEL_EVENTS = [
-  { name: 'PageView', standard: true, surface: 'Toda navegación' },
-  { name: 'ViewContent', standard: true, surface: 'Producto / hover card' },
-  { name: 'Search', standard: true, surface: 'Buscador (3+ chars)' },
-  { name: 'AddToCart', standard: true, surface: 'Botón agregar' },
-  { name: 'ViewCart', standard: false, surface: 'Apertura del drawer' },
-  { name: 'InitiateCheckout', standard: true, surface: 'Entrar a /checkout' },
-  { name: 'AddPaymentInfo', standard: true, surface: 'Seleccionar pago' },
-  { name: 'Purchase', standard: true, surface: 'Confirmar orden' },
-  { name: 'Contact', standard: true, surface: 'Click WhatsApp' },
-  { name: 'Lead', standard: true, surface: '1er WhatsApp/sesión' },
-] as const;
-```
+## Plan
 
-Cualquier evento nuevo que se agregue al pixel se registra aquí — el panel lo detecta automáticamente.
+### 1. Verificación en vivo (sin código)
 
-### 2. Telemetría runtime (sin backend)
-En `metaPixel.ts` añadimos un interceptor: cada vez que `safeFbq` dispara un evento, registra `{ name, lastFiredAt }` en `localStorage` bajo `__fb_event_log`. Esto permite que el panel muestre **"última vez visto en esta sesión"** y confirme en vivo si un evento dispara o no — útil cuando el admin recorre el sitio en otra pestaña para validar.
+Antes de tocar nada, confirmar en `catarsiszone.com`:
 
-### 3. Persistencia de la lista de Meta
-Reutilizamos la tabla `config` (ya está cableada): nueva clave `meta_pixel_configured_events` con un JSON array de strings. Sin migración nueva — `config` ya soporta valores arbitrarios.
+1. Abrir DevTools → Network → filtrar por `facebook.com/tr`.
+2. Escribir en la barra de búsqueda "coca" y esperar 1 segundo.
+3. Debería aparecer una request `GET https://www.facebook.com/tr/?id=<PIXEL_ID>&ev=Search&cd[search_string]=coca...`.
+4. En consola: `JSON.parse(localStorage.__fb_event_log).Search` — debe mostrar `count` y `lastFiredAt`.
+5. En Meta Events Manager → **Test Events** con el navegador conectado, debería listar `Search` en tiempo real.
 
-### 4. UI: `MetaPixelValidatorCard.tsx`
-Card dentro de la pestaña **Marketing > Meta** (debajo del campo Pixel ID), con tres secciones:
+Con eso sabemos exactamente en qué eslabón se rompe (cliente no dispara / dispara pero red bloquea / red ok pero Meta no lo cuenta).
 
-**a) Inventario de la app** — tabla con los 10 eventos del manifest, columna "Última vez disparado" leyendo `localStorage`, badge "Estándar" / "Custom".
+### 2. Endurecer el disparo (código)
 
-**b) Eventos configurados en Meta** — textarea (uno por línea) **o** lista de chips con los 18 eventos estándar de Meta + custom, donde el admin marca los que ve en Events Manager. Botón "Guardar" persiste en `config.meta_pixel_configured_events`.
+Aunque el trigger existe, hay 3 mejoras concretas:
 
-**c) Resultado del diff** — tres listas:
-- ✅ **Configurado y disparado** (todo bien).
-- 🗑️ **Configurado en Meta, NO usado por la app** → "Borra estos en Events Manager".
-- ⚠️ **Disparado por la app, NO configurado en Meta** → "Agrega estos para no perder señal" (raro tras el refactor, pero útil).
+**a) Disparar `Search` también al presionar Enter aunque tenga <3 chars ignorar, pero flushear el debounce al submit para evitar duplicados**
+En `SearchBar.tsx` el submit ya llama `trackSearch` — mantener, pero limpiar el timeout del hook para no enviar dos `Search` seguidos con el mismo string.
 
-Cada item en "no usados" tiene botón **Copiar nombre** para pegar fácil en Meta al borrarlo.
+**b) Reintento tras init del pixel**
+Actualmente `safeFbq` encola si el pixel no está listo y drena tras `initMetaPixel`. Confirmar que la cola realmente se drena en el orden correcto y añadir un `console.debug('[MetaPixel] flushed', N)` para verlo en Network.
 
-### 5. Reset & ayuda
-- Botón "Limpiar log de sesión" → borra `__fb_event_log`.
-- Link "¿Cómo veo mis eventos en Meta?" → abre `https://business.facebook.com/events_manager2/list/pixel/{pixelId}/test_events` en nueva pestaña.
+**c) Fallback con `sendBeacon`**
+Si la búsqueda ocurre justo antes de navegar a la página de producto, la request de `fbq` puede cancelarse. Añadir un ping `navigator.sendBeacon('https://www.facebook.com/tr/?...&ev=Search&...')` en paralelo cuando `document.visibilityState === 'hidden'` está por cambiar. Esto es un patch defensivo — solo si el paso 1 muestra requests canceladas.
 
-## Archivos a crear / modificar
+### 3. Validar
 
-- **NEW** `src/lib/metaPixelManifest.ts` — lista canónica.
-- **EDIT** `src/lib/metaPixel.ts` — interceptor que escribe `__fb_event_log` en cada `safeFbq`.
-- **NEW** `src/components/admin/marketing/MetaPixelValidatorCard.tsx` — la UI.
-- **EDIT** `src/components/admin/MetaCatalogPanel.tsx` — insertar el card al final.
-- **EDIT** `src/hooks/useConfig.ts` — exponer `meta_pixel_configured_events` (string[]).
+- Tras desplegar, repetir el paso 1 y confirmar la request `ev=Search` con status 200 y `search_string` correcto.
+- En **Events Manager → Test Events**, ver `Search` con "Received".
 
-Sin migración SQL: `config` ya almacena valores libres.
+## Preguntas para el usuario
 
-## Pregunta antes de implementar
+Antes de tocar código me sirve saber:
 
-1. La "lista del lado Meta" la quieres como **textarea de copiar/pegar** (más rápido para listas largas) o como **checklist de los 18 eventos estándar + entrada custom** (más guiado, evita typos)?
+1. ¿En qué pantalla de Meta estás mirando? (Overview, Diagnostics, Test Events)
+2. ¿Estás probando desde el dominio publicado `catarsiszone.com` o desde el preview?
+3. ¿Puedes abrir DevTools → Network en `catarsiszone.com`, buscar algo, y decirme si aparece una request a `facebook.com/tr?...ev=Search...`?
+
+Con esa info aplico el fix mínimo necesario en vez de reescribir todo el flujo.
