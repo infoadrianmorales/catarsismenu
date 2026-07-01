@@ -67,6 +67,10 @@ const safeFbq = (...args: unknown[]): void => {
   }
 };
 
+/** Cache del pixel ID para fallback vía sendBeacon */
+let activePixelId: string | null = null;
+export const getActivePixelId = (): string | null => activePixelId;
+
 /**
  * Initialize Meta Pixel with a given ID. Safe to call multiple times — only runs once.
  * NO dispara PageView (lo hace MetaPixelProvider en cada cambio de ruta, incluida la primera).
@@ -78,8 +82,10 @@ export const initMetaPixel = (pixelId: string): void => {
 
   window.fbq('init', pixelId);
   isInitialized = true;
+  activePixelId = pixelId.trim();
 
   // Drena la cola de eventos previos a init
+  const drained = queue.length;
   while (queue.length) {
     const args = queue.shift();
     if (args) {
@@ -89,6 +95,9 @@ export const initMetaPixel = (pixelId: string): void => {
         console.warn('[MetaPixel] queued track failed', err);
       }
     }
+  }
+  if (drained > 0) {
+    console.debug('[MetaPixel] flushed queued events:', drained);
   }
 };
 
