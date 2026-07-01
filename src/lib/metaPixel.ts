@@ -67,6 +67,10 @@ const safeFbq = (...args: unknown[]): void => {
   }
 };
 
+/** Cache del pixel ID para fallback vía sendBeacon */
+let activePixelId: string | null = null;
+export const getActivePixelId = (): string | null => activePixelId;
+
 /**
  * Initialize Meta Pixel with a given ID. Safe to call multiple times — only runs once.
  * NO dispara PageView (lo hace MetaPixelProvider en cada cambio de ruta, incluida la primera).
@@ -78,8 +82,10 @@ export const initMetaPixel = (pixelId: string): void => {
 
   window.fbq('init', pixelId);
   isInitialized = true;
+  activePixelId = pixelId.trim();
 
   // Drena la cola de eventos previos a init
+  const drained = queue.length;
   while (queue.length) {
     const args = queue.shift();
     if (args) {
@@ -89,6 +95,9 @@ export const initMetaPixel = (pixelId: string): void => {
         console.warn('[MetaPixel] queued track failed', err);
       }
     }
+  }
+  if (drained > 0) {
+    console.debug('[MetaPixel] flushed queued events:', drained);
   }
 };
 
@@ -209,11 +218,48 @@ export const trackLead = (source: string): void => {
   safeFbq('track', 'Lead', { content_category: source }, { eventID: generateEventId() });
 };
 
-/** Search con validaciones (debounce y min length en el caller) */
+/**
+ * Search con:
+ * - Validación (min 3 chars).
+ * - Deduplicación: ignora la misma query dentro de 2s (evita doble disparo
+ *   cuando el debounce del hook y el submit coinciden).
+ * - Fallback vía sendBeacon/Image al endpoint `facebook.com/tr` para que el
+ *   evento no se pierda si el usuario navega inmediatamente después
+ *   (típico: escribir "coca" → click en producto → la request de fbq se cancela).
+ */
+let lastSearchQuery = '';
+let lastSearchAt = 0;
 export const trackSearch = (query: string): void => {
   const q = query?.trim();
   if (!q || q.length < 3) return;
-  safeFbq('track', 'Search', { search_string: q }, { eventID: generateEventId() });
+  const now = Date.now();
+  if (q === lastSearchQuery && now - lastSearchAt < 2000) return;
+  lastSearchQuery = q;
+  lastSearchAt = now;
+
+  const eventID = generateEventId();
+  safeFbq('track', 'Search', { search_string: q }, { eventID });
+
+  // Fallback resistente a cancelación de navegación: ping directo al endpoint
+  // de Meta. `id` = pixelId, `ev` = evento, `cd[...]` = custom data, `eid` = eventID
+  // (mismo eventID → Meta deduplica contra el fbq principal).
+  try {
+    const pid = getActivePixelId();
+    if (!pid || typeof window === 'undefined') return;
+    const url =
+      `https://www.facebook.com/tr/?id=${encodeURIComponent(pid)}` +
+      `&ev=Search&cd[search_string]=${encodeURIComponent(q)}` +
+      `&eid=${encodeURIComponent(eventID)}&noscript=0`;
+    if (typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
+      navigator.sendBeacon(url);
+    } else {
+      // Fallback ultra-legacy: pixel via Image
+      const img = new Image(1, 1);
+      img.src = url;
+    }
+  } catch {
+    /* fallback opcional: no romper si falla */
+  }
 };
 
 /** AddPaymentInfo */
