@@ -1,76 +1,61 @@
 ## Objetivo
-Migrar URLs de producto de `/producto/{slug}` → `/{categoria}/{slug}`, sin romper enlaces existentes.
 
-## Sugerencias / ajustes al prompt
+Mostrar una sección de "También te puede gustar" al final de cada página de producto (`/{categoria}/{slug}`), con el mismo estilo visual del carrusel de sugerencias del carrito, para incentivar la compra cruzada.
 
-Reviso el prompt y encontré varios puntos críticos que hay que ajustar para que la migración no rompa nada:
+## Alcance
 
-### 1. La ruta `/:categoria/:slug` es un cazador demasiado amplio ⚠️
-En `App.tsx` existen rutas de un solo segmento (`/menu`, `/carrito`, `/checkout`, `/admin`, `/auth`, `/local`, `/orden-confirmada`, `/terminos-y-condiciones`) y de categoría (`/hamburguesas`, `/pizzas`, etc.). Un patrón `/:categoria/:slug` no colisiona con las de un solo segmento, pero sí colisiona con `/categoria/:slug` (fallback largo de categoría) — porque React Router matchea la primera declarada. Solución: **declarar `/:categoria/:slug` DESPUÉS de `/categoria/:slug`** (así "categoria" como literal gana) y validar dentro de `ProductPage` que `categoria` sea un slug de categoría válido; si no, mostrar `NotFound`. Sin esta guarda, cualquier URL de dos segmentos renderiza ProductPage y termina en pantalla en blanco.
+Aplica automáticamente a **todos los productos existentes y futuros** (se renderiza dentro de `ProductPage.tsx`, que es el componente único para todas las URLs de producto).
 
-### 2. Faltan archivos que también usan la ruta vieja
-El prompt cubre `ProductPage`, `MenuCard`, `CompactProductCard`. Detecté otros que también hay que actualizar para consistencia y SEO:
-- `src/components/ProductSchema.tsx` — JSON-LD schema.org `"url"`.
-- `src/components/HamburgerMenu.tsx` — `navigate('/producto/${slug}')` en la búsqueda.
-- `src/components/admin/MetaCatalogPanel.tsx` — texto informativo del formato de URL.
-- `supabase/functions/meta-catalog-feed/index.ts` — feed XML que Meta usa para el catálogo. **Crítico**: si no se actualiza, los anuncios de Meta seguirán enviando a `/producto/{slug}` (funciona por el redirect, pero pierde señales de conversión y añade un salto extra).
+## Lógica de sugerencias (contextual al producto visto)
 
-### 3. `ProductRedirect` con `useProducts()` carga TODOS los productos solo para leer una categoría
-Sobrecarga de red innecesaria. Alternativa mejor: consulta puntual a Supabase (`select categoria from products where slug = ?`). Más liviano y no depende del hook global. Mientras la lista carga, el prompt hace `return null` — deja pantalla en blanco. Añadir un fallback mínimo (spinner del layout ya existente) o un `<meta http-equiv="refresh">` de respaldo.
+Se creará un nuevo hook `useProductSuggestions(product)` reutilizando las mismas reglas del carrito, adaptadas al contexto de "estoy viendo un producto":
 
-### 4. Redirect real vs client-side
-El prompt aclara que es client-side. Ok mientras vivan en Lovable. Añado también un `<link rel="canonical">` apuntando a la nueva URL desde `ProductPage` para que Google consolide señales cuanto antes (ya existe `SEO` component — verificar si soporta canonical).
+1. **Nunca** incluir el producto actual.
+2. **Nunca** incluir coctelería ni postres (mismas exclusiones del negocio).
+3. Solo productos `is_orderable` y de categorías activas.
+4. **Prioridad 1 — Complementos**: hasta 6 productos de categorías distintas a la del producto visto (con best sellers primero). Por ejemplo, viendo una hamburguesa → sugerir papas, emparedados, parrilla.
+5. **Prioridad 2 — Bebidas**: si la categoría "bebidas" está activa y el producto visto no es una bebida, hasta 6 bebidas en un segundo carrusel ("¿Algo para tomar?").
+6. **Prioridad 3 — Misma categoría**: si el producto visto es una bebida (o no hay suficientes complementos), rellenar con otros productos de la misma categoría, excluyendo el actual.
+7. Rotación diaria con `seededShuffle` (misma técnica del carrito).
 
-### 5. Sitemap: el prompt se cortó y NO genera URLs de producto
-El `public/sitemap.xml` actual tiene solo 2 URLs (home + /menu), hecho a mano. No incluye productos ni categorías. Recomendación: pasar a **generador `scripts/generate-sitemap.ts`** que:
-- Lea productos desde Supabase.
-- Emita `/{categoria}/{slug}` por cada producto.
-- Incluya cada ruta de categoría.
-- Se ejecute en `predev` + `prebuild`.
+## Componente visual
 
-Esto no está en el prompt original y **cambia el mecanismo** — según reglas del proyecto necesita tu confirmación explícita. Alternativa mínima: agregar las URLs a mano.
+Se reutilizará `UpsellSuggestions` extrayendo el `SuggestionCarousel` interno a un componente compartido, para no duplicar UI:
 
-### 6. Slugs de categoría dinámicos
-`useProducts` normaliza `categoria` a un `MenuCategory` (enum tipado). Si en el futuro se crea una categoría nueva desde el panel admin, la URL `/{nueva-categoria}/{slug}` funcionará solo si `NotFound` no la captura. La guarda de la sección 1 debe validar contra la lista dinámica de `usePublicCategories`, no contra una lista hardcodeada.
+- `src/components/cart/UpsellSuggestions.tsx` → sigue consumiendo `useCartSuggestions` (sin cambios funcionales para el carrito).
+- Nuevo `src/components/product/ProductSuggestions.tsx` → consume `useProductSuggestions(product)` y renderiza el mismo carrusel con títulos:
+  - "También te puede gustar" (complementos / misma categoría)
+  - "¿Algo para tomar?" (bebidas, solo si aplica)
+- Mismo estilo: banner Rich Black `#0a1628`, borde sutil, acento Xanthous `#F2B60F`, flechas navegables, 3 tarjetas visibles en desktop y ~3.5 en móvil.
 
-### 7. Compatibilidad con la home actual
-La home usa short URLs (`/hamburguesas`) para categorías. Con la nueva regla, `/hamburguesas/mi-slug` es el producto y `/hamburguesas` es la categoría — bien, no chocan porque una es 1 segmento y la otra 2.
+## Integración en la página de producto
 
-## Plan de implementación
+En `src/pages/ProductPage.tsx`, insertar `<ProductSuggestions product={product} />` justo **antes del Footer**, dentro de un contenedor `container mx-auto px-4 pb-10` para que respete el ancho del layout.
 
-**A. Router (`src/App.tsx`)**
-- Import lazy: `const ProductRedirect = lazy(() => import("./pages/ProductRedirect"));`
-- Reemplazar `/producto/:slug` → apunta a `<ProductRedirect />`.
-- Añadir `<Route path="/:categoria/:slug" element={<ProductPage />} />` **después** de `/categoria/:slug` y todas las categorías cortas, antes de `*`.
+Al hacer clic en "+" en una sugerencia:
+- Se ejecuta `addToCart(product, 'suggestion')` (mismo evento analítico que ya existe).
+- La página **no navega**: solo suma al carrito, mostrando el toast estándar. Así el usuario puede seguir viendo el producto original y agregar varios.
 
-**B. `src/pages/ProductRedirect.tsx` (nuevo)**
-- Query puntual con `supabase.from('products').select('categoria').eq('slug', slug).maybeSingle()`.
-- Loading → spinner discreto. Sin match → `<Navigate to="/" replace />`.
-- Con match → `<Navigate to={`/${categoria}/${slug}`} replace />`.
-- Comentarios con fecha.
+## Casos borde
 
-**C. `src/pages/ProductPage.tsx`**
-- `useParams<{ categoria: string; slug: string }>()`.
-- Guarda: si `categoria` no está en la lista de categorías válidas → `NotFound`.
-- Si `product && categoria !== product.categoria` → `<Navigate to={`/${product.categoria}/${slug}`} replace />` (URL canónica).
-- Reemplazar 2 usos internos de `/producto/${slug}` por `/${product.categoria}/${product.slug}`.
+- **Sin sugerencias disponibles** (categorías desactivadas o catálogo muy pequeño): el componente retorna `null` y no ocupa espacio.
+- **Producto sin categoría válida**: no se renderiza.
+- **Carga**: mientras `useProducts` está cargando, no se muestra placeholder (el hook devuelve `[]`).
 
-**D. Componentes que enlazan a producto**
-- `src/components/MenuCard.tsx`: envolver imagen + título en `<Link to={`/${item.categoria}/${item.slug}`}>`, sin envolver el botón "agregar".
-- `src/components/CompactProductCard.tsx`: reemplazar los 2 `Link to`.
-- `src/components/HamburgerMenu.tsx`: `navigate(`/${p.categoria}/${p.slug}`)`.
-- `src/components/ProductSchema.tsx`: aceptar `categoria` como prop y usarlo en `"url"`.
-- `src/components/admin/MetaCatalogPanel.tsx`: actualizar el texto de ejemplo.
+## Archivos a crear / modificar
 
-**E. Edge function del feed de Meta**
-- `supabase/functions/meta-catalog-feed/index.ts`: `link = ${SITE_URL}/${p.categoria}/${p.slug}`. Re-deploy.
+### Nuevos
+- `src/hooks/useProductSuggestions.ts` — hook contextual al producto visto.
+- `src/components/product/ProductSuggestions.tsx` — wrapper visual reutilizando el carrusel.
 
-**F. Sitemap (te consulto abajo)**
+### Refactor menor (no cambia comportamiento del carrito)
+- `src/components/cart/UpsellSuggestions.tsx` — exportar `SuggestionCarousel` para reutilizarlo. Alternativa: extraer a `src/components/shared/SuggestionCarousel.tsx` e importarlo desde ambos lugares (preferido, más limpio).
 
-Cada archivo tocado lleva comentario `[2026-07-02] CATARSIS — …`.
+### Integración
+- `src/pages/ProductPage.tsx` — importar y renderizar `<ProductSuggestions />` antes del `<Footer />`.
 
-## Preguntas para ti antes de ejecutar
+## Fuera de alcance
 
-1. **Sitemap**: ¿migro a `scripts/generate-sitemap.ts` (lee productos de la DB y emite todas las URLs automáticamente en cada build), o mantengo el estático y solo agrego un comentario recordatorio como pide el prompt?
-2. **Edge function `meta-catalog-feed`**: ¿la actualizo y re-despliego en esta misma tanda? (recomendado para que Meta Ads no siga apuntando al redirect).
-3. **Guarda de categorías válidas en ProductPage**: ¿ok validar contra `usePublicCategories` (dinámico, incluye nuevas categorías creadas desde admin) en vez de lista hardcodeada?
+- No se toca el carrito ni el checkout.
+- No se cambia el estilo visual del carrusel (se hereda tal cual del carrito para mantener consistencia).
+- No se agregan sugerencias en la home ni en las páginas de categoría (ya tienen su propio listado).
