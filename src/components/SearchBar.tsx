@@ -54,7 +54,7 @@ export const SearchBar = ({ value, onChange, placeholder = '🔍 Buscar por nomb
         {/* Wrapper con ancho animado */}
         <div
           className={`relative transition-all duration-500 ease-out ${
-            open ? 'w-full' : 'w-14'
+            open ? 'w-full' : 'w-auto'
           }`}
         >
           {/* Glow */}
