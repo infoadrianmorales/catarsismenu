@@ -174,7 +174,7 @@ const ProductPage = () => {
         displayMode={displayMode}
       />
       
-      <div className="container px-4 py-6 pb-32">
+      <div className="container px-4 py-6 pb-6">
         {/* Back button */}
         <Button 
           variant="ghost" 
