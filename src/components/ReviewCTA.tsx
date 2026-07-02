@@ -6,8 +6,8 @@
  */
 import { trackContact } from '@/lib/metaPixel';
 
-// URL de reseñas de Google — actualizar cuando se tenga el enlace oficial
-const GOOGLE_REVIEW_URL = 'https://g.page/r/CatarsisFood/review';
+// URL oficial de reseñas de Google Business
+const GOOGLE_REVIEW_URL = 'https://g.page/r/Ce_gFnqwpuwcEBM/review';
 
 export const ReviewCTA = () => {
   const handleClick = () => {
