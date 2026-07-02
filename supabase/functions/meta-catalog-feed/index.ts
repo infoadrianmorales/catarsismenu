@@ -55,7 +55,9 @@ serve(async (req) => {
     const entries = (productsResult.data || []).map((p: any) => {
       const title = escapeXml(p.nombre || '');
       const description = escapeXml(p.descripcion_corta || `${p.nombre} en Catarsis Drinks & Food`);
-      const link = `${SITE_URL}/producto/${p.slug}`;
+      // [2026-07-02] CATARSIS — URL canónica /{categoria}/{slug}. Meta Ads recibe
+      // el deep link directo sin pasar por el redirect cliente.
+      const link = `${SITE_URL}/${p.categoria}/${p.slug}`;
       const imageLink = p.imagen_url || `${SITE_URL}/og-image.jpg`;
       const price = `${Number(p.precio_usd).toFixed(2)} USD`;
       const availability = p.is_orderable !== false ? 'in stock' : 'out of stock';
