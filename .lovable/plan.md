@@ -1,33 +1,32 @@
-## Cambio de fondo del bloque Newsletter (`src/components/NewsletterSection.tsx`)
+## 1. Panel de suscriptores del newsletter en admin
 
-El fondo azul Rich Black (`#010C23`) se confunde con el fondo general de la página. Cambiar a un **blanco opaco / hueso** para que el bloque destaque.
+La tabla `newsletter_subscribers` ya existe en Lovable Cloud (email, source, created_at). Solo falta la interfaz.
 
-### Ajustes
+**Nuevo archivo**: `src/components/admin/NewsletterPanel.tsx`
+- Lista todos los correos suscritos con: email, fecha de suscripción y fuente (homepage, categoría, etc.).
+- Buscador por email.
+- Contador total de suscriptores.
+- Botón "Exportar CSV" para descargar la lista.
+- Botón para eliminar un suscriptor (opcional, con confirmación).
+- Consulta directa a Supabase con RLS de admin.
 
-**Contenedor**
-- Fondo: `bg-[#F5F6F8]` (blanco opaco, mismo tono que usábamos antes en SocialProof).
-- Quitar `border-white/5`; agregar `border border-black/5` para un borde sutil.
-- Mantener `rounded-3xl shadow-2xl` y el padding actual.
+**Modificar** `src/pages/Admin.tsx`:
+- Agregar nueva pestaña "Newsletter" (icono `Mail` de lucide) en el `TabsList`, entre "Marketing" y "Usuarios". El grid pasa de `grid-cols-11` a `grid-cols-12`.
+- Agregar el `TabsContent` correspondiente.
 
-**Ícono avión (Send)**
-- Color: `text-[#010C23]` (azul marca) en lugar de blanco.
+**Verificación RLS**: la tabla ya tiene política que permite lectura solo a admins. No requiere migración.
 
-**Título "¡SUSCRÍBETE!"**
-- `text-[#010C23]` (azul marca).
+## 2. Mostrar Newsletter en páginas de categoría
 
-**Input de correo**
-- Borde: `border-[#010C23]/20`, focus `border-[#010C23]/50`.
-- Texto: `text-[#010C23]`, placeholder: `placeholder:text-[#010C23]/40`.
+**Modificar** `src/pages/CategoryPage.tsx`:
+- Importar `NewsletterSection` con `lazy` + `Suspense` (mismo patrón que `Index.tsx`).
+- Insertarlo después de la grilla de productos y antes del `<Footer />`.
+- Pasar `source="category-{slug}"` para diferenciar en analytics de dónde vino cada suscripción.
 
-**Botón "Registrarme"**
-- Fondo: `bg-[#DB1F51]` (Raspberry) con `text-white`.
-- Hover: `hover:bg-[#c11b47]`.
-- Quitar el borde blanco actual.
-- Así se convierte en el punto focal llamativo dentro del bloque claro.
+**Ajuste en `NewsletterSection.tsx`**:
+- Aceptar prop opcional `source?: string` (default `"homepage"`) para poder etiquetar el origen.
 
-**Texto de apoyo**
-- `text-[#010C23]/60`.
-
-### Fuera de alcance
-- No se toca la estructura, el formulario, ni la lógica de suscripción a Lovable Cloud.
-- No se modifica `SocialProofSection` ni ningún otro componente.
+## Fuera de alcance
+- No se modifica la lógica de suscripción ni el diseño actual (blanco opaco con botón Raspberry).
+- No se agregan a otras páginas (checkout, cart, order-confirmed) salvo confirmación posterior.
+- La página `/menu` (estática) queda intacta.

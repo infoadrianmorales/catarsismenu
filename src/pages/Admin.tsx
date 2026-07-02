@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Loader2, LogOut, Settings, Package, Users, Layers, ShoppingBag, UserCheck, Image, BarChart3, Megaphone, PlusCircle, Globe } from 'lucide-react';
+import { Loader2, LogOut, Settings, Package, Users, Layers, ShoppingBag, UserCheck, Image, BarChart3, Megaphone, PlusCircle, Globe, Mail } from 'lucide-react';
 import { AnalyticsPanel } from '@/components/admin/AnalyticsPanel';
 import { ConfigPanel } from '@/components/admin/ConfigPanel';
 import { ProductsPanel } from '@/components/admin/ProductsPanel';
@@ -18,6 +18,9 @@ import { MarketingPanel } from '@/components/admin/MarketingPanel';
 import { ExtrasPanel } from '@/components/admin/ExtrasPanel';
 // [2026-05-02] Panel de visitantes (geo + fuentes de tráfico)
 import { VisitorsPanel } from '@/components/admin/VisitorsPanel';
+// [NEWSLETTER-PANEL] Gestión de suscriptores al boletín
+import { NewsletterPanel } from '@/components/admin/NewsletterPanel';
+
 
 const Admin = () => {
   const { user, isAdmin, loading, roleLoading, signOut } = useAuth();
@@ -79,7 +82,7 @@ const Admin = () => {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6">
         <Tabs defaultValue="analytics" className="w-full">
-          <TabsList className="grid w-full grid-cols-11 mb-6">
+          <TabsList className="grid w-full grid-cols-12 mb-6">
             <TabsTrigger value="analytics" className="gap-2">
               <BarChart3 className="h-4 w-4" />
               <span className="hidden sm:inline">Analíticas</span>
@@ -120,11 +123,16 @@ const Admin = () => {
               <Megaphone className="h-4 w-4" />
               <span className="hidden sm:inline">Marketing</span>
             </TabsTrigger>
+            <TabsTrigger value="newsletter" className="gap-2">
+              <Mail className="h-4 w-4" />
+              <span className="hidden sm:inline">Newsletter</span>
+            </TabsTrigger>
             <TabsTrigger value="users" className="gap-2">
               <Users className="h-4 w-4" />
               <span className="hidden sm:inline">Usuarios</span>
             </TabsTrigger>
           </TabsList>
+
 
           <TabsContent value="analytics">
             <AnalyticsPanel />
@@ -165,6 +173,11 @@ const Admin = () => {
           <TabsContent value="marketing">
             <MarketingPanel />
           </TabsContent>
+
+          <TabsContent value="newsletter">
+            <NewsletterPanel />
+          </TabsContent>
+
 
           <TabsContent value="users">
             <UsersPanel />
