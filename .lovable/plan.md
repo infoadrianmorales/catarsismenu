@@ -1,25 +1,12 @@
-## Objetivo
-Hacer que todas las tarjetas de testimonio tengan el mismo tamaño (sin importar el largo del texto) y que roten automáticamente cada pocos segundos.
+## Problema
+Aunque el recuadro tiene altura mínima fija, los controles (flechas + dots) se mueven verticalmente porque están inmediatamente debajo del texto y el bloque completo está centrado con `justify-center`. Testimonios cortos suben los controles; los largos los bajan.
 
-## Cambios en `src/components/SocialProofSection.tsx`
+## Solución en `src/components/SocialProofSection.tsx`
 
-1. **Altura uniforme del recuadro**
-   - Añadir una altura mínima fija al contenedor blanco del testimonio (`min-h-[280px]` en móvil, `min-h-[320px]` en desktop) para que testimonios cortos y largos ocupen el mismo espacio vertical.
-   - Centrar verticalmente el contenido con `flex flex-col justify-center`.
-   - Limitar el ancho de la cita (`max-w-2xl mx-auto`) — ya existe — y mantener line-height consistente.
+Anclar los controles al fondo del recuadro para que su posición sea constante:
 
-2. **Autoplay del carrusel**
-   - Añadir un `useEffect` con `setInterval` de **6 segundos** que llame a `next()` automáticamente.
-   - Pausar el autoplay al hacer hover sobre la tarjeta (estado `isPaused`) y al interactuar con los controles (flechas / dots reinician el timer).
-   - Limpiar el intervalo en el cleanup del efecto.
-   - Respetar `prefers-reduced-motion`: si el usuario lo tiene activado, no se auto-avanza.
+1. Cambiar el contenedor blanco de `justify-center` a `justify-between` y añadir un spacer superior (`<div />`) para mantener el testimonio centrado ópticamente entre el spacer y los controles.
+2. Los controles (flechas + dots) quedan siempre pegados al borde inferior del recuadro con padding constante.
+3. Mantener la altura mínima ya establecida (`min-h-[300px] sm:min-h-[340px]`) para que el bloque no colapse.
 
-3. **Transición suave**
-   - Añadir un `key={index}` con animación de fade sutil (clase Tailwind `animate-in fade-in duration-500`) al bloque del testimonio activo para que el cambio no sea brusco.
-
-## Sin cambios
-- El CTA de reseña Google (bloque azul inferior) se mantiene igual.
-- Los 7 testimonios y su contenido no se modifican.
-
-## Nota técnica
-Duración: 6s por testimonio (equilibrio entre lectura cómoda y rotación visible). Si prefieres 4s u 8s, avísame y lo ajusto.
+Resultado: el deslizador (flechas y dots) permanece en la misma coordenada Y sin importar el largo del testimonio.
