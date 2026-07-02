@@ -1,4 +1,4 @@
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, Navigate } from 'react-router-dom';
 import { ArrowLeft, Minus, Plus, ShoppingCart, AlertCircle } from 'lucide-react';
 import { OptimizedImage } from '@/components/OptimizedImage';
 import { MenuHeader } from '@/components/MenuHeader';
