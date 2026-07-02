@@ -76,7 +76,8 @@ export const CompactProductCard = memo(({ item, currency, displayMode = 'ambas',
     <Card className="group overflow-hidden border-border/40 bg-card hover:border-primary/50 transition-all duration-200 hover:shadow-glow h-full flex flex-col" data-meta-event="ViewContent" id={`product-card-${item.id}`}>
       <CardContent className="p-0 flex flex-col h-full">
         {/* Image - Clickable to product detail */}
-        <Link to={`/producto/${item.slug}`} className="block shrink-0" onMouseEnter={handleEnter} onMouseLeave={handleLeave} onTouchStart={handleEnter}>
+        {/* [2026-07-02] URL canónica /{categoria}/{slug} */}
+        <Link to={`/${item.categoria}/${item.slug}`} className="block shrink-0" onMouseEnter={handleEnter} onMouseLeave={handleLeave} onTouchStart={handleEnter}>
           <div className="relative p-1 sm:p-1.5">
             {/* Zoom effect on container, only on desktop to avoid mobile rendering issues */}
             <div className="relative aspect-square overflow-hidden rounded-lg bg-white border border-foreground/10 shadow-sm sm:transition-transform sm:duration-300 sm:ease-out sm:group-hover:scale-105">
@@ -95,7 +96,7 @@ export const CompactProductCard = memo(({ item, currency, displayMode = 'ambas',
         
         {/* Content */}
         <div className="p-2.5 pt-1.5 flex flex-col flex-1">
-          <Link to={`/producto/${item.slug}`} className="block mb-1">
+          <Link to={`/${item.categoria}/${item.slug}`} className="block mb-1">
             <h3 className="font-display text-sm font-bold leading-tight group-hover:text-primary transition-colors line-clamp-2 whitespace-normal min-h-[2.5rem]">
               {item.nombre}
             </h3>

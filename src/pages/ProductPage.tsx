@@ -1,4 +1,4 @@
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, Navigate } from 'react-router-dom';
 import { ArrowLeft, Minus, Plus, ShoppingCart, AlertCircle } from 'lucide-react';
 import { OptimizedImage } from '@/components/OptimizedImage';
 import { MenuHeader } from '@/components/MenuHeader';
@@ -18,7 +18,9 @@ import { ProductSchema } from '@/components/ProductSchema';
 import { BreadcrumbSchema } from '@/components/BreadcrumbSchema';
 
 const ProductPage = () => {
-  const { slug } = useParams<{ slug: string }>();
+  // [2026-07-02] CATARSIS — La URL canónica del producto es /{categoria}/{slug}.
+  // La ruta antigua /producto/:slug la resuelve <ProductRedirect />.
+  const { categoria, slug } = useParams<{ categoria: string; slug: string }>();
   const navigate = useNavigate();
   const { currency, toggleCurrency, displayMode, getPrices } = useCurrency();
   const { products, loading } = useProducts();
@@ -27,6 +29,13 @@ const ProductPage = () => {
   const product = useMemo(() => {
     return products.find(p => p.slug === slug);
   }, [products, slug]);
+
+  // [2026-07-02] CATARSIS — Si la categoría en la URL no coincide con la real
+  // del producto, redirigimos a la URL canónica. Evita contenido duplicado
+  // y mantiene coherente el breadcrumb / analytics.
+  if (product && categoria && categoria !== product.categoria) {
+    return <Navigate to={`/${product.categoria}/${product.slug}`} replace />;
+  }
 
   const quantity = product ? getItemQuantity(product.id) : 0;
   const isOrderable = product ? isProductOrderable(product) : false;
@@ -133,7 +142,8 @@ const ProductPage = () => {
   const breadcrumbItems = [
     { name: 'Inicio', url: 'https://www.catarsiszone.com/' },
     { name: categoryLabel, url: `https://www.catarsiszone.com/categoria/${product.categoria}` },
-    { name: product.nombre, url: `https://www.catarsiszone.com/producto/${product.slug}` }
+    // [2026-07-02] CATARSIS — URL canónica actualizada al esquema /{categoria}/{slug}.
+    { name: product.nombre, url: `https://www.catarsiszone.com/${product.categoria}/${product.slug}` }
   ];
 
   return (
@@ -142,7 +152,7 @@ const ProductPage = () => {
         title={product.nombre}
         description={product.descripcion_corta || `${product.nombre} en Catarsis Drinks & Food`}
         image={product.imagen}
-        url={`/producto/${product.slug}`}
+        url={`/${product.categoria}/${product.slug}`}
         type="product"
       />
       <ProductSchema
@@ -152,6 +162,7 @@ const ProductPage = () => {
         priceUSD={product.precio_usd}
         slug={product.slug}
         category={categoryLabel}
+        categoria={product.categoria}
         isAvailable={isOrderable}
       />
       <BreadcrumbSchema items={breadcrumbItems} />

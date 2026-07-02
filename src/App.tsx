@@ -26,6 +26,8 @@ const Checkout = lazy(() => import("./pages/Checkout"));
 const OrderConfirmed = lazy(() => import("./pages/OrderConfirmed"));
 const CategoryPage = lazy(() => import("./pages/CategoryPage"));
 const ProductPage = lazy(() => import("./pages/ProductPage"));
+// [2026-07-02] CATARSIS — Redirige URLs antiguas /producto/:slug a /{categoria}/{slug}
+const ProductRedirect = lazy(() => import("./pages/ProductRedirect"));
 const MenuLocal = lazy(() => import("./pages/MenuLocal"));
 // Página de menú — URL independiente para SEO e indexación por IA
 const Menu = lazy(() => import("./pages/Menu"));
@@ -78,7 +80,12 @@ const AppContent = () => {
           <Route path="/entradas" element={<CategoryPage />} />
           <Route path="/ensaladas" element={<CategoryPage />} />
           <Route path="/cocteleria" element={<CategoryPage />} />
-            <Route path="/producto/:slug" element={<ProductPage />} />
+            {/* [2026-07-02] CATARSIS — URL antigua: redirige a /{categoria}/{slug} */}
+            <Route path="/producto/:slug" element={<ProductRedirect />} />
+            {/* [2026-07-02] CATARSIS — URL canónica de producto. Va después de rutas literales
+                (categoría, /menu, /carrito, etc.) para que esos matcheen primero.
+                ProductPage valida internamente que :categoria sea una categoría real. */}
+            <Route path="/:categoria/:slug" element={<ProductPage />} />
             <Route path="/terminos-y-condiciones" element={<Legal />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/admin" element={<Admin />} />

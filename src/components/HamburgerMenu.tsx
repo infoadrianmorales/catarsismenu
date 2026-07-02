@@ -61,10 +61,11 @@ export const HamburgerMenu = () => {
   }, [query, products]);
 
   // Al elegir un producto: cerramos el menú, limpiamos búsqueda y navegamos.
-  const handleSelectProduct = (slug: string) => {
+  // [2026-07-02] URL canónica /{categoria}/{slug}
+  const handleSelectProduct = (categoria: string, slug: string) => {
     setOpen(false);
     setQuery('');
-    navigate(`/producto/${slug}`);
+    navigate(`/${categoria}/${slug}`);
   };
 
   const getCategoryUrl = (slug: string) =>
@@ -125,7 +126,7 @@ export const HamburgerMenu = () => {
                 <button
                   key={p.id}
                   type="button"
-                  onClick={() => handleSelectProduct(p.slug)}
+                  onClick={() => handleSelectProduct(p.categoria, p.slug)}
                   className="w-full flex items-center gap-3 rounded-md px-2 py-1.5 text-left hover:bg-white/10 transition-colors"
                 >
                   <Search className="h-3.5 w-3.5 text-[#DB1F51] shrink-0" />
