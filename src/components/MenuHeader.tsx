@@ -9,6 +9,8 @@ import { useViewMode } from '@/contexts/ViewModeContext';
 import { appConfig } from '@/data/config';
 import { MessageCircle, Instagram, MapPin } from 'lucide-react';
 import { trackContact, trackLead } from '@/lib/metaPixel';
+// [2026-07-02] CATARSIS — Menú hamburguesa con buscador, categorías, horario y contacto.
+import { HamburgerMenu } from '@/components/HamburgerMenu';
 import logoCatarsis from '@/assets/logo-catarsis.png';
 
 interface MenuHeaderProps {
@@ -33,8 +35,11 @@ export const MenuHeader = ({ currency, onCurrencyToggle, displayMode = 'ambas' }
   return (
     <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md border-b border-border/50">
       <div className="container px-4 h-16 flex items-center justify-between">
-        {/* Logo — clickeable, redirige al inicio */}
-        <div className="flex items-center">
+        {/* Bloque izquierdo: menú hamburguesa + logo */}
+        <div className="flex items-center gap-1">
+          {/* [2026-07-02] CATARSIS — Menú hamburguesa junto al logo:
+              categorías, buscador, horario y contacto. */}
+          <HamburgerMenu />
           <Link to="/" aria-label="Ir al inicio de Catarsis" className="flex items-center">
             <img 
               src={logoCatarsis} 
