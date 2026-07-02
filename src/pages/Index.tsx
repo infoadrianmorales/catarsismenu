@@ -34,6 +34,10 @@ const LazyFooter = lazy(() =>
 const LazyTapeDivider = lazy(() =>
   import('@/components/Footer').then(m => ({ default: m.TapeDivider }))
 );
+const LazyReviewCTA = lazy(() =>
+  import('@/components/ReviewCTA').then(m => ({ default: m.ReviewCTA }))
+);
+
 
 const Index = () => {
   const { currency, toggleCurrency, displayMode } = useCurrency();
