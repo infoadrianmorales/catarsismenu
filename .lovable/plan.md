@@ -1,32 +1,30 @@
-## 1. Panel de suscriptores del newsletter en admin
+# Compactar home: 4 productos por categoría + botón "Ver todo"
 
-La tabla `newsletter_subscribers` ya existe en Lovable Cloud (email, source, created_at). Solo falta la interfaz.
+## Objetivo
+Reducir el largo de la página principal mostrando máximo 4 productos por categoría, con un botón llamativo "Ver todo" que lleve a la página completa de esa categoría (que ya existe en `/categoria/:slug`).
 
-**Nuevo archivo**: `src/components/admin/NewsletterPanel.tsx`
-- Lista todos los correos suscritos con: email, fecha de suscripción y fuente (homepage, categoría, etc.).
-- Buscador por email.
-- Contador total de suscriptores.
-- Botón "Exportar CSV" para descargar la lista.
-- Botón para eliminar un suscriptor (opcional, con confirmación).
-- Consulta directa a Supabase con RLS de admin.
+## Alcance
+Solo afecta la vista "Todos" del menú principal (home). No cambia:
+- Vistas de categoría individual (`/categoria/:slug`) — siguen mostrando todos los productos.
+- Vista Best Seller — se mantiene con sus 8.
+- Vistas cuando el usuario filtra por una categoría específica desde los tabs — se muestran completos (ya que quiere ver esa categoría entera).
+- Búsqueda / resultados filtrados — no se recortan.
 
-**Modificar** `src/pages/Admin.tsx`:
-- Agregar nueva pestaña "Newsletter" (icono `Mail` de lucide) en el `TabsList`, entre "Marketing" y "Usuarios". El grid pasa de `grid-cols-11` a `grid-cols-12`.
-- Agregar el `TabsContent` correspondiente.
+## Cambios
 
-**Verificación RLS**: la tabla ya tiene política que permite lectura solo a admins. No requiere migración.
+### 1. `src/components/MenuGrid.tsx`
+En el bloque "Show all categories with sections" (cuando `selectedCategory === 'todos'`):
+- Recortar cada `categoryItems` a los primeros 4 antes de renderizar.
+- Si la categoría tiene más de 4 productos, agregar debajo del grid un botón grande "Ver todo (N)" que enlace a `/categoria/${category}`.
+- Si tiene 4 o menos, no mostrar el botón (se muestran todos).
 
-## 2. Mostrar Newsletter en páginas de categoría
+### 2. Diseño del botón "Ver todo"
+Llamativo pero coherente con el sistema:
+- Ancho completo del grid en móvil, centrado con ancho auto en desktop.
+- Fondo Raspberry (`bg-primary`), texto blanco, borde redondeado, padding generoso (`py-4 px-8`), tipografía Phudu en mayúsculas.
+- Icono `ChevronRight` con animación de translate al hover.
+- Texto: `VER TODAS LAS {CATEGORÍA} ({N})` — por ejemplo "VER TODAS LAS HAMBURGUESAS (12)".
+- Ubicado con `mt-6` bajo el grid de esa categoría.
 
-**Modificar** `src/pages/CategoryPage.tsx`:
-- Importar `NewsletterSection` con `lazy` + `Suspense` (mismo patrón que `Index.tsx`).
-- Insertarlo después de la grilla de productos y antes del `<Footer />`.
-- Pasar `source="category-{slug}"` para diferenciar en analytics de dónde vino cada suscripción.
-
-**Ajuste en `NewsletterSection.tsx`**:
-- Aceptar prop opcional `source?: string` (default `"homepage"`) para poder etiquetar el origen.
-
-## Fuera de alcance
-- No se modifica la lógica de suscripción ni el diseño actual (blanco opaco con botón Raspberry).
-- No se agregan a otras páginas (checkout, cart, order-confirmed) salvo confirmación posterior.
-- La página `/menu` (estática) queda intacta.
+## Resultado esperado
+La home queda mucho más corta: cada categoría muestra 4 tarjetas + un CTA grande. El usuario que quiera ver más hace clic y va a la página dedicada de la categoría, o usa los tabs superiores (que ya filtran a la vista completa de esa categoría).
