@@ -70,10 +70,15 @@ const OrderConfirmed = () => {
             </div>
           </CardContent>
         </Card>
+
+        <div className="mt-8">
+          <ReviewCTA />
+        </div>
       </div>
       
       <Footer />
     </div>
+
   );
 };
 
