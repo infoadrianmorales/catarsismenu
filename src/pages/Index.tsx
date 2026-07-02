@@ -159,10 +159,14 @@ const Index = () => {
         <LazyTapeDivider />
       </Suspense>
       <SemanticSEOSection />
+      <Suspense fallback={null}>
+        <LazyReviewCTA />
+      </Suspense>
       </main>
       <Suspense fallback={null}>
         <LazyFooter />
       </Suspense>
+
       
       <FloatingCartButton />
       
