@@ -153,6 +153,13 @@ export const MenuGrid = ({ items, currency, selectedCategory, displayMode = 'amb
         if (categoryItems.length === 0) return null;
         const categoryInfo = categoryTitles[category as ProductCategory];
         
+      {groupedItems && Object.entries(groupedItems).map(([category, categoryItems]) => {
+        if (categoryItems.length === 0) return null;
+        const categoryInfo = categoryTitles[category as ProductCategory];
+        const totalCount = categoryItems.length;
+        const visibleItems = categoryItems.slice(0, 4);
+        const hasMore = totalCount > 4;
+
         return (
           <section key={category} id={category} className="container px-4 scroll-mt-32">
             <div className="mb-6 space-y-1">
@@ -163,20 +170,33 @@ export const MenuGrid = ({ items, currency, selectedCategory, displayMode = 'amb
                 {categoryInfo.subtitle}
               </p>
             </div>
-            
+
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {categoryItems.map(item => (
-                <MenuCard 
-                  key={item.id} 
-                  item={item} 
+              {visibleItems.map(item => (
+                <MenuCard
+                  key={item.id}
+                  item={item}
                   currency={currency}
                   displayMode={displayMode}
                 />
               ))}
             </div>
+
+            {hasMore && (
+              <div className="mt-6 flex justify-center">
+                <Link
+                  to={`/categoria/${category}`}
+                  className="group inline-flex items-center gap-2 rounded-full bg-primary px-8 py-4 font-display font-black uppercase tracking-wide text-primary-foreground shadow-lg transition-all hover:bg-primary/90 hover:shadow-xl hover:-translate-y-0.5"
+                >
+                  <span>Ver todas las {categoryInfo.title.split(' ')[0]} ({totalCount})</span>
+                  <ChevronRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+                </Link>
+              </div>
+            )}
           </section>
         );
       })}
     </div>
   );
 };
+
