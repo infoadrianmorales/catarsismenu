@@ -2,7 +2,10 @@
 // [2026-06-10] PIXEL: dispara ViewContent en hover/touch sostenido (1 vez por
 // producto/sesión via Set global), reemplazando el atributo data-meta-event que no
 // hacía nada por sí solo.
+// [2026-07-02] CATARSIS — Imagen y título son ahora enlace a la URL canónica
+// del producto /{categoria}/{slug}. El botón "agregar" queda fuera del link.
 import { useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { MenuItem, Currency } from '@/types/menu';
 import { Card, CardContent } from '@/components/ui/card';
 import { useCurrency, PriceDisplayMode } from '@/hooks/useCurrency';
