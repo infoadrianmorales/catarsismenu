@@ -26,6 +26,8 @@ const Checkout = lazy(() => import("./pages/Checkout"));
 const OrderConfirmed = lazy(() => import("./pages/OrderConfirmed"));
 const CategoryPage = lazy(() => import("./pages/CategoryPage"));
 const ProductPage = lazy(() => import("./pages/ProductPage"));
+// [2026-07-02] CATARSIS — Redirige URLs antiguas /producto/:slug a /{categoria}/{slug}
+const ProductRedirect = lazy(() => import("./pages/ProductRedirect"));
 const MenuLocal = lazy(() => import("./pages/MenuLocal"));
 // Página de menú — URL independiente para SEO e indexación por IA
 const Menu = lazy(() => import("./pages/Menu"));
