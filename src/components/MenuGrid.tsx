@@ -152,10 +152,7 @@ export const MenuGrid = ({ items, currency, selectedCategory, displayMode = 'amb
       {groupedItems && Object.entries(groupedItems).map(([category, categoryItems]) => {
         if (categoryItems.length === 0) return null;
         const categoryInfo = categoryTitles[category as ProductCategory];
-        
-      {groupedItems && Object.entries(groupedItems).map(([category, categoryItems]) => {
-        if (categoryItems.length === 0) return null;
-        const categoryInfo = categoryTitles[category as ProductCategory];
+
         const totalCount = categoryItems.length;
         const visibleItems = categoryItems.slice(0, 4);
         const hasMore = totalCount > 4;
