@@ -27,8 +27,8 @@ export const SearchBar = ({ value, onChange, placeholder = '🔍 Buscar por nomb
 
   const handleOpen = () => {
     setOpen(true);
-    // Meta Pixel: intención de búsqueda al abrir el buscador
-    trackSearch('__open_searchbar__');
+    // Meta Pixel: intención de búsqueda al abrir el buscador (validación de evento)
+    trackSearch('abrir_buscador');
     // autofocus con delay para dejar terminar la animación
     setTimeout(() => inputRef.current?.focus(), 320);
   };
