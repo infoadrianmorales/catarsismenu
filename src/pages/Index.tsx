@@ -34,11 +34,8 @@ const LazyFooter = lazy(() =>
 const LazyTapeDivider = lazy(() =>
   import('@/components/Footer').then(m => ({ default: m.TapeDivider }))
 );
-const LazyReviewCTA = lazy(() =>
-  import('@/components/ReviewCTA').then(m => ({ default: m.ReviewCTA }))
-);
-const LazyTestimonials = lazy(() =>
-  import('@/components/TestimonialsSection').then(m => ({ default: m.TestimonialsSection }))
+const LazySocialProof = lazy(() =>
+  import('@/components/SocialProofSection').then(m => ({ default: m.SocialProofSection }))
 );
 const LazyNewsletter = lazy(() =>
   import('@/components/NewsletterSection').then(m => ({ default: m.NewsletterSection }))
