@@ -1,30 +1,27 @@
-# Compactar home: 4 productos por categoría + botón "Ver todo"
+## Problema
+La home usa `CategorySection` (no `MenuGrid`), y ese componente renderiza TODOS los productos de cada categoría. Por eso Coctelería, Bebidas, etc. siguen mostrando filas completas: la compactación previa se aplicó al componente equivocado.
 
-## Objetivo
-Reducir el largo de la página principal mostrando máximo 4 productos por categoría, con un botón llamativo "Ver todo" que lleve a la página completa de esa categoría (que ya existe en `/categoria/:slug`).
+## Solución
+Aplicar la regla de "máx 4 + botón Ver todo grande" dentro de `src/components/CategorySection.tsx`, para que afecte a TODAS las categorías de la home.
 
-## Alcance
-Solo afecta la vista "Todos" del menú principal (home). No cambia:
-- Vistas de categoría individual (`/categoria/:slug`) — siguen mostrando todos los productos.
-- Vista Best Seller — se mantiene con sus 8.
-- Vistas cuando el usuario filtra por una categoría específica desde los tabs — se muestran completos (ya que quiere ver esa categoría entera).
-- Búsqueda / resultados filtrados — no se recortan.
+### Cambios en `src/components/CategorySection.tsx`
+1. Calcular:
+   - `totalCount = items.length`
+   - `visibleItems = items.slice(0, 4)`
+   - `hasMore = totalCount > 4`
+2. Renderizar el grid con `visibleItems` (no `items`).
+3. Mantener el enlace pequeño "Ver todo" arriba a la derecha (ya existe).
+4. Debajo del grid, cuando `hasMore`, añadir el CTA grande estilo Raspberry que ya usamos en `MenuGrid`:
+   - Botón `Link` a `/categoria/${slug}`
+   - Texto: `VER TODOS LOS {TITLE} ({totalCount})` en uppercase, font-display black
+   - Fondo `bg-primary`, texto `text-primary-foreground`, padding generoso (`px-8 py-4`), esquinas `rounded-full`, sombra y hover con `-translate-y-0.5`
+   - Ícono `ChevronRight` con hover-translate
+5. Categorías con 4 o menos productos: se muestran completas sin botón grande (el link pequeño superior queda igual, ya que también sirve como acceso directo — o se puede ocultar cuando `!hasMore` para no repetir; propongo ocultarlo también cuando no hay más).
 
-## Cambios
+### Comportamiento resultante
+- Bebidas (8+): muestra 4 + botón grande "VER TODAS LAS BEBIDAS (N)".
+- Coctelería (8+): 4 + botón grande.
+- Postres (≤4 si aplica): se muestran todos, sin botón.
+- Vista `/categoria/:slug`: sigue mostrando todo el listado sin restricción (no se toca).
 
-### 1. `src/components/MenuGrid.tsx`
-En el bloque "Show all categories with sections" (cuando `selectedCategory === 'todos'`):
-- Recortar cada `categoryItems` a los primeros 4 antes de renderizar.
-- Si la categoría tiene más de 4 productos, agregar debajo del grid un botón grande "Ver todo (N)" que enlace a `/categoria/${category}`.
-- Si tiene 4 o menos, no mostrar el botón (se muestran todos).
-
-### 2. Diseño del botón "Ver todo"
-Llamativo pero coherente con el sistema:
-- Ancho completo del grid en móvil, centrado con ancho auto en desktop.
-- Fondo Raspberry (`bg-primary`), texto blanco, borde redondeado, padding generoso (`py-4 px-8`), tipografía Phudu en mayúsculas.
-- Icono `ChevronRight` con animación de translate al hover.
-- Texto: `VER TODAS LAS {CATEGORÍA} ({N})` — por ejemplo "VER TODAS LAS HAMBURGUESAS (12)".
-- Ubicado con `mt-6` bajo el grid de esa categoría.
-
-## Resultado esperado
-La home queda mucho más corta: cada categoría muestra 4 tarjetas + un CTA grande. El usuario que quiera ver más hace clic y va a la página dedicada de la categoría, o usa los tabs superiores (que ya filtran a la vista completa de esa categoría).
+No se modifica lógica de negocio, datos, ni `MenuGrid` (queda como fallback para otras vistas).

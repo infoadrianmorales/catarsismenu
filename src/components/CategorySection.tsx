@@ -23,10 +23,15 @@ export const CategorySection = ({
 }: CategorySectionProps) => {
   if (items.length === 0) return null;
 
+  // [2026-07-02] Compactación home: máx 4 productos por categoría + CTA grande "Ver todo".
+  const totalCount = items.length;
+  const visibleItems = items.slice(0, 4);
+  const hasMore = totalCount > 4;
+
   return (
     <section className="py-6">
       <div className="container px-4">
-        {/* Header with title and "Ver todo" CTA */}
+        {/* Header con título y "Ver todo" pequeño (solo si hay más) */}
         <div className="flex items-center justify-between mb-4">
           <Link 
             to={`/categoria/${slug}`}
@@ -38,13 +43,15 @@ export const CategorySection = ({
             <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
           </Link>
           
-          <Link 
-            to={`/categoria/${slug}`}
-            // ACCESIBILIDAD [CONTRASTE]: #FF4D7A (ratio ~5.2:1) reemplaza text-primary (#DB1F54, ratio 3.93:1)
-            className="text-sm font-medium text-[#FF4D7A] hover:text-[#FF4D7A]/80 hover:underline transition-colors"
-          >
-            Ver todo
-          </Link>
+          {hasMore && (
+            <Link 
+              to={`/categoria/${slug}`}
+              // ACCESIBILIDAD [CONTRASTE]: #FF4D7A (ratio ~5.2:1) reemplaza text-primary (ratio 3.93:1)
+              className="text-sm font-medium text-[#FF4D7A] hover:text-[#FF4D7A]/80 hover:underline transition-colors"
+            >
+              Ver todo
+            </Link>
+          )}
         </div>
 
         {subtitle && (
@@ -53,9 +60,9 @@ export const CategorySection = ({
           </p>
         )}
 
-        {/* Products in grid - standard browser loading */}
+        {/* Grid limitado a 4 productos */}
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {items.map((item) => (
+          {visibleItems.map((item) => (
             <MenuCard 
               key={item.id}
               item={item} 
@@ -64,6 +71,19 @@ export const CategorySection = ({
             />
           ))}
         </div>
+
+        {/* CTA grande cuando hay más de 4 productos */}
+        {hasMore && (
+          <div className="mt-6 flex justify-center">
+            <Link
+              to={`/categoria/${slug}`}
+              className="group inline-flex items-center gap-2 rounded-full bg-primary px-8 py-4 font-display font-black uppercase tracking-wide text-primary-foreground shadow-lg transition-all hover:bg-primary/90 hover:shadow-xl hover:-translate-y-0.5"
+            >
+              <span>Ver todos los {title} ({totalCount})</span>
+              <ChevronRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+            </Link>
+          </div>
+        )}
       </div>
     </section>
   );
