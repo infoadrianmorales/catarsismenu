@@ -1,30 +1,14 @@
 ## Objetivo
-Actualizar la URL de Google Maps al Place ID real y reestructurar `SemanticSEOSection` en 2 columnas simétricas (texto SEO existente a la izquierda, ubicación con mapa a la derecha). En móvil, apiladas.
+Mejorar la simetría entre columnas y aumentar el tamaño del texto en `SemanticSEOSection`, tomando como referencia la imagen adjunta (H2 grande en amarillo Phudu uppercase, párrafos más grandes y aireados, columna derecha alineada verticalmente con la izquierda).
 
-## Cambios
+## Cambios (solo `src/components/SemanticSEOSection.tsx`)
 
-### 1) `src/data/config.ts` (línea 8)
-Reemplazar:
-```ts
-maps_url: 'https://maps.google.com/?q=Catarsis+Lecheria',
-```
-por:
-```ts
-// [2026-07-02] CATARSIS — URL actualizada con Place ID real
-// (antes era una búsqueda por texto, menos precisa).
-maps_url: 'https://www.google.com/maps/search/?api=1&query=Catarsis+Drinks+%26+Food&query_place_id=ChIJcYAx4ThzLYwR7-AWerCm7Bw',
-```
-
-### 2) `src/components/SemanticSEOSection.tsx`
-Reescritura completa (los tags JSX del prompt vinieron truncados; los reconstruyo respetando la intención textual y visual):
-- Imports: `MapPin`, `Clock` de `lucide-react` y `appConfig` de `@/data/config`.
-- Contenedor `max-w-5xl` (antes `max-w-3xl`) para acomodar 2 columnas.
-- H2 SEO existente se conserva **idéntico** arriba, ancho completo.
-- Grid `md:grid-cols-2 gap-8`:
-  - **Columna izquierda**: los dos `<p>` semánticos SEO existentes, textualmente sin cambios (críticos para Google/IA).
-  - **Columna derecha**: título "Encuéntranos en Lechería", mapa embed OpenStreetMap (iframe con bbox de coordenadas 10.181209, -64.690776, sin API key) envuelto en `<a>` que abre `appConfig.maps_url`, bloque MapPin con "CC Aventura Plaza / Av. Diego Bautista Urbaneja, Lechería, Anzoátegui", bloque Clock con "Lunes a Domingo / 12:00 PM – 1:00 AM", y botón CTA Raspberry "Cómo llegar" que abre `appConfig.maps_url`.
-- Mantener fondo `#010C23`, tokens de color y contraste WCAG AA (text-gray-300).
-- Comentarios de gobernanza (no eliminar texto SEO, horario 1:00 AM confirmado, coordenadas verificadas, sincronía con RestaurantSchema/FAQSchema/llms.txt).
-
-## No tocar
-Ningún otro archivo. Sin cambios en schemas ni en Footer.
+1. **H2** — pasar de `text-sm md:text-base` a `text-2xl md:text-4xl font-display font-bold uppercase tracking-tight` para replicar el peso visual del mock.
+2. **Párrafos SEO (columna izquierda)** — de `text-xs md:text-sm` a `text-base md:text-lg leading-relaxed`, con `space-y-4` entre párrafos. Texto se mantiene idéntico (crítico SEO).
+3. **Columna derecha**:
+   - Subtítulo "Encuéntranos en Lechería" a `text-xl md:text-2xl font-display font-bold` blanco.
+   - Mapa más alto (`h-64 md:h-72`) y con esquinas más suaves para equilibrio visual.
+   - Bloques MapPin/Clock con texto `text-sm md:text-base`, separadores sutiles (`border-t border-white/10`) entre filas para replicar las líneas divisorias del mock.
+   - CTA "Cómo llegar" un poco más grande (`px-6 py-3 text-base`), ancho auto.
+4. **Grid** — `gap-10 md:gap-12`, `items-start` mantenido; contenedor `max-w-6xl` para más aire; padding vertical `py-14 md:py-20`.
+5. Mantener colores del brand (#F2B60F amarillo, #DB1F51 raspberry, fondo #010C23) y contraste WCAG AA. Sin cambios en `config.ts` ni en el texto SEO.
