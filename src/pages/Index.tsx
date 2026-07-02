@@ -160,26 +160,22 @@ const Index = () => {
       )}
       
       
-      {/* ORDEN FINAL — no modificar esta secuencia:
-          1. Franja de marca — elemento visual de separación
-          2. SemanticSEOSection — texto SEO para Google e IAs
-          3. Footer — contacto, horario y ubicación */}
-      {/* ORDEN FINAL — no modificar esta secuencia:
+      {/* [2026-07-02] CATARSIS — ORDEN FINAL, no modificar esta secuencia:
           1. SocialProof — testimonios + CTA de reseña Google unificados
-          2. Newsletter — captación de correos
+          2. SemanticSEOSection — texto SEO para Google e IAs + ubicación/mapa
           3. Franja de marca — elemento visual de separación
-          4. SemanticSEOSection — texto SEO para Google e IAs
+          4. Newsletter — captación de correos
           5. Footer — contacto, horario y ubicación */}
       <Suspense fallback={null}>
         <LazySocialProof />
       </Suspense>
-      <Suspense fallback={null}>
-        <LazyNewsletter />
-      </Suspense>
+      <SemanticSEOSection />
       <Suspense fallback={null}>
         <LazyTapeDivider />
       </Suspense>
-      <SemanticSEOSection />
+      <Suspense fallback={null}>
+        <LazyNewsletter />
+      </Suspense>
       </main>
       <Suspense fallback={null}>
         <LazyFooter />
