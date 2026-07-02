@@ -1,10 +1,12 @@
-Mostrar el `TopBar` también en móvil, con una versión compacta que no sature.
+## Cambios
 
-## Cambios en `src/components/TopBar.tsx`
+**1. `src/components/TopBar.tsx` — centrar el mensaje "Abrimos todos los días"**
+- Cambiar el layout de `justify-between` a un grid de 3 columnas: íconos IG/Maps a la izquierda, texto centrado, y un placeholder invisible a la derecha para mantener la simetría (o usar `grid-cols-3` con `justify-self`).
+- En móvil el texto centrado sigue siendo el corto "🕒 Ver horarios"; en desktop "🕒 Abrimos todos los días | Click para ver los horarios".
+- Aplica a todos los breakpoints (móvil, tablet, desktop).
 
-- Quitar `hidden md:block` → siempre visible.
-- Móvil: altura `h-8`, íconos IG/Maps más pequeños, y en el botón de horarios ocultar el separador `|` y acortar el copy a solo `"Ver horarios"` con la lupa del reloj. En `md+` conservar el texto completo actual ("Abrimos todos los días | Click para ver los horarios").
-- Reducir `gap` y `text-[11px]` en móvil, `text-xs` desde `md`.
-- Popover mantiene el mismo contenido; `align="end"` sigue funcionando en móvil.
+**2. `src/components/MenuHeader.tsx` — ocultar Instagram y ubicación en móvil**
+- Añadir `hidden md:inline-flex` a los dos `<Button>` (Instagram y MapPin) del header para que en móvil no dupliquen los que ya están en el TopBar. En desktop/tablet se conservan tal cual.
+- WhatsApp y el carrito quedan visibles en todos los tamaños.
 
-Resultado: en móvil se ve una franja delgada azul con IG + pin a la izquierda y "🕒 Ver horarios" a la derecha; en desktop no cambia nada.
+Sin cambios en `HamburgerMenu` — allí también existen los enlaces, pero es el menú desplegable (no redundante con el TopBar).
