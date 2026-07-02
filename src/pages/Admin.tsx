@@ -82,7 +82,7 @@ const Admin = () => {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6">
         <Tabs defaultValue="analytics" className="w-full">
-          <TabsList className="grid w-full grid-cols-11 mb-6">
+          <TabsList className="grid w-full grid-cols-12 mb-6">
             <TabsTrigger value="analytics" className="gap-2">
               <BarChart3 className="h-4 w-4" />
               <span className="hidden sm:inline">Analíticas</span>
@@ -123,11 +123,16 @@ const Admin = () => {
               <Megaphone className="h-4 w-4" />
               <span className="hidden sm:inline">Marketing</span>
             </TabsTrigger>
+            <TabsTrigger value="newsletter" className="gap-2">
+              <Mail className="h-4 w-4" />
+              <span className="hidden sm:inline">Newsletter</span>
+            </TabsTrigger>
             <TabsTrigger value="users" className="gap-2">
               <Users className="h-4 w-4" />
               <span className="hidden sm:inline">Usuarios</span>
             </TabsTrigger>
           </TabsList>
+
 
           <TabsContent value="analytics">
             <AnalyticsPanel />
@@ -168,6 +173,11 @@ const Admin = () => {
           <TabsContent value="marketing">
             <MarketingPanel />
           </TabsContent>
+
+          <TabsContent value="newsletter">
+            <NewsletterPanel />
+          </TabsContent>
+
 
           <TabsContent value="users">
             <UsersPanel />

@@ -10,10 +10,16 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useCurrency } from '@/hooks/useCurrency';
 import { useProducts } from '@/hooks/useProducts';
 import { usePublicCategories } from '@/hooks/usePublicCategories';
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, lazy, Suspense } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { SEO } from '@/components/SEO';
 import { trackCustomEvent } from '@/lib/metaPixel';
+
+// [NEWSLETTER] Lazy: below the fold en páginas de categoría
+const LazyNewsletter = lazy(() =>
+  import('@/components/NewsletterSection').then(m => ({ default: m.NewsletterSection }))
+);
+
 
 const CategoryPage = () => {
   const { slug: paramSlug } = useParams<{ slug: string }>();
@@ -160,8 +166,13 @@ const CategoryPage = () => {
           </div>
         )}
       </div>
-      
+
+      <Suspense fallback={null}>
+        <LazyNewsletter source={`category-${slug}`} />
+      </Suspense>
+
       <Footer />
+
       
       <StickyActionBar 
         currency={currency}
