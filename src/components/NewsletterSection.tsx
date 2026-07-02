@@ -16,9 +16,15 @@ const emailSchema = z
   .email({ message: 'Ingresa un correo válido' })
   .max(254, { message: 'Correo demasiado largo' });
 
-export const NewsletterSection = () => {
+export interface NewsletterSectionProps {
+  /** Etiqueta del origen guardada en la BD (homepage, category-hamburguesas, etc.). */
+  source?: string;
+}
+
+export const NewsletterSection = ({ source = 'homepage' }: NewsletterSectionProps = {}) => {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,7 +38,8 @@ export const NewsletterSection = () => {
     try {
       const { error } = await supabase
         .from('newsletter_subscribers')
-        .insert({ email: parsed.data.toLowerCase(), source: 'homepage' });
+        .insert({ email: parsed.data.toLowerCase(), source });
+
 
       if (error) {
         // 23505 = unique_violation → ya suscrito, tratamos como éxito silencioso

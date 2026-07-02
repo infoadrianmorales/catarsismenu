@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Loader2, LogOut, Settings, Package, Users, Layers, ShoppingBag, UserCheck, Image, BarChart3, Megaphone, PlusCircle, Globe } from 'lucide-react';
+import { Loader2, LogOut, Settings, Package, Users, Layers, ShoppingBag, UserCheck, Image, BarChart3, Megaphone, PlusCircle, Globe, Mail } from 'lucide-react';
 import { AnalyticsPanel } from '@/components/admin/AnalyticsPanel';
 import { ConfigPanel } from '@/components/admin/ConfigPanel';
 import { ProductsPanel } from '@/components/admin/ProductsPanel';
@@ -18,6 +18,9 @@ import { MarketingPanel } from '@/components/admin/MarketingPanel';
 import { ExtrasPanel } from '@/components/admin/ExtrasPanel';
 // [2026-05-02] Panel de visitantes (geo + fuentes de tráfico)
 import { VisitorsPanel } from '@/components/admin/VisitorsPanel';
+// [NEWSLETTER-PANEL] Gestión de suscriptores al boletín
+import { NewsletterPanel } from '@/components/admin/NewsletterPanel';
+
 
 const Admin = () => {
   const { user, isAdmin, loading, roleLoading, signOut } = useAuth();
