@@ -37,6 +37,15 @@ const LazyTapeDivider = lazy(() =>
 const LazyReviewCTA = lazy(() =>
   import('@/components/ReviewCTA').then(m => ({ default: m.ReviewCTA }))
 );
+const LazyTestimonials = lazy(() =>
+  import('@/components/TestimonialsSection').then(m => ({ default: m.TestimonialsSection }))
+);
+const LazyNewsletter = lazy(() =>
+  import('@/components/NewsletterSection').then(m => ({ default: m.NewsletterSection }))
+);
+const LazyTopBar = lazy(() =>
+  import('@/components/TopBar').then(m => ({ default: m.TopBar }))
+);
 
 
 const Index = () => {
