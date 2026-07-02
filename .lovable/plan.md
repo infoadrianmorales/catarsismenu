@@ -1,25 +1,25 @@
-## Objetivo
-Agregar 4 nuevos productos a la categoría **Bebidas**: Jugo de fresa, Jugo de parchita, Jugo de piña y Limonada — todos a **$4 USD**, etiquetados como **"Nuevo"**.
+Reordenar la categoría **Bebidas** para que los 4 jugos nuevos aparezcan primero en el feed principal.
 
-## Pasos
+## Nuevo orden
 
-### 1. Optimizar imágenes
-- Convertir las 4 imágenes subidas a **WebP**, 800×800, fondo blanco, peso <200 KB.
-- Subir cada una vía `lovable-assets` al CDN y luego al bucket `product-images` de Cloud (que es donde el resto de productos guardan `imagen_url`).
+1. Jugo de Fresa
+2. Jugo de Parchita
+3. Jugo de Piña
+4. Limonada
+5. Coca-Cola Original 2L
+6. Coca-Cola Original 1.5L
+7. Coca-Cola Original 1L
+8. Coca-Cola Original 355ml
+9. Coca-Cola Sin Azúcar 2L
+10. Coca-Cola Sin Azúcar 1L
+11. Coca-Cola Zero 355ml
+12. Agua Mineral Nevada 600ml
+13. Cerveza Polar Light 250ml
+14. Cerveza Polar Pilsen 219ml
+15. Cerveza Solera Classic 250ml
+16. Cerveza Solera Light 250ml
 
-### 2. Insertar productos en la tabla `products`
-Cuatro filas nuevas en categoría `bebidas`, activas, con:
-- `nombre`, `slug`, `descripcion_corta` según lo indicado
-- `precio_usd = 4`
-- `tags = ['Nuevo']`
-- `imagen_url` = URL pública del bucket
-- `orden` continuando desde 12 (después de las cervezas)
+## Cambio técnico
 
-### 3. Verificación
-- Confirmar que aparecen en Home → sección Bebidas y en `/bebidas`.
-- Validar responsive y que se conserve el grid/card actual (no se toca ningún componente de UI).
-
-## Detalles técnicos
-- **No se modifica ningún componente React.** El `MenuCard` existente ya usa `loading="lazy"`, `object-contain`, aspect-ratio 1:1 y alt semántico — solo se aprovecha.
-- El `alt` se toma del campo `nombre`; se garantiza que quede como "Jugo de fresa Catarsis" ajustando el nombre o dejando que MenuCard concatene la marca (verificar antes de insertar).
-- No se toca `menuItems.ts` (fallback estático); los productos vienen de la BD.
+- `UPDATE` al campo `orden` de las 16 filas de `products` con `categoria='bebidas'` vía la herramienta de datos de Cloud. No se toca esquema, código ni imágenes.
+- En el Home (`CategorySection` con `slice(0,4)`) los 4 jugos serán los visibles con el botón "Ver más".
