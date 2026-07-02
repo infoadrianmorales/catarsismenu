@@ -162,6 +162,7 @@ const ProductPage = () => {
         priceUSD={product.precio_usd}
         slug={product.slug}
         category={categoryLabel}
+        categoria={product.categoria}
         isAvailable={isOrderable}
       />
       <BreadcrumbSchema items={breadcrumbItems} />
