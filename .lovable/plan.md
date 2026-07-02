@@ -1,4 +1,5 @@
-En `src/components/CategorySection.tsx`, cambiar el color del texto del CTA grande de Rich Black a blanco:
-- `text-[#010C23]` → `text-white`
+En `src/components/CategorySection.tsx`, oscurecer el amarillo del CTA para dar más contraste al texto blanco:
+- `bg-[#FFB800]` → `bg-[#C88600]` (mostaza profundo)
+- `hover:bg-[#FFB800]/90` → `hover:bg-[#B07400]`
 
-El fondo amarillo Xanthous (`#FFB800`) y el resto de estilos permanecen igual.
+Texto blanco y demás estilos quedan igual.
