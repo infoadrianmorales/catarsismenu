@@ -108,10 +108,12 @@ export const MenuHeader = ({ currency, onCurrencyToggle, displayMode = 'ambas' }
                 <MessageCircle className="h-4 w-4" />
               </Button>
             )}
+            {/* [2026-07-02] Instagram y ubicación se ocultan en móvil
+                porque ya están en el TopBar superior (evita redundancia). */}
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8"
+              className="h-8 w-8 hidden md:inline-flex"
               asChild
             >
               <a href={appConfig.instagram_url} target="_blank" rel="noopener noreferrer" aria-label="Instagram">
@@ -122,7 +124,7 @@ export const MenuHeader = ({ currency, onCurrencyToggle, displayMode = 'ambas' }
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8"
+                className="h-8 w-8 hidden md:inline-flex"
                 asChild
               >
                 <a href={appConfig.maps_url} target="_blank" rel="noopener noreferrer" aria-label="Ubicación">
