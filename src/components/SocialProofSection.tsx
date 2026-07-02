@@ -82,14 +82,14 @@ export const SocialProofSection = () => {
           Testimonios de nuestros clientes
         </h2>
 
-        <div className="rounded-3xl bg-[#010C23] border border-white/10 overflow-hidden">
-          {/* Testimonios */}
-          <div className="px-6 py-12 sm:py-14 text-center">
-            <p className="text-white text-base font-medium">{active.name}</p>
-            <p className="text-white/60 text-sm mb-6">{active.role}</p>
+        <div className="rounded-3xl overflow-hidden">
+          {/* Testimonios — fondo blanco */}
+          <div className="bg-white px-6 py-12 sm:py-14 text-center">
+            <p className="text-[#010C23] text-base font-medium">{active.name}</p>
+            <p className="text-[#010C23]/60 text-sm mb-6">{active.role}</p>
 
             <p
-              className="text-white text-lg sm:text-xl md:text-2xl italic max-w-2xl mx-auto leading-relaxed"
+              className="text-[#010C23] text-lg sm:text-xl md:text-2xl italic max-w-2xl mx-auto leading-relaxed"
               style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
             >
               "{active.quote}"
@@ -101,7 +101,7 @@ export const SocialProofSection = () => {
                 type="button"
                 onClick={prev}
                 aria-label="Testimonio anterior"
-                className="p-2 text-white/50 hover:text-white transition-colors"
+                className="p-2 text-[#010C23]/50 hover:text-[#010C23] transition-colors"
               >
                 <ChevronLeft className="h-5 w-5" />
               </button>
@@ -115,8 +115,8 @@ export const SocialProofSection = () => {
                     aria-label={`Ir al testimonio ${i + 1}`}
                     className={`h-2 rounded-full transition-all ${
                       i === index
-                        ? 'w-6 bg-white'
-                        : 'w-2 bg-white/25 hover:bg-white/40'
+                        ? 'w-6 bg-[#010C23]'
+                        : 'w-2 bg-[#010C23]/25 hover:bg-[#010C23]/40'
                     }`}
                   />
                 ))}
@@ -126,18 +126,16 @@ export const SocialProofSection = () => {
                 type="button"
                 onClick={next}
                 aria-label="Siguiente testimonio"
-                className="p-2 text-white/50 hover:text-white transition-colors"
+                className="p-2 text-[#010C23]/50 hover:text-[#010C23] transition-colors"
               >
                 <ChevronRight className="h-5 w-5" />
               </button>
             </div>
           </div>
 
-          {/* Separador */}
-          <div className="border-t border-white/10 mx-6" />
+          {/* CTA Reseña Google — fondo azul marca */}
+          <div className="bg-[#010C23] px-6 py-8 sm:py-10 flex flex-col md:flex-row items-center md:justify-between gap-6 text-center md:text-left">
 
-          {/* CTA Reseña Google */}
-          <div className="px-6 py-8 sm:py-10 flex flex-col md:flex-row items-center md:justify-between gap-6 text-center md:text-left">
             <div className="space-y-2 max-w-xl">
               <h3 className="font-display text-white text-2xl sm:text-3xl font-bold tracking-tight leading-tight uppercase">
                 ¿Qué te pareció <span className="text-[#DB1F51]">Catarsis</span>?
