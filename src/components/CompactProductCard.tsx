@@ -96,7 +96,7 @@ export const CompactProductCard = memo(({ item, currency, displayMode = 'ambas',
         
         {/* Content */}
         <div className="p-2.5 pt-1.5 flex flex-col flex-1">
-          <Link to={`/producto/${item.slug}`} className="block mb-1">
+          <Link to={`/${item.categoria}/${item.slug}`} className="block mb-1">
             <h3 className="font-display text-sm font-bold leading-tight group-hover:text-primary transition-colors line-clamp-2 whitespace-normal min-h-[2.5rem]">
               {item.nombre}
             </h3>
