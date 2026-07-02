@@ -17,29 +17,45 @@ interface Testimonial {
 
 const TESTIMONIALS: Testimonial[] = [
   {
-    name: 'Daniela Padrón',
-    role: 'Cliente',
-    quote: '¡La CHEESY BURGER es mi favorita! Siempre la pido con extra tocineta.',
+    name: 'Alexandra Bolívar',
+    role: 'Local Guide',
+    quote:
+      'Excelente servicio de otro nivel. Música en directo, buen ambiente y tiempo de espera menor a 10 minutos.',
   },
   {
-    name: 'Andrés Rojas',
-    role: 'Cliente',
-    quote: 'La mejor pizza artesanal de Lechería. La masa es espectacular.',
+    name: 'Boot Camp Venezuela',
+    role: 'Local Guide',
+    quote:
+      'Esto es una experiencia increíble. Les recomiendo la Pizza Tasty, es BRUTAL. Todo de primera: desde la masa, los ingredientes y la cocción. 💯 puntos.',
   },
   {
-    name: 'María Fernanda',
-    role: 'Cliente',
-    quote: 'El ambiente es increíble y los cócteles de autor son únicos en la zona.',
+    name: 'Giovanna Gabriella',
+    role: 'Local Guide',
+    quote:
+      'Todo excelente. Me gustó porque tiene espacio al aire libre, buena música y la comida muy rica.',
   },
   {
-    name: 'José Luis',
-    role: 'Cliente',
-    quote: 'Delivery rápido y la comida llega caliente. Mi spot favorito.',
+    name: 'María Gabriela León Franco',
+    role: 'Local Guide',
+    quote: 'Excelente ambiente para pasarlo en familia y amigos. Lo recomiendo 💛.',
   },
   {
-    name: 'Camila Herrera',
+    name: 'Alan Armas',
+    role: 'Local Guide',
+    quote:
+      'La comida es UFF, buenísima. El ambiente es chill, perfecto para una reunión con amigos o una cita tranquila. Recomiendo mucho sus hamburguesas y el emparedado de Fondue de lomito. 100% recomendados.',
+  },
+  {
+    name: 'Andrés Daniel',
+    role: 'Local Guide',
+    quote:
+      'Todo lo que pidió la familia fue riquísimo. Los platos a buena temperatura, la comida con un sabor especial y los jugos súper concentrados ✨. Y ni hablar de los Aros de Cebolla, los mejores que he probado en mi vida. Su empaque para llevar, muy elegante.',
+  },
+  {
+    name: 'Keillys Ramírez',
     role: 'Cliente',
-    quote: 'Los emparedados son enormes y llenos de sabor. Muy recomendados.',
+    quote:
+      'Me gustó todo, la verdad. Muy recomendado para pasar el rato y conversar con amigos. La atención de los chicos es súper buena.',
   },
 ];
 
