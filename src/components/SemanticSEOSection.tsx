@@ -13,13 +13,13 @@ import { MapPin, Clock } from 'lucide-react';
 import { appConfig } from '@/data/config';
 
 export const SemanticSEOSection = () => {
-  // Coordenadas verificadas del negocio.
-  const LAT = 10.181209;
-  const LNG = -64.690776;
-  // BBox pequeña alrededor del punto para el embed de OpenStreetMap (sin API key).
-  const delta = 0.003;
-  const bbox = `${LNG - delta}%2C${LAT - delta}%2C${LNG + delta}%2C${LAT + delta}`;
-  const osmEmbed = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${LAT}%2C${LNG}`;
+  // [2026-07-02] Embed oficial de Google Maps (Catarsis Lechería).
+  // URL provista por el negocio — no reemplazar por OSM ni por búsquedas
+  // por texto. Si cambia la ubicación, actualizar también appConfig.maps_url.
+  const googleMapsEmbed =
+    'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3926.993171529659!2d-64.69077589999999!3d10.181209299999999!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8c2d7338e1318071%3A0x1ceca6b07a16e0ef!2sCatarsis%20Lecheria!5e0!3m2!1ses!2sve!4v1783028229320!5m2!1ses!2sve';
+
+
 
   return (
     <section
@@ -75,11 +75,14 @@ export const SemanticSEOSection = () => {
               className="block relative rounded-2xl overflow-hidden border border-white/10 group"
             >
               <iframe
-                title="Ubicación de Catarsis en Lechería"
-                src={osmEmbed}
+                title="Ubicación de Catarsis en Google Maps"
+                src={googleMapsEmbed}
                 loading="lazy"
-                className="w-full h-64 md:h-72 pointer-events-none"
+                allowFullScreen
+                referrerPolicy="strict-origin-when-cross-origin"
+                className="w-full h-64 md:h-72 pointer-events-none border-0"
               />
+
               <span className="absolute bottom-3 left-3 bg-[#DB1F51] text-white text-xs font-semibold px-3 py-1.5 rounded-full">
                 Ver en Google Maps
               </span>
