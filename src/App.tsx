@@ -80,7 +80,12 @@ const AppContent = () => {
           <Route path="/entradas" element={<CategoryPage />} />
           <Route path="/ensaladas" element={<CategoryPage />} />
           <Route path="/cocteleria" element={<CategoryPage />} />
-            <Route path="/producto/:slug" element={<ProductPage />} />
+            {/* [2026-07-02] CATARSIS — URL antigua: redirige a /{categoria}/{slug} */}
+            <Route path="/producto/:slug" element={<ProductRedirect />} />
+            {/* [2026-07-02] CATARSIS — URL canónica de producto. Va después de rutas literales
+                (categoría, /menu, /carrito, etc.) para que esos matcheen primero.
+                ProductPage valida internamente que :categoria sea una categoría real. */}
+            <Route path="/:categoria/:slug" element={<ProductPage />} />
             <Route path="/terminos-y-condiciones" element={<Legal />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/admin" element={<Admin />} />
