@@ -1,15 +1,25 @@
-## Problema
+## Cambios (dos archivos, solo presentación)
 
-En `src/components/ReviewCTA.tsx` uso clases `bg-raspberry`, `text-raspberry`, `fill-xanthous`, `shadow-raspberry/20`, pero esos tokens **no están registrados en `tailwind.config.ts`** (solo existen como variables CSS `--raspberry` / `--xanthous`). Resultado: el botón sale transparente, "Catarsis" no aparece en fucsia y las estrellas se ven negras — justo lo que muestras en la captura.
+### 1) `src/components/ReviewCTA.tsx` — más compacto y mejor responsive
 
-## Cambios
+- Reducir padding del bloque: `py-14 px-4 sm:px-8` → `py-8 sm:py-10 px-4 sm:px-6`.
+- Reducir tamaño del heading: `text-4xl md:text-5xl` → `text-2xl sm:text-3xl md:text-4xl`.
+- Reducir párrafo: `text-base md:text-lg` → `text-sm md:text-base`, con `max-w-sm`.
+- Reducir estrellas de `w-6 h-6` a `w-5 h-5` con `gap-1`.
+- Botón más pequeño: `px-8 py-4` → `px-5 sm:px-6 py-2.5 sm:py-3`, texto `text-sm`, ícono `w-4 h-4`.
+- Layout: en móvil apilar centrado (`flex-col text-center`), a partir de `md:` volver a split. Reducir gap a `gap-6 md:gap-8`.
+- Reducir halos decorativos (`w-40 h-40` en móvil, `md:w-64 md:h-64`) para que no invadan.
 
-Editar únicamente `src/components/ReviewCTA.tsx` para usar los mismos valores del prototipo aprobado:
+### 2) `src/components/SearchBar.tsx` — mejor responsive
 
-1. **Estrellas** → reemplazar `fill-xanthous` por color directo `#FFB800` (`style={{ color: '#FFB800' }}` + `fill="currentColor"`).
-2. **"Catarsis"** → reemplazar `text-raspberry` por `text-[#DB1F51]`.
-3. **Botón** → reemplazar `bg-raspberry hover:bg-raspberry/90 shadow-raspberry/20` por `bg-[#DB1F51] hover:bg-[#c11b47] shadow-[#DB1F51]/20` (píldora fucsia sólida con flecha, tal cual el prototipo).
-4. **Halos** → mantener con `hsl(var(--raspberry)/0.06)` y `hsl(var(--xanthous)/0.05)` (esos sí existen como variables CSS y funcionan como fondo sutil).
-5. Sin cambios en `Index.tsx`, `OrderConfirmed.tsx`, ni en la lógica de tracking. Sin tocar tailwind.config.
+- Reducir contenedor: `py-8` → `py-4 sm:py-6`, altura `h-14` → `h-12 sm:h-14`.
+- Botón "Buscar":
+  - En móvil ocultar la palabra ("Buscar" visible sólo desde `sm:`): `<span className="hidden sm:inline …">Buscar</span>`.
+  - Reducir padding móvil: `pl-6 pr-8` → `pl-4 pr-5 sm:pl-6 sm:pr-8`.
+  - Ajustar `gap-3` → `gap-2 sm:gap-3` e ícono `h-5 w-5` (ok) o `h-[18px] w-[18px]` en móvil.
+- Input: reducir padding izquierda en móvil `pl-8` → `pl-4 sm:pl-8`, `text-base` → `text-sm sm:text-base`, y placeholder más corto en móvil (usar prop existente si ya se pasa, si no dejar el default).
+- Botón limpiar: `h-9 w-9` → `h-8 w-8 sm:h-9 sm:w-9`, `mr-2` sin cambios.
+- Cuchilla inclinada (`-right-4 w-8`) mantener; solo verificar que no rompa en móvil por el reducido padding.
+- Sin cambios de lógica, tracking Meta Pixel intacto.
 
-Resultado esperado: heading en Phudu con "Catarsis" fucsia, 5 estrellas amarillas alineadas a la derecha y píldora fucsia sólida "Déjanos tu reseña →", idéntico al prototipo Split editorial.
+Sin cambios en tokens de Tailwind ni en otros archivos.
