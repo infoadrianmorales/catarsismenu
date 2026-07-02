@@ -103,11 +103,11 @@ export const SocialProofSection = () => {
         <div className="rounded-3xl overflow-hidden">
           {/* Testimonios — fondo blanco, altura fija para uniformidad */}
           <div
-            className="bg-white px-6 py-12 sm:py-14 text-center flex flex-col justify-center min-h-[300px] sm:min-h-[340px]"
+            className="bg-white px-6 py-12 sm:py-14 text-center flex flex-col justify-between min-h-[300px] sm:min-h-[340px]"
             onMouseEnter={() => setIsPaused(true)}
             onMouseLeave={() => setIsPaused(false)}
           >
-            <div key={index} className="animate-fade-in">
+            <div key={index} className="animate-fade-in my-auto">
               <p className="text-[#010C23] text-base font-medium">{active.name}</p>
               <p className="text-[#010C23]/60 text-sm mb-6">{active.role}</p>
 
