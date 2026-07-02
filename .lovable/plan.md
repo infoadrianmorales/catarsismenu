@@ -1,13 +1,12 @@
-## Cambios en `src/components/TopBar.tsx`
+## Cambio en `src/components/SocialProofSection.tsx`
 
-**1. Botones a la izquierda** — dejar solo dos:
-- Instagram (`@catarsislecheria`) — se mantiene.
-- Ubicación (icono `MapPin` de lucide) → enlaza a Google Maps de CC Aventura Plaza, Lechería (mismo link usado en el footer).
-- Eliminar: icono Mail y icono WhatsApp.
+Cambiar el fondo del bloque unificado (testimonios + CTA reseña) de gris claro `#F5F6F8` a **Rich Black `#010C23`** (color de marca), manteniendo la estructura de un solo bloque.
 
-**2. Popover de horarios** — dejar solo el horario real de Catarsis Lechería:
-- Lechería · Lunes a Domingo · **12:00 PM – 1:00 AM** (horario oficial según memoria del proyecto).
-- Eliminar por completo el bloque de Caracas.
-- Ajustar el ancho del popover (`w-56`) al quedar un solo bloque.
+Ajustes de contraste dentro del mismo bloque:
+- **Card wrapper**: `bg-[#010C23]` + un borde sutil `border border-white/10` para separarlo del fondo oscuro de la página.
+- **Testimonio**: nombre y quote en blanco (`text-white`), rol y quote secundaria en `text-white/60`.
+- **Controles del carrusel**: flechas y dots en tonos `white/40 → white/90` (activo blanco sólido, ancho `w-6`).
+- **Separador**: `border-white/10`.
+- **CTA reseña**: título en blanco con "Catarsis" en `#DB1F51`, descripción en `text-white/70`, estrellas amarillas `#FFB800` sin cambios, botón Raspberry `#DB1F51` sin cambios.
 
-No se toca ningún otro archivo ni estilo.
+No se toca la estructura, tipografías, ni la lógica del carrusel. Solo tokens de color para asegurar legibilidad sobre el nuevo fondo oscuro.
