@@ -1,19 +1,19 @@
 ## Objetivo
-Mejorar la simetría visual entre la columna de texto SEO (izquierda) y el mapa (derecha) en `src/components/SemanticSEOSection.tsx`, eliminando elementos duplicados.
+Reordenar las secciones finales en `src/pages/Index.tsx` para que el mapa (SemanticSEOSection) aparezca justo después de los testimonios, y el Newsletter quede al final antes del Footer.
 
-## Cambios en `src/components/SemanticSEOSection.tsx`
+## Cambio único en `src/pages/Index.tsx`
 
-**Columna derecha — simplificar:**
-- Eliminar el bloque de dirección "CC Aventura Plaza / Av. Diego Bautista Urbaneja…"
-- Eliminar el bloque de horario "Lunes a Domingo / 12:00 PM – 1:00 AM"
-- Eliminar el botón CTA "Cómo llegar"
-- Mantener únicamente: título "ENCUÉNTRANOS EN LECHERÍA" + iframe del mapa de Google
+Reemplazar el bloque final (SocialProof → Newsletter → TapeDivider → SemanticSEOSection → Footer) por el nuevo orden:
 
-**Simetría visual:**
-- Igualar la altura del mapa con la altura del bloque de texto usando `h-full` en el iframe y `flex flex-col` en la columna derecha, para que el mapa se estire y ocupe todo el alto de la columna izquierda.
-- Alinear ambas columnas con `items-stretch` en el grid.
-- El título "ENCUÉNTRANOS EN LECHERÍA" queda alineado verticalmente con el H2 amarillo de la izquierda (misma línea base).
-- Mantener el tamaño de texto actual (`text-lg`) en los párrafos SEO ya que la columna derecha ahora será más limpia.
+1. `LazySocialProof` — testimonios + CTA reseñas Google
+2. `SemanticSEOSection` — texto SEO + mapa/ubicación
+3. `LazyTapeDivider` — franja amarilla de marca
+4. `LazyNewsletter` — captación de correos
+5. `LazyFooter` — pie de página (después del cierre de `</main>`)
 
-## Resultado
-Dos columnas equilibradas: texto SEO a la izquierda, mapa grande a la derecha con el mismo alto. Sin duplicación de dirección/horario/CTA (ya presentes en el footer y otras secciones).
+Actualizar el comentario `ORDEN FINAL` con la nueva secuencia. Consolidar los dos bloques de comentarios duplicados en uno solo.
+
+## Fuera de alcance
+- No se modifica ningún otro archivo.
+- No se cambia el contenido interno de los componentes.
+- No se tocan los `Suspense` boundaries ni los imports.
