@@ -1,17 +1,25 @@
-## Cambio en `SearchBar.tsx` (estado colapsado)
+## Rediseño de `SearchBar.tsx` — variante "Borde inclinado"
 
-Convertir el botón redondo pequeño en una **píldora horizontal amplia** que integra ícono lupa + texto "Buscar", para que se lea como acción clara y no como un punto suelto.
+Elimino el toggle (colapsado/expandido) y dejo la barra siempre abierta con el botón **Buscar** integrado a la izquierda.
 
-### Detalles
+### Estructura visual (basada en la selección v3)
 
-- Forma: `rounded-full` tipo pill, alto `h-14` (igual que la barra abierta para no saltar layout al expandir).
-- Ancho: `min-w-[220px]` en mobile, `min-w-[280px]` en desktop (queda amplio y centrado, sin quedarse chico).
-- Contenido: `<Search />` (24px) + label `Buscar` (Phudu/uppercase, `text-lg`, tracking amplio).
-- Color: fondo `bg-primary` (Raspberry), texto `text-primary-foreground`, sombra `shadow-primary/30` + glow.
-- Micro-interacción: `hover:scale-[1.02]`, `active:scale-95`, ícono lupa hace `group-hover:rotate-12`.
-- Al hacer click: sigue disparando `trackSearch('abrir_buscador')` y expande la barra a ancho completo con la animación slide actual.
-- Estado abierto: sin cambios (barra completa con input, X y submit).
+- Píldora `h-14 rounded-full` en `bg-background` con `border border-white/10 ring-1 ring-white/5` y `shadow-2xl`.
+- Botón submit a la izquierda: `bg-primary text-primary-foreground` con ícono lupa + label "BUSCAR" (Phudu uppercase, tracking amplio).
+- **Borde inclinado**: div absoluto `w-8 h-full -skew-x-12 bg-primary` fusionado al borde derecho del botón (efecto "cuchilla").
+- **Yellow top-border** sobre el botón: línea `h-[2px] bg-secondary/70` en la parte superior (Xanthous).
+- **Noise overlay**: capa absoluta con SVG turbulence + `opacity-[0.04] mix-blend-overlay` sobre toda la píldora.
+- **Glow raspberry pulsante en focus**: capa `-inset-1.5 blur-2xl bg-primary` con `opacity-20`, `group-focus-within:opacity-50` + `animate-pulse` sólo cuando el input está enfocado.
+- Detalle Xanthous a la derecha (barrita `w-1 h-4 bg-secondary/30`).
+
+### Comportamiento
+
+- Siempre visible (sin estado colapsado). Elimino `useState(open)` y `handleOpen`.
+- El botón submit dispara `handleSubmit` → `trackSearch(value)` (evento Meta Pixel).
+- Enter dentro del input también ejecuta submit → mismo evento (nativo del `<form>`).
+- Botón mantiene `id="search-submit-btn"` y `data-meta-event="Search"` para validación.
+- Ícono X a la derecha (dentro del input) sólo aparece si hay `value`, para limpiar.
 
 ### Fuera de alcance
 
-No se toca la barra expandida, el placeholder, ni la lógica de tracking del Pixel.
+No se modifica `useSearch`, ni `trackSearch`, ni la lógica de filtrado. Solo el componente `src/components/SearchBar.tsx`.
