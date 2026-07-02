@@ -61,11 +61,29 @@ const TESTIMONIALS: Testimonial[] = [
 
 export const SocialProofSection = () => {
   const [index, setIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
   const total = TESTIMONIALS.length;
   const active = TESTIMONIALS[index];
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const prev = () => setIndex((i) => (i - 1 + total) % total);
   const next = () => setIndex((i) => (i + 1) % total);
+
+  // [2026-07-02] Autoplay 6s con pausa en hover y respeto por reduced-motion.
+  useEffect(() => {
+    const prefersReduced =
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReduced || isPaused) return;
+
+    timerRef.current = setInterval(() => {
+      setIndex((i) => (i + 1) % total);
+    }, 6000);
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [isPaused, total, index]);
 
   const handleReviewClick = () => {
     try {
