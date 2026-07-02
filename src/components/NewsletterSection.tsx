@@ -61,12 +61,12 @@ export const NewsletterSection = () => {
   return (
     <section className="w-full flex items-center justify-center px-4 sm:px-6 py-8">
       <div className="w-full max-w-5xl">
-        <div className="rounded-3xl bg-[#010C23] border border-white/5 shadow-2xl px-6 py-10 sm:py-12 text-center">
+        <div className="rounded-3xl bg-[#F5F6F8] border border-black/5 shadow-2xl px-6 py-10 sm:py-12 text-center">
           <div className="flex justify-center mb-4">
-            <Send className="h-8 w-8 text-white" strokeWidth={1.5} />
+            <Send className="h-8 w-8 text-[#010C23]" strokeWidth={1.5} />
           </div>
 
-          <h2 className="font-display text-white text-3xl sm:text-4xl font-bold mb-6">
+          <h2 className="font-display text-[#010C23] text-3xl sm:text-4xl font-bold mb-6">
             ¡Suscríbete!
           </h2>
 
@@ -83,24 +83,25 @@ export const NewsletterSection = () => {
               required
               maxLength={254}
               aria-label="Correo electrónico"
-              className="flex-1 rounded-full bg-transparent border border-white/20 px-5 py-3 text-white placeholder:text-white/40 focus:outline-none focus:border-white/50 transition-colors disabled:opacity-50"
+              className="flex-1 rounded-full bg-white border border-[#010C23]/20 px-5 py-3 text-[#010C23] placeholder:text-[#010C23]/40 focus:outline-none focus:border-[#010C23]/50 transition-colors disabled:opacity-50"
             />
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex items-center justify-center gap-2 rounded-full border border-white/30 hover:bg-[#DB1F51] hover:border-[#DB1F51] text-white px-6 py-3 font-medium transition-all disabled:opacity-50"
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-[#DB1F51] hover:bg-[#c11b47] text-white px-6 py-3 font-medium transition-all disabled:opacity-50 shadow-lg shadow-[#DB1F51]/20"
             >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               <span>Registrarme</span>
             </button>
           </form>
 
-          <p className="text-white/50 text-xs sm:text-sm mt-5">
+          <p className="text-[#010C23]/60 text-xs sm:text-sm mt-5">
             Suscríbete a nuestro newsletter y recibe ofertas y noticias exclusivas.
           </p>
         </div>
       </div>
     </section>
+
   );
 };
 

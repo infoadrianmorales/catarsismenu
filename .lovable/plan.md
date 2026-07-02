@@ -1,23 +1,33 @@
-## Ajuste de fondos en `src/components/SocialProofSection.tsx`
+## Cambio de fondo del bloque Newsletter (`src/components/NewsletterSection.tsx`)
 
-Mantener el bloque unificado (una sola card redondeada) pero con dos zonas de color diferenciadas:
+El fondo azul Rich Black (`#010C23`) se confunde con el fondo general de la página. Cambiar a un **blanco opaco / hueso** para que el bloque destaque.
 
-**Zona 1 — Testimonios (arriba): fondo blanco**
-- Contenedor: `bg-white`.
-- Nombre y quote: `text-[#010C23]`.
-- Rol: `text-[#010C23]/60`.
-- Flechas del carrusel: `text-[#010C23]/50 → hover:text-[#010C23]`.
-- Dots: activo `bg-[#010C23]` (w-6), inactivos `bg-[#010C23]/25`.
+### Ajustes
 
-**Separador**: se elimina la línea divisoria (el cambio de color ya separa visualmente).
+**Contenedor**
+- Fondo: `bg-[#F5F6F8]` (blanco opaco, mismo tono que usábamos antes en SocialProof).
+- Quitar `border-white/5`; agregar `border border-black/5` para un borde sutil.
+- Mantener `rounded-3xl shadow-2xl` y el padding actual.
 
-**Zona 2 — CTA reseña (abajo): fondo azul de marca `#010C23` (Rich Black / azul noche)**
-- Contenedor: `bg-[#010C23]`.
-- Título en blanco con "Catarsis" en `#DB1F51`.
-- Descripción: `text-white/70`.
-- Estrellas amarillas `#FFB800` sin cambios.
-- Botón Raspberry `#DB1F51` sin cambios.
+**Ícono avión (Send)**
+- Color: `text-[#010C23]` (azul marca) en lugar de blanco.
 
-**Wrapper de la card**: quitar el `bg-[#010C23]` global y el `border-white/10` (cada zona ya trae su fondo); mantener `rounded-3xl overflow-hidden` para que las esquinas recorten limpiamente ambas zonas.
+**Título "¡SUSCRÍBETE!"**
+- `text-[#010C23]` (azul marca).
 
-Sin cambios en tipografías, estructura, ni contenido de las reseñas.
+**Input de correo**
+- Borde: `border-[#010C23]/20`, focus `border-[#010C23]/50`.
+- Texto: `text-[#010C23]`, placeholder: `placeholder:text-[#010C23]/40`.
+
+**Botón "Registrarme"**
+- Fondo: `bg-[#DB1F51]` (Raspberry) con `text-white`.
+- Hover: `hover:bg-[#c11b47]`.
+- Quitar el borde blanco actual.
+- Así se convierte en el punto focal llamativo dentro del bloque claro.
+
+**Texto de apoyo**
+- `text-[#010C23]/60`.
+
+### Fuera de alcance
+- No se toca la estructura, el formulario, ni la lógica de suscripción a Lovable Cloud.
+- No se modifica `SocialProofSection` ni ningún otro componente.
