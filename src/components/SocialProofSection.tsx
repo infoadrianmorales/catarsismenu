@@ -3,7 +3,7 @@
  * Bloque unificado que combina Testimonios + CTA de reseña Google
  * dentro de una sola card gris clara.
  */
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { trackContact } from '@/lib/metaPixel';
 
