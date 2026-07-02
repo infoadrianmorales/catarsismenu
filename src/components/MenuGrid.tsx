@@ -1,7 +1,11 @@
 // [2026-04-08] SOURCE TRACKING: best-seller tab pasa source='best_seller', resto pasa 'menu'.
+// [2026-07-02] Home compacta: máx 4 productos por categoría en vista "todos" + CTA "Ver todo".
+import { Link } from 'react-router-dom';
+import { ChevronRight } from 'lucide-react';
 import { MenuItem, Currency, MenuCategory } from '@/types/menu';
 import { MenuCard } from './MenuCard';
 import { PriceDisplayMode } from '@/hooks/useCurrency';
+
 
 interface MenuGridProps {
   items: MenuItem[];
