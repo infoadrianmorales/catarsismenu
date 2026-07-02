@@ -103,7 +103,7 @@ export const SocialProofSection = () => {
         <div className="rounded-3xl overflow-hidden">
           {/* Testimonios — zonas fijas para que los controles no se desplacen por el largo del texto */}
           <div
-            className="bg-white px-6 py-10 sm:py-12 text-center grid grid-rows-[auto_1fr_auto] min-h-[360px] sm:min-h-[390px]"
+            className="bg-white px-6 py-10 sm:py-12 text-center grid grid-rows-[44px_minmax(0,1fr)_48px] h-[470px] sm:h-[430px] md:h-[410px]"
             onMouseEnter={() => setIsPaused(true)}
             onMouseLeave={() => setIsPaused(false)}
           >
@@ -112,9 +112,9 @@ export const SocialProofSection = () => {
               <p className="text-[#010C23]/60 text-sm">{active.role}</p>
             </div>
 
-            <div key={`quote-${index}`} className="animate-fade-in flex items-center justify-center min-h-[180px] sm:min-h-[200px] py-6">
+            <div key={`quote-${index}`} className="animate-fade-in min-h-0 flex items-center justify-center py-6">
               <p
-                className="text-[#010C23] text-lg sm:text-xl md:text-2xl italic max-w-2xl mx-auto leading-relaxed"
+                className="text-[#010C23] text-base sm:text-xl md:text-2xl italic max-w-2xl mx-auto leading-relaxed"
                 style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
               >
                 "{active.quote}"
