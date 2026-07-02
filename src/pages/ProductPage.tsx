@@ -16,6 +16,8 @@ import { trackViewContent, trackAddToCart } from '@/lib/metaPixel';
 import { SEO } from '@/components/SEO';
 import { ProductSchema } from '@/components/ProductSchema';
 import { BreadcrumbSchema } from '@/components/BreadcrumbSchema';
+// [2026-07-02] Sugerencias contextuales al final de cada página de producto.
+import { ProductSuggestions } from '@/components/product/ProductSuggestions';
 
 const ProductPage = () => {
   // [2026-07-02] CATARSIS — La URL canónica del producto es /{categoria}/{slug}.
@@ -313,6 +315,9 @@ const ProductPage = () => {
         </div>
       </div>
       
+      {/* [2026-07-02] Sugerencias de otros productos — se auto-oculta si no hay */}
+      <ProductSuggestions product={product} />
+
       <Footer />
     </div>
   );
