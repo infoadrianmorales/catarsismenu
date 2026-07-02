@@ -38,4 +38,12 @@
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
+  <!--
+    [2026-07-02] CATARSIS — RECORDATORIO
+    A partir de esta fecha, las URLs de producto siguen el formato
+    /{categoria}/{slug} (ej. /hamburguesas/smash-clasica).
+    /producto/{slug} sigue funcionando pero redirige a la canónica.
+    Al agregar/renombrar productos, sumar aquí una <url> con la
+    URL canónica nueva y remover la vieja si aplica.
+  -->
 </urlset>
