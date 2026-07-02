@@ -37,6 +37,15 @@ const LazyTapeDivider = lazy(() =>
 const LazyReviewCTA = lazy(() =>
   import('@/components/ReviewCTA').then(m => ({ default: m.ReviewCTA }))
 );
+const LazyTestimonials = lazy(() =>
+  import('@/components/TestimonialsSection').then(m => ({ default: m.TestimonialsSection }))
+);
+const LazyNewsletter = lazy(() =>
+  import('@/components/NewsletterSection').then(m => ({ default: m.NewsletterSection }))
+);
+const LazyTopBar = lazy(() =>
+  import('@/components/TopBar').then(m => ({ default: m.TopBar }))
+);
 
 
 const Index = () => {
@@ -83,6 +92,9 @@ const Index = () => {
       <RestaurantSchema />
       <FAQSchema />
       <LocalBusinessSchema />
+      <Suspense fallback={null}>
+        <LazyTopBar />
+      </Suspense>
       <MenuHeader
         currency={currency} 
         onCurrencyToggle={toggleCurrency}
@@ -155,13 +167,26 @@ const Index = () => {
           1. Franja de marca — elemento visual de separación
           2. SemanticSEOSection — texto SEO para Google e IAs
           3. Footer — contacto, horario y ubicación */}
+      {/* ORDEN FINAL — no modificar esta secuencia:
+          1. Testimonios — prueba social antes del CTA de reseña
+          2. ReviewCTA — invita a dejar reseña en Google
+          3. Newsletter — captación de correos
+          4. Franja de marca — elemento visual de separación
+          5. SemanticSEOSection — texto SEO para Google e IAs
+          6. Footer — contacto, horario y ubicación */}
+      <Suspense fallback={null}>
+        <LazyTestimonials />
+      </Suspense>
+      <Suspense fallback={null}>
+        <LazyReviewCTA />
+      </Suspense>
+      <Suspense fallback={null}>
+        <LazyNewsletter />
+      </Suspense>
       <Suspense fallback={null}>
         <LazyTapeDivider />
       </Suspense>
       <SemanticSEOSection />
-      <Suspense fallback={null}>
-        <LazyReviewCTA />
-      </Suspense>
       </main>
       <Suspense fallback={null}>
         <LazyFooter />
