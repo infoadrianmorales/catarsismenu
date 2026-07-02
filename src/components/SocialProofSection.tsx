@@ -3,7 +3,7 @@
  * Bloque unificado que combina Testimonios + CTA de reseña Google
  * dentro de una sola card gris clara.
  */
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { trackContact } from '@/lib/metaPixel';
 
@@ -61,11 +61,29 @@ const TESTIMONIALS: Testimonial[] = [
 
 export const SocialProofSection = () => {
   const [index, setIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
   const total = TESTIMONIALS.length;
   const active = TESTIMONIALS[index];
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const prev = () => setIndex((i) => (i - 1 + total) % total);
   const next = () => setIndex((i) => (i + 1) % total);
+
+  // [2026-07-02] Autoplay 6s con pausa en hover y respeto por reduced-motion.
+  useEffect(() => {
+    const prefersReduced =
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReduced || isPaused) return;
+
+    timerRef.current = setInterval(() => {
+      setIndex((i) => (i + 1) % total);
+    }, 6000);
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [isPaused, total, index]);
 
   const handleReviewClick = () => {
     try {
@@ -83,17 +101,23 @@ export const SocialProofSection = () => {
         </h2>
 
         <div className="rounded-3xl overflow-hidden">
-          {/* Testimonios — fondo blanco */}
-          <div className="bg-white px-6 py-12 sm:py-14 text-center">
-            <p className="text-[#010C23] text-base font-medium">{active.name}</p>
-            <p className="text-[#010C23]/60 text-sm mb-6">{active.role}</p>
+          {/* Testimonios — fondo blanco, altura fija para uniformidad */}
+          <div
+            className="bg-white px-6 py-12 sm:py-14 text-center flex flex-col justify-center min-h-[300px] sm:min-h-[340px]"
+            onMouseEnter={() => setIsPaused(true)}
+            onMouseLeave={() => setIsPaused(false)}
+          >
+            <div key={index} className="animate-fade-in">
+              <p className="text-[#010C23] text-base font-medium">{active.name}</p>
+              <p className="text-[#010C23]/60 text-sm mb-6">{active.role}</p>
 
-            <p
-              className="text-[#010C23] text-lg sm:text-xl md:text-2xl italic max-w-2xl mx-auto leading-relaxed"
-              style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
-            >
-              "{active.quote}"
-            </p>
+              <p
+                className="text-[#010C23] text-lg sm:text-xl md:text-2xl italic max-w-2xl mx-auto leading-relaxed"
+                style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+              >
+                "{active.quote}"
+              </p>
+            </div>
 
             {/* Controles del carrusel */}
             <div className="flex items-center justify-center gap-4 mt-8">
