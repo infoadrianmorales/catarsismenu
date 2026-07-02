@@ -142,7 +142,8 @@ const ProductPage = () => {
   const breadcrumbItems = [
     { name: 'Inicio', url: 'https://www.catarsiszone.com/' },
     { name: categoryLabel, url: `https://www.catarsiszone.com/categoria/${product.categoria}` },
-    { name: product.nombre, url: `https://www.catarsiszone.com/producto/${product.slug}` }
+    // [2026-07-02] CATARSIS — URL canónica actualizada al esquema /{categoria}/{slug}.
+    { name: product.nombre, url: `https://www.catarsiszone.com/${product.categoria}/${product.slug}` }
   ];
 
   return (
@@ -151,7 +152,7 @@ const ProductPage = () => {
         title={product.nombre}
         description={product.descripcion_corta || `${product.nombre} en Catarsis Drinks & Food`}
         image={product.imagen}
-        url={`/producto/${product.slug}`}
+        url={`/${product.categoria}/${product.slug}`}
         type="product"
       />
       <ProductSchema
