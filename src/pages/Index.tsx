@@ -34,11 +34,8 @@ const LazyFooter = lazy(() =>
 const LazyTapeDivider = lazy(() =>
   import('@/components/Footer').then(m => ({ default: m.TapeDivider }))
 );
-const LazyReviewCTA = lazy(() =>
-  import('@/components/ReviewCTA').then(m => ({ default: m.ReviewCTA }))
-);
-const LazyTestimonials = lazy(() =>
-  import('@/components/TestimonialsSection').then(m => ({ default: m.TestimonialsSection }))
+const LazySocialProof = lazy(() =>
+  import('@/components/SocialProofSection').then(m => ({ default: m.SocialProofSection }))
 );
 const LazyNewsletter = lazy(() =>
   import('@/components/NewsletterSection').then(m => ({ default: m.NewsletterSection }))
@@ -168,17 +165,13 @@ const Index = () => {
           2. SemanticSEOSection — texto SEO para Google e IAs
           3. Footer — contacto, horario y ubicación */}
       {/* ORDEN FINAL — no modificar esta secuencia:
-          1. Testimonios — prueba social antes del CTA de reseña
-          2. ReviewCTA — invita a dejar reseña en Google
-          3. Newsletter — captación de correos
-          4. Franja de marca — elemento visual de separación
-          5. SemanticSEOSection — texto SEO para Google e IAs
-          6. Footer — contacto, horario y ubicación */}
+          1. SocialProof — testimonios + CTA de reseña Google unificados
+          2. Newsletter — captación de correos
+          3. Franja de marca — elemento visual de separación
+          4. SemanticSEOSection — texto SEO para Google e IAs
+          5. Footer — contacto, horario y ubicación */}
       <Suspense fallback={null}>
-        <LazyTestimonials />
-      </Suspense>
-      <Suspense fallback={null}>
-        <LazyReviewCTA />
+        <LazySocialProof />
       </Suspense>
       <Suspense fallback={null}>
         <LazyNewsletter />

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { MenuHeader } from '@/components/MenuHeader';
 import { Footer } from '@/components/Footer';
-import { ReviewCTA } from '@/components/ReviewCTA';
+import { SocialProofSection } from '@/components/SocialProofSection';
 
 import { useCurrency } from '@/hooks/useCurrency';
 
@@ -74,7 +74,7 @@ const OrderConfirmed = () => {
         </Card>
 
         <div className="mt-8">
-          <ReviewCTA />
+          <SocialProofSection />
         </div>
       </div>
       
