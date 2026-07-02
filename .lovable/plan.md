@@ -1,27 +1,15 @@
-# Botón de reseña de Google
+## Problema
 
-## Ubicación
-Insertar la tarjeta justo antes del `Footer` en la home (`src/pages/Index.tsx`), después de la última sección de contenido. Así queda visible al final del recorrido, cuando el usuario ya vio el menú y es más probable que quiera dejar reseña.
+En `src/components/ReviewCTA.tsx` uso clases `bg-raspberry`, `text-raspberry`, `fill-xanthous`, `shadow-raspberry/20`, pero esos tokens **no están registrados en `tailwind.config.ts`** (solo existen como variables CSS `--raspberry` / `--xanthous`). Resultado: el botón sale transparente, "Catarsis" no aparece en fucsia y las estrellas se ven negras — justo lo que muestras en la captura.
 
-Alternativa: sólo mostrarla en la página de "Pedido confirmado" (`OrderConfirmed.tsx`) tras completar la orden. Por defecto voy con la home + confirmación de pedido para maximizar visibilidad.
+## Cambios
 
-## Componente
-Crear `src/components/ReviewCTA.tsx` con el diseño Raspberry seleccionado:
-- Fondo `#DB1F51`, sombra dura amarilla `#FFB800`, borde negro, textura halftone.
-- Título "CUÉNTANOS" en Phudu, 5 estrellas amarillas, botón blanco con logo de Google + "DÉJANOS TU RESEÑA".
-- Usar tokens semánticos del design system (raspberry, xanthous, rich-black) — sin hardcodear colores.
-- Hover: leve translate + sombra extendida (como el prototipo).
+Editar únicamente `src/components/ReviewCTA.tsx` para usar los mismos valores del prototipo aprobado:
 
-## Link de Google
-El botón abrirá el link de reseñas del negocio. Necesito la URL exacta — usaré un placeholder por ahora: `https://g.page/r/CATARSIS/review` y lo dejaré como constante fácil de editar en el componente. Se abre en nueva pestaña (`target="_blank"`, `rel="noopener"`).
+1. **Estrellas** → reemplazar `fill-xanthous` por color directo `#FFB800` (`style={{ color: '#FFB800' }}` + `fill="currentColor"`).
+2. **"Catarsis"** → reemplazar `text-raspberry` por `text-[#DB1F51]`.
+3. **Botón** → reemplazar `bg-raspberry hover:bg-raspberry/90 shadow-raspberry/20` por `bg-[#DB1F51] hover:bg-[#c11b47] shadow-[#DB1F51]/20` (píldora fucsia sólida con flecha, tal cual el prototipo).
+4. **Halos** → mantener con `hsl(var(--raspberry)/0.06)` y `hsl(var(--xanthous)/0.05)` (esos sí existen como variables CSS y funcionan como fondo sutil).
+5. Sin cambios en `Index.tsx`, `OrderConfirmed.tsx`, ni en la lógica de tracking. Sin tocar tailwind.config.
 
-## Tracking
-Disparar evento `Contact` de Meta Pixel (`trackContact('google_review')`) al hacer clic para medir intención.
-
-## Archivos
-- Crear: `src/components/ReviewCTA.tsx`
-- Editar: `src/pages/Index.tsx` (insertar `<ReviewCTA />` antes del Footer)
-- Editar: `src/pages/OrderConfirmed.tsx` (insertar también tras el mensaje de confirmación)
-
-## Pregunta pendiente
-¿Cuál es el link real de reseñas de Google del negocio? Si no lo tienes a mano, dejo el placeholder y lo actualizas después en el componente.
+Resultado esperado: heading en Phudu con "Catarsis" fucsia, 5 estrellas amarillas alineadas a la derecha y píldora fucsia sólida "Déjanos tu reseña →", idéntico al prototipo Split editorial.

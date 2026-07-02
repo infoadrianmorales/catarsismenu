@@ -37,7 +37,7 @@ export const ReviewCTA = () => {
           {/* Izquierda: Texto */}
           <div className="relative space-y-3 max-w-xl text-center md:text-left">
             <h2 className="font-display text-white text-4xl md:text-5xl font-bold tracking-tight leading-tight">
-              ¿Qué te pareció <span className="text-raspberry">Catarsis</span>?
+              ¿Qué te pareció <span className="text-[#DB1F51]">Catarsis</span>?
             </h2>
             <p className="font-body text-white/60 text-base md:text-lg max-w-md mx-auto md:mx-0">
               Tu experiencia es el motor de nuestro espacio. Ayúdanos a crecer dejando una reseña en Google.
@@ -48,7 +48,7 @@ export const ReviewCTA = () => {
           <div className="relative flex flex-col items-center md:items-end gap-5 shrink-0">
             <div className="flex gap-1.5" aria-hidden="true">
               {Array.from({ length: 5 }).map((_, i) => (
-                <svg key={i} className="w-6 h-6 fill-xanthous" viewBox="0 0 24 24">
+                <svg key={i} className="w-6 h-6" style={{ color: '#FFB800' }} fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
                 </svg>
               ))}
@@ -59,7 +59,7 @@ export const ReviewCTA = () => {
               target="_blank"
               rel="noopener noreferrer"
               onClick={handleClick}
-              className="group inline-flex items-center gap-3 bg-raspberry hover:bg-raspberry/90 text-white px-8 py-4 rounded-full font-body font-medium transition-all duration-300 hover:-translate-y-1 shadow-lg shadow-raspberry/20 min-h-[44px]"
+              className="group inline-flex items-center gap-3 bg-[#DB1F51] hover:bg-[#c11b47] text-white px-8 py-4 rounded-full font-body font-medium transition-all duration-300 hover:-translate-y-1 shadow-lg shadow-[#DB1F51]/20 min-h-[44px]"
             >
               <span>Déjanos tu reseña</span>
               <svg
