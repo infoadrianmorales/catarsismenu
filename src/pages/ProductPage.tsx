@@ -315,6 +315,9 @@ const ProductPage = () => {
         </div>
       </div>
       
+      {/* [2026-07-02] Sugerencias de otros productos — se auto-oculta si no hay */}
+      <ProductSuggestions product={product} />
+
       <Footer />
     </div>
   );
