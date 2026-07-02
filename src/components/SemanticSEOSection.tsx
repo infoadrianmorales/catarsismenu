@@ -36,12 +36,11 @@ export const SemanticSEOSection = () => {
           ¿Por qué Catarsis es el restaurante favorito de Lechería?
         </h2>
 
-        <div className="grid md:grid-cols-2 gap-10 md:gap-12 items-start">
+        <div className="grid md:grid-cols-2 gap-10 md:gap-12 items-stretch">
           {/* Columna izquierda — Párrafos semánticos SEO.
               NO ELIMINAR NI OCULTAR. Google e IAs leen este texto.
-              Actualizar si cambia la carta o el horario.
               CONTRASTE: text-gray-300 cumple WCAG AA sobre #010C23. */}
-          <div className="space-y-4 text-base md:text-lg text-gray-300 leading-relaxed">
+          <div className="flex flex-col justify-center space-y-4 text-base md:text-lg text-gray-300 leading-relaxed">
             <p>
               Catarsis Drinks &amp; Food es un restaurante en CC Aventura
               Plaza, Lechería, Anzoátegui, reconocido por la calidad de
@@ -57,11 +56,10 @@ export const SemanticSEOSection = () => {
             </p>
           </div>
 
-          {/* Columna derecha — Ubicación real con mapa y CTA.
-              Coordenadas verificadas: 10.181209, -64.690776.
-              Mapa vía OpenStreetMap (gratis, sin API key). CTA usa
-              appConfig.maps_url (Place ID real) — misma URL del Footer. */}
-          <div className="space-y-5">
+          {/* Columna derecha — solo título + mapa (dirección, horario y CTA
+              se muestran en el Footer y TopBar; se eliminaron aquí para
+              evitar duplicación y mejorar la simetría visual). */}
+          <div className="flex flex-col gap-5">
             <h3 className="text-xl md:text-2xl font-display font-bold text-white">
               Encuéntranos en Lechería
             </h3>
@@ -71,7 +69,7 @@ export const SemanticSEOSection = () => {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Ver ubicación de Catarsis en Google Maps"
-              className="block relative rounded-2xl overflow-hidden border border-white/10 group"
+              className="block relative rounded-2xl overflow-hidden border border-white/10 group flex-1 min-h-[320px]"
             >
               <iframe
                 title="Ubicación de Catarsis en Google Maps"
@@ -79,41 +77,13 @@ export const SemanticSEOSection = () => {
                 loading="lazy"
                 allowFullScreen
                 referrerPolicy="strict-origin-when-cross-origin"
-                className="w-full h-64 md:h-72 pointer-events-none border-0"
+                className="w-full h-full pointer-events-none border-0"
               />
 
               <span className="absolute bottom-3 left-3 bg-[#DB1F51] text-white text-xs font-semibold px-3 py-1.5 rounded-full">
                 Ver en Google Maps
               </span>
             </a>
-
-            <div className="flex items-start gap-3 text-sm md:text-base text-gray-300 pt-2">
-              <MapPin className="h-6 w-6 mt-0.5 shrink-0" style={{ color: '#F2B60F' }} />
-              <div className="leading-snug">
-                <p className="font-bold text-white text-base md:text-lg">CC Aventura Plaza</p>
-                <p>Av. Diego Bautista Urbaneja, Lechería, Anzoátegui</p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3 text-sm md:text-base text-gray-300 pt-4 border-t border-white/10">
-              <Clock className="h-6 w-6 mt-0.5 shrink-0" style={{ color: '#F2B60F' }} />
-              <div className="leading-snug pt-4">
-                <p className="font-bold text-white text-base md:text-lg">Lunes a Domingo</p>
-                <p>12:00 PM – 1:00 AM</p>
-              </div>
-            </div>
-
-            <div className="pt-4 border-t border-white/10">
-              <a
-                href={appConfig.maps_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 bg-[#DB1F51] hover:bg-[#DB1F51]/90 text-white text-base font-semibold px-6 py-3 rounded-full transition-colors"
-              >
-                <MapPin className="h-5 w-5" />
-                Cómo llegar
-              </a>
-            </div>
           </div>
         </div>
       </div>
