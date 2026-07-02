@@ -65,7 +65,7 @@ export const SearchBar = ({ value, onChange, placeholder = '🔍 Buscar por nomb
           />
 
           {!open ? (
-            // Estado colapsado: botón lupa
+            // Estado colapsado: píldora Buscar (lupa + label)
             <Button
               type="button"
               onClick={handleOpen}
@@ -73,9 +73,10 @@ export const SearchBar = ({ value, onChange, placeholder = '🔍 Buscar por nomb
               aria-expanded={false}
               id="search-toggle-btn"
               data-meta-event="Search"
-              className="relative h-14 w-14 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 hover:scale-105 active:scale-95 transition-all duration-300"
+              className="group relative h-14 min-w-[220px] sm:min-w-[280px] px-8 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 hover:scale-[1.02] active:scale-95 transition-all duration-300 flex items-center justify-center gap-3"
             >
-              <Search className="h-6 w-6" />
+              <Search className="h-6 w-6 transition-transform duration-300 group-hover:rotate-12" />
+              <span className="font-heading uppercase text-lg tracking-wider">Buscar</span>
             </Button>
           ) : (
             // Estado abierto: barra completa
