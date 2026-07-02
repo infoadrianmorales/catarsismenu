@@ -75,11 +75,14 @@ export const SemanticSEOSection = () => {
               className="block relative rounded-2xl overflow-hidden border border-white/10 group"
             >
               <iframe
-                title="Ubicación de Catarsis en Lechería"
-                src={osmEmbed}
+                title="Ubicación de Catarsis en Google Maps"
+                src={googleMapsEmbed}
                 loading="lazy"
-                className="w-full h-64 md:h-72 pointer-events-none"
+                allowFullScreen
+                referrerPolicy="strict-origin-when-cross-origin"
+                className="w-full h-64 md:h-72 pointer-events-none border-0"
               />
+
               <span className="absolute bottom-3 left-3 bg-[#DB1F51] text-white text-xs font-semibold px-3 py-1.5 rounded-full">
                 Ver en Google Maps
               </span>
