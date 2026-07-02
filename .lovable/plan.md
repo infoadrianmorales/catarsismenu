@@ -1,54 +1,76 @@
 ## Objetivo
-Añadir un menú hamburguesa (☰) a la izquierda del logo con: buscador en vivo, categorías, horario y contacto.
+Migrar URLs de producto de `/producto/{slug}` → `/{categoria}/{slug}`, sin romper enlaces existentes.
 
-## Sugerencias antes de ejecutar
+## Sugerencias / ajustes al prompt
 
-Reviso el prompt y detecto varios puntos que conviene ajustar antes de codearlo:
+Reviso el prompt y encontré varios puntos críticos que hay que ajustar para que la migración no rompa nada:
 
-**1. JSX roto en el snippet pegado**
-El código del prompt llega con las etiquetas `<...>` eliminadas por el formateador de chat (se ve `Icon` suelto, `input` sin apertura, etc.). Voy a reescribir el componente completo desde cero respetando la intención, no copiar tal cual.
+### 1. La ruta `/:categoria/:slug` es un cazador demasiado amplio ⚠️
+En `App.tsx` existen rutas de un solo segmento (`/menu`, `/carrito`, `/checkout`, `/admin`, `/auth`, `/local`, `/orden-confirmada`, `/terminos-y-condiciones`) y de categoría (`/hamburguesas`, `/pizzas`, etc.). Un patrón `/:categoria/:slug` no colisiona con las de un solo segmento, pero sí colisiona con `/categoria/:slug` (fallback largo de categoría) — porque React Router matchea la primera declarada. Solución: **declarar `/:categoria/:slug` DESPUÉS de `/categoria/:slug`** (así "categoria" como literal gana) y validar dentro de `ProductPage` que `categoria` sea un slug de categoría válido; si no, mostrar `NotFound`. Sin esta guarda, cualquier URL de dos segmentos renderiza ProductPage y termina en pantalla en blanco.
 
-**2. Ruta de producto incorrecta**
-El prompt navega a `/${categoria}/${slug}`, pero en `App.tsx` la ruta real es `/producto/:slug`. Uso `/producto/${slug}` para no romper la navegación.
+### 2. Faltan archivos que también usan la ruta vieja
+El prompt cubre `ProductPage`, `MenuCard`, `CompactProductCard`. Detecté otros que también hay que actualizar para consistencia y SEO:
+- `src/components/ProductSchema.tsx` — JSON-LD schema.org `"url"`.
+- `src/components/HamburgerMenu.tsx` — `navigate('/producto/${slug}')` en la búsqueda.
+- `src/components/admin/MetaCatalogPanel.tsx` — texto informativo del formato de URL.
+- `supabase/functions/meta-catalog-feed/index.ts` — feed XML que Meta usa para el catálogo. **Crítico**: si no se actualiza, los anuncios de Meta seguirán enviando a `/producto/{slug}` (funciona por el redirect, pero pierde señales de conversión y añade un salto extra).
 
-**3. Color `#14B2AA` (teal) fuera de branding**
-El proyecto usa Raspberry `#DB1F51` y Xanthous `#FFB800` (memoria core). Cambio el focus ring y acentos a Raspberry para respetar la identidad.
+### 3. `ProductRedirect` con `useProducts()` carga TODOS los productos solo para leer una categoría
+Sobrecarga de red innecesaria. Alternativa mejor: consulta puntual a Supabase (`select categoria from products where slug = ?`). Más liviano y no depende del hook global. Mientras la lista carga, el prompt hace `return null` — deja pantalla en blanco. Añadir un fallback mínimo (spinner del layout ya existente) o un `<meta http-equiv="refresh">` de respaldo.
 
-**4. Horario duplicado y hardcodeado**
-Ya existe `TopBar.tsx` con el horario oficial (Lechería, Lun–Dom 12:00 PM–1:00 AM) en un popover. Repetirlo en el hamburguesa duplica info. Propongo dos opciones:
-- **A (recomendada):** Mostrar el horario en el hamburguesa igual, pero leer el string una sola vez desde una constante compartida (o replicar el mismo texto exacto de `TopBar`) para que si mañana cambia, no queden desfasados.
-- **B:** Omitir el bloque horario del hamburguesa (ya está en TopBar y Footer).
+### 4. Redirect real vs client-side
+El prompt aclara que es client-side. Ok mientras vivan en Lovable. Añado también un `<link rel="canonical">` apuntando a la nueva URL desde `ProductPage` para que Google consolide señales cuanto antes (ya existe `SEO` component — verificar si soporta canonical).
 
-**5. Redundancia con navegación móvil existente**
-Confirmar: ¿el hamburguesa debe aparecer en **desktop + móvil** o solo en móvil? El header actual no tiene un menú móvil dedicado, así que asumo **ambos**, pero conviene confirmarlo.
+### 5. Sitemap: el prompt se cortó y NO genera URLs de producto
+El `public/sitemap.xml` actual tiene solo 2 URLs (home + /menu), hecho a mano. No incluye productos ni categorías. Recomendación: pasar a **generador `scripts/generate-sitemap.ts`** que:
+- Lea productos desde Supabase.
+- Emita `/{categoria}/{slug}` por cada producto.
+- Incluya cada ruta de categoría.
+- Se ejecute en `predev` + `prebuild`.
 
-**6. Best-seller doble ícono**
-El prompt renderiza `<Icon />` y además prefija `🔥` al nombre para best-seller. Queda ruidoso. Uso solo el ícono del hook (que ya viene definido en `usePublicCategories`).
+Esto no está en el prompt original y **cambia el mecanismo** — según reglas del proyecto necesita tu confirmación explícita. Alternativa mínima: agregar las URLs a mano.
 
-**7. `descripcion_corta` puede no existir en el tipo Product**
-Uso encadenamiento opcional y también busco por `descripcion` como fallback, para evitar errores TS.
+### 6. Slugs de categoría dinámicos
+`useProducts` normaliza `categoria` a un `MenuCategory` (enum tipado). Si en el futuro se crea una categoría nueva desde el panel admin, la URL `/{nueva-categoria}/{slug}` funcionará solo si `NotFound` no la captura. La guarda de la sección 1 debe validar contra la lista dinámica de `usePublicCategories`, no contra una lista hardcodeada.
 
-**8. Accesibilidad**
-Añadir `aria-label="Abrir menú"` al trigger y `role="dialog"` no es necesario en DropdownMenu (Radix ya lo maneja), pero sí verificar tamaño táctil ≥44×44px (memoria).
+### 7. Compatibilidad con la home actual
+La home usa short URLs (`/hamburguesas`) para categorías. Con la nueva regla, `/hamburguesas/mi-slug` es el producto y `/hamburguesas` es la categoría — bien, no chocan porque una es 1 segmento y la otra 2.
 
-## Plan de implementación (si apruebas)
+## Plan de implementación
 
-1. **Crear `src/components/HamburgerMenu.tsx`** con:
-   - `DropdownMenu` de shadcn, trigger con ícono `Menu` (44×44px).
-   - Buscador en vivo (`Input` con `onKeyDown stopPropagation`, resultados ≥2 chars, máx 6).
-   - Lista de categorías desde `usePublicCategories().sectionCategories`, usando `CATEGORY_SHORT_ROUTES` con fallback `/categoria/:slug`.
-   - Bloque horario (opción A: string compartido con TopBar) y contacto (WhatsApp, Instagram, Ubicación) leídos de `appConfig`.
-   - Navegación a producto: `/producto/${slug}`.
-   - Colores de marca: Raspberry para acento/focus ring, fondo `#010C23`.
-   - Comentarios en español explicando cada bloque.
+**A. Router (`src/App.tsx`)**
+- Import lazy: `const ProductRedirect = lazy(() => import("./pages/ProductRedirect"));`
+- Reemplazar `/producto/:slug` → apunta a `<ProductRedirect />`.
+- Añadir `<Route path="/:categoria/:slug" element={<ProductPage />} />` **después** de `/categoria/:slug` y todas las categorías cortas, antes de `*`.
 
-2. **Editar `src/components/MenuHeader.tsx`**:
-   - Import de `HamburgerMenu`.
-   - Insertarlo dentro del `<div className="flex items-center">` (línea 37) **antes** del `<Link>` del logo, con un pequeño `gap` para que respire.
-   - Comentario explicativo con fecha.
+**B. `src/pages/ProductRedirect.tsx` (nuevo)**
+- Query puntual con `supabase.from('products').select('categoria').eq('slug', slug).maybeSingle()`.
+- Loading → spinner discreto. Sin match → `<Navigate to="/" replace />`.
+- Con match → `<Navigate to={`/${categoria}/${slug}`} replace />`.
+- Comentarios con fecha.
 
-## Preguntas para ti (rápidas)
-1. ¿El menú hamburguesa debe verse en **desktop y móvil** o solo en móvil?
-2. ¿Prefieres **A** (mostrar horario replicado) o **B** (omitirlo porque ya está en TopBar/Footer)?
+**C. `src/pages/ProductPage.tsx`**
+- `useParams<{ categoria: string; slug: string }>()`.
+- Guarda: si `categoria` no está en la lista de categorías válidas → `NotFound`.
+- Si `product && categoria !== product.categoria` → `<Navigate to={`/${product.categoria}/${slug}`} replace />` (URL canónica).
+- Reemplazar 2 usos internos de `/producto/${slug}` por `/${product.categoria}/${product.slug}`.
 
-Con esas dos respuestas ejecuto de inmediato.
+**D. Componentes que enlazan a producto**
+- `src/components/MenuCard.tsx`: envolver imagen + título en `<Link to={`/${item.categoria}/${item.slug}`}>`, sin envolver el botón "agregar".
+- `src/components/CompactProductCard.tsx`: reemplazar los 2 `Link to`.
+- `src/components/HamburgerMenu.tsx`: `navigate(`/${p.categoria}/${p.slug}`)`.
+- `src/components/ProductSchema.tsx`: aceptar `categoria` como prop y usarlo en `"url"`.
+- `src/components/admin/MetaCatalogPanel.tsx`: actualizar el texto de ejemplo.
+
+**E. Edge function del feed de Meta**
+- `supabase/functions/meta-catalog-feed/index.ts`: `link = ${SITE_URL}/${p.categoria}/${p.slug}`. Re-deploy.
+
+**F. Sitemap (te consulto abajo)**
+
+Cada archivo tocado lleva comentario `[2026-07-02] CATARSIS — …`.
+
+## Preguntas para ti antes de ejecutar
+
+1. **Sitemap**: ¿migro a `scripts/generate-sitemap.ts` (lee productos de la DB y emite todas las URLs automáticamente en cada build), o mantengo el estático y solo agrego un comentario recordatorio como pide el prompt?
+2. **Edge function `meta-catalog-feed`**: ¿la actualizo y re-despliego en esta misma tanda? (recomendado para que Meta Ads no siga apuntando al redirect).
+3. **Guarda de categorías válidas en ProductPage**: ¿ok validar contra `usePublicCategories` (dinámico, incluye nuevas categorías creadas desde admin) en vez de lista hardcodeada?
