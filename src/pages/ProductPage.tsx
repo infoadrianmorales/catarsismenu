@@ -18,7 +18,9 @@ import { ProductSchema } from '@/components/ProductSchema';
 import { BreadcrumbSchema } from '@/components/BreadcrumbSchema';
 
 const ProductPage = () => {
-  const { slug } = useParams<{ slug: string }>();
+  // [2026-07-02] CATARSIS — La URL canónica del producto es /{categoria}/{slug}.
+  // La ruta antigua /producto/:slug la resuelve <ProductRedirect />.
+  const { categoria, slug } = useParams<{ categoria: string; slug: string }>();
   const navigate = useNavigate();
   const { currency, toggleCurrency, displayMode, getPrices } = useCurrency();
   const { products, loading } = useProducts();
@@ -27,6 +29,13 @@ const ProductPage = () => {
   const product = useMemo(() => {
     return products.find(p => p.slug === slug);
   }, [products, slug]);
+
+  // [2026-07-02] CATARSIS — Si la categoría en la URL no coincide con la real
+  // del producto, redirigimos a la URL canónica. Evita contenido duplicado
+  // y mantiene coherente el breadcrumb / analytics.
+  if (product && categoria && categoria !== product.categoria) {
+    return <Navigate to={`/${product.categoria}/${product.slug}`} replace />;
+  }
 
   const quantity = product ? getItemQuantity(product.id) : 0;
   const isOrderable = product ? isProductOrderable(product) : false;
