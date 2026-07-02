@@ -4,6 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { PriceDisplayMode } from '@/hooks/useCurrency';
 import { CartDrawer } from '@/components/cart/CartDrawer';
+import { Link } from 'react-router-dom';
 import { useViewMode } from '@/contexts/ViewModeContext';
 import { appConfig } from '@/data/config';
 import { MessageCircle, Instagram, MapPin } from 'lucide-react';

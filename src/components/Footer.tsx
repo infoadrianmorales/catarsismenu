@@ -30,14 +30,17 @@ export const Footer = () => {
         <div className="flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
           {/* Brand */}
           <div className="flex flex-col items-center md:items-start gap-2">
-            <img 
-              src={logoCatarsis} 
-              alt="Catarsis Drinks & Food - Restaurante de hamburguesas en Lechería" 
-              loading="lazy"
-              width="240"
-              height="80"
-              className="h-16 md:h-20 w-auto"
-            />
+            {/* Logo clickeable — redirige al inicio */}
+            <Link to="/" aria-label="Ir al inicio de Catarsis" className="inline-flex">
+              <img 
+                src={logoCatarsis} 
+                alt="Catarsis Drinks & Food - Restaurante de hamburguesas en Lechería" 
+                loading="lazy"
+                width="240"
+                height="80"
+                className="h-16 md:h-20 w-auto"
+              />
+            </Link>
             {/* LAZY: Esta imagen está fuera de la pantalla inicial.
                 Se carga solo cuando el usuario hace scroll hasta ella,
                 reduciendo el tiempo de carga inicial del sitio. */}
