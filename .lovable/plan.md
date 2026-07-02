@@ -1,14 +1,19 @@
-## Objetivo
-Mejorar la simetría entre columnas y aumentar el tamaño del texto en `SemanticSEOSection`, tomando como referencia la imagen adjunta (H2 grande en amarillo Phudu uppercase, párrafos más grandes y aireados, columna derecha alineada verticalmente con la izquierda).
+## Cambios
 
-## Cambios (solo `src/components/SemanticSEOSection.tsx`)
+### 1) `src/data/config.ts`
+Reemplazar `maps_url` por el enlace corto oficial provisto:
+```ts
+maps_url: 'https://maps.app.goo.gl/8gq64htCh7T5KxpR8',
+```
+Esto actualiza automáticamente el botón "Cómo llegar" de `SemanticSEOSection` y cualquier enlace del Footer que ya use `appConfig.maps_url`.
 
-1. **H2** — pasar de `text-sm md:text-base` a `text-2xl md:text-4xl font-display font-bold uppercase tracking-tight` para replicar el peso visual del mock.
-2. **Párrafos SEO (columna izquierda)** — de `text-xs md:text-sm` a `text-base md:text-lg leading-relaxed`, con `space-y-4` entre párrafos. Texto se mantiene idéntico (crítico SEO).
-3. **Columna derecha**:
-   - Subtítulo "Encuéntranos en Lechería" a `text-xl md:text-2xl font-display font-bold` blanco.
-   - Mapa más alto (`h-64 md:h-72`) y con esquinas más suaves para equilibrio visual.
-   - Bloques MapPin/Clock con texto `text-sm md:text-base`, separadores sutiles (`border-t border-white/10`) entre filas para replicar las líneas divisorias del mock.
-   - CTA "Cómo llegar" un poco más grande (`px-6 py-3 text-base`), ancho auto.
-4. **Grid** — `gap-10 md:gap-12`, `items-start` mantenido; contenedor `max-w-6xl` para más aire; padding vertical `py-14 md:py-20`.
-5. Mantener colores del brand (#F2B60F amarillo, #DB1F51 raspberry, fondo #010C23) y contraste WCAG AA. Sin cambios en `config.ts` ni en el texto SEO.
+### 2) `src/components/SemanticSEOSection.tsx`
+- Reemplazar el iframe OpenStreetMap por el embed oficial de Google Maps:
+  ```
+  https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3926.993171529659!2d-64.69077589999999!3d10.181209299999999!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8c2d7338e1318071%3A0x1ceca6b07a16e0ef!2sCatarsis%20Lecheria!5e0!3m2!1ses!2sve!4v1783028229320!5m2!1ses!2sve
+  ```
+- Mantener wrapper `<a>` con `appConfig.maps_url`, atributos `loading="lazy"`, `referrerPolicy="strict-origin-when-cross-origin"`, `allowFullScreen`, `title` accesible y `className` actual (alto `h-64 md:h-72`, borde redondeado).
+- Eliminar las constantes `LAT/LNG/bbox/osmEmbed` (ya no se usan).
+
+## No tocar
+Ningún otro archivo. El Footer ya consume `appConfig.maps_url`, así que se actualiza sin cambios.
