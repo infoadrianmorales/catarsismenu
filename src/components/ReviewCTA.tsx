@@ -19,36 +19,36 @@ export const ReviewCTA = () => {
   };
 
   return (
-    <section className="w-full flex items-center justify-center bg-background px-4 sm:px-6 py-12">
+    <section className="w-full flex items-center justify-center bg-background px-4 sm:px-6 py-8 sm:py-10">
       <div className="w-full max-w-5xl">
-        <div className="relative overflow-hidden border-y border-white/10 py-14 px-4 sm:px-8 flex flex-col md:flex-row items-center justify-between gap-10">
+        <div className="relative overflow-hidden border-y border-white/10 py-8 sm:py-10 px-4 sm:px-6 flex flex-col md:flex-row items-center md:justify-between text-center md:text-left gap-6 md:gap-8">
           {/* Halos decorativos muy sutiles */}
           <div
-            className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 rounded-full blur-3xl pointer-events-none"
+            className="absolute top-0 right-0 -mr-16 -mt-16 w-40 h-40 md:w-64 md:h-64 rounded-full blur-3xl pointer-events-none"
             style={{ backgroundColor: 'hsl(var(--raspberry) / 0.06)' }}
             aria-hidden="true"
           />
           <div
-            className="absolute bottom-0 left-0 -ml-20 -mb-20 w-64 h-64 rounded-full blur-3xl pointer-events-none"
+            className="absolute bottom-0 left-0 -ml-16 -mb-16 w-40 h-40 md:w-64 md:h-64 rounded-full blur-3xl pointer-events-none"
             style={{ backgroundColor: 'hsl(var(--xanthous) / 0.05)' }}
             aria-hidden="true"
           />
 
           {/* Izquierda: Texto */}
-          <div className="relative space-y-3 max-w-xl text-center md:text-left">
-            <h2 className="font-display text-white text-4xl md:text-5xl font-bold tracking-tight leading-tight">
+          <div className="relative space-y-2 max-w-xl">
+            <h2 className="font-display text-white text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight leading-tight">
               ¿Qué te pareció <span className="text-[#DB1F51]">Catarsis</span>?
             </h2>
-            <p className="font-body text-white/60 text-base md:text-lg max-w-md mx-auto md:mx-0">
+            <p className="font-body text-white/60 text-sm md:text-base max-w-sm mx-auto md:mx-0">
               Tu experiencia es el motor de nuestro espacio. Ayúdanos a crecer dejando una reseña en Google.
             </p>
           </div>
 
           {/* Derecha: Estrellas + CTA */}
-          <div className="relative flex flex-col items-center md:items-end gap-5 shrink-0">
-            <div className="flex gap-1.5" aria-hidden="true">
+          <div className="relative flex flex-col items-center md:items-end gap-3 sm:gap-4 shrink-0">
+            <div className="flex gap-1" aria-hidden="true">
               {Array.from({ length: 5 }).map((_, i) => (
-                <svg key={i} className="w-6 h-6" style={{ color: '#FFB800' }} fill="currentColor" viewBox="0 0 24 24">
+                <svg key={i} className="w-5 h-5" style={{ color: '#FFB800' }} fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
                 </svg>
               ))}
@@ -59,11 +59,11 @@ export const ReviewCTA = () => {
               target="_blank"
               rel="noopener noreferrer"
               onClick={handleClick}
-              className="group inline-flex items-center gap-3 bg-[#DB1F51] hover:bg-[#c11b47] text-white px-8 py-4 rounded-full font-body font-medium transition-all duration-300 hover:-translate-y-1 shadow-lg shadow-[#DB1F51]/20 min-h-[44px]"
+              className="group inline-flex items-center gap-2 bg-[#DB1F51] hover:bg-[#c11b47] text-white px-5 sm:px-6 py-2.5 sm:py-3 rounded-full font-body font-medium text-sm transition-all duration-300 hover:-translate-y-0.5 shadow-lg shadow-[#DB1F51]/20 min-h-[44px]"
             >
               <span>Déjanos tu reseña</span>
               <svg
-                className="w-5 h-5 group-hover:translate-x-1 transition-transform"
+                className="w-4 h-4 group-hover:translate-x-1 transition-transform"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
