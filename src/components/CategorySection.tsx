@@ -77,9 +77,9 @@ export const CategorySection = ({
           <div className="mt-6 flex justify-center">
             <Link
               to={`/categoria/${slug}`}
-              className="group inline-flex items-center gap-2 rounded-full bg-primary px-8 py-4 font-display font-black uppercase tracking-wide text-primary-foreground shadow-lg transition-all hover:bg-primary/90 hover:shadow-xl hover:-translate-y-0.5"
+              className="group inline-flex items-center gap-2 rounded-full bg-[#FFB800] px-8 py-4 font-display font-black uppercase tracking-wide text-[#010C23] shadow-lg transition-all hover:bg-[#FFB800]/90 hover:shadow-xl hover:-translate-y-0.5"
             >
-              <span>Ver todos los {title} ({totalCount})</span>
+              <span>Ver toda la categoría ({totalCount})</span>
               <ChevronRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
             </Link>
           </div>
