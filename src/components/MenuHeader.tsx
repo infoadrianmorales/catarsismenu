@@ -4,6 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { PriceDisplayMode } from '@/hooks/useCurrency';
 import { CartDrawer } from '@/components/cart/CartDrawer';
+import { Link } from 'react-router-dom';
 import { useViewMode } from '@/contexts/ViewModeContext';
 import { appConfig } from '@/data/config';
 import { MessageCircle, Instagram, MapPin } from 'lucide-react';
@@ -32,19 +33,18 @@ export const MenuHeader = ({ currency, onCurrencyToggle, displayMode = 'ambas' }
   return (
     <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md border-b border-border/50">
       <div className="container px-4 h-16 flex items-center justify-between">
-        {/* Logo */}
+        {/* Logo — clickeable, redirige al inicio */}
         <div className="flex items-center">
-          <img 
-            src={logoCatarsis} 
-            alt="Logo de Catarsis Drinks & Food"
-            loading="eager"
-            width="180"
-            height="60"
-            className="h-10 md:h-14 w-auto"
-          />
-          {/* EAGER: Esta imagen es visible al abrir la página.
-              Cargar inmediatamente evita que el usuario vea
-              un espacio vacío al llegar al sitio. */}
+          <Link to="/" aria-label="Ir al inicio de Catarsis" className="flex items-center">
+            <img 
+              src={logoCatarsis} 
+              alt="Logo de Catarsis Drinks & Food"
+              loading="eager"
+              width="180"
+              height="60"
+              className="h-10 md:h-14 w-auto"
+            />
+          </Link>
         </div>
         
         <div className="flex items-center gap-4">
