@@ -96,8 +96,8 @@ export const MenuCard = ({ item, currency, displayMode = 'ambas', source = 'menu
   return (
     <Card className="group h-full flex flex-col overflow-hidden border-border/40 bg-card hover:border-primary/50 transition-all duration-200 hover:shadow-glow hover:-translate-y-1" data-meta-event="ViewContent" id={`product-card-${item.id}`} onMouseEnter={handleEnter} onMouseLeave={handleLeave} onTouchStart={handleEnter}>
       <CardContent className="p-0 flex flex-col flex-1">
-        {/* White-background image container - zoom only on desktop */}
-        <div className="relative p-1.5 sm:p-2">
+        {/* [2026-07-02] Imagen clickable → página de producto */}
+        <Link to={`/${item.categoria}/${item.slug}`} className="block relative p-1.5 sm:p-2">
           <div className="relative aspect-square overflow-hidden rounded-lg bg-white border border-foreground/10 shadow-md sm:transition-transform sm:duration-300 sm:ease-out sm:group-hover:scale-105">
             <img 
               src={item.imagen} 
@@ -110,15 +110,18 @@ export const MenuCard = ({ item, currency, displayMode = 'ambas', source = 'menu
             {/* LAZY: Esta imagen está fuera de la pantalla inicial.
                 Se carga solo cuando el usuario hace scroll hasta ella. */}
           </div>
-        </div>
+        </Link>
         
         {/* Content — flex column full height para empujar CTA al fondo */}
         <div className="p-4 pt-2 flex flex-col flex-1 space-y-3">
           <div className="space-y-1">
             {/* [2026-06-05] ALINEACIÓN: line-clamp-2 + min-h reserva 2 líneas siempre para igualar altura entre tarjetas */}
-            <h3 className="font-display text-lg font-bold leading-tight group-hover:text-primary transition-colors line-clamp-2 min-h-[2.5rem]">
-              {item.nombre}
-            </h3>
+            {/* [2026-07-02] Título también clickable hacia la URL canónica */}
+            <Link to={`/${item.categoria}/${item.slug}`} className="block">
+              <h3 className="font-display text-lg font-bold leading-tight group-hover:text-primary transition-colors line-clamp-2 min-h-[2.5rem]">
+                {item.nombre}
+              </h3>
+            </Link>
             <ExpandableText 
               text={item.descripcion_corta || ''} 
               maxLines={2} 
