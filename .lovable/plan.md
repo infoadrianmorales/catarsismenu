@@ -1,4 +1,6 @@
-En `src/components/CategorySection.tsx`:
-- Restaurar el amarillo claro: `bg-[#FFB800]` con hover `hover:bg-[#FFB800]/90`.
-- Cambiar el texto de blanco puro a un blanco apagado (off-white cálido) para que no se pierda sobre el amarillo: `text-[#FFF8E7]` (cream). Sombra sutil `drop-shadow-sm` para separar del fondo.
-- Si prefieres oscurecer en lugar de aclarar el "blanco", alternativa: `text-[#3A2500]` (marrón oscuro cálido). Voy con el cream por defecto ya que el pedido menciona "más oscuro que blanco" pero manteniendo aspecto claro; si no convence, se ajusta en un pase.
+Cambiar el color del texto del botón "Ver toda la categoría (N)" en `src/components/CategorySection.tsx`:
+
+- Reemplazar `text-[#3A2500]` (marrón oscuro) por un blanco apagado/cremoso `text-[#F2E9D8]`.
+- Mantener el fondo amarillo Xanthous (`#FFB800`) sin cambios.
+
+Este tono es blanco pero desaturado hacia crema, para que se lea como "blanco" sin desaparecer sobre el amarillo claro.
