@@ -1,25 +1,99 @@
-## Cambios (dos archivos, solo presentación)
+# Preview de mejoras: Footer, Newsletter, Top Bar y Testimonios
 
-### 1) `src/components/ReviewCTA.tsx` — más compacto y mejor responsive
+Cuatro cambios visuales en la página principal, respetando la identidad de Catarsis (Rich Black, Raspberry, Xanthous, Phudu/DM Sans). Se conservan enlaces y datos actuales; solo cambia la presentación.
 
-- Reducir padding del bloque: `py-14 px-4 sm:px-8` → `py-8 sm:py-10 px-4 sm:px-6`.
-- Reducir tamaño del heading: `text-4xl md:text-5xl` → `text-2xl sm:text-3xl md:text-4xl`.
-- Reducir párrafo: `text-base md:text-lg` → `text-sm md:text-base`, con `max-w-sm`.
-- Reducir estrellas de `w-6 h-6` a `w-5 h-5` con `gap-1`.
-- Botón más pequeño: `px-8 py-4` → `px-5 sm:px-6 py-2.5 sm:py-3`, texto `text-sm`, ícono `w-4 h-4`.
-- Layout: en móvil apilar centrado (`flex-col text-center`), a partir de `md:` volver a split. Reducir gap a `gap-6 md:gap-8`.
-- Reducir halos decorativos (`w-40 h-40` en móvil, `md:w-64 md:h-64`) para que no invadan.
+## 1) Top Bar superior (imagen 3)
 
-### 2) `src/components/SearchBar.tsx` — mejor responsive
+Barra delgada fija en la parte más alta del layout, sobre el `MenuHeader`.
 
-- Reducir contenedor: `py-8` → `py-4 sm:py-6`, altura `h-14` → `h-12 sm:h-14`.
-- Botón "Buscar":
-  - En móvil ocultar la palabra ("Buscar" visible sólo desde `sm:`): `<span className="hidden sm:inline …">Buscar</span>`.
-  - Reducir padding móvil: `pl-6 pr-8` → `pl-4 pr-5 sm:pl-6 sm:pr-8`.
-  - Ajustar `gap-3` → `gap-2 sm:gap-3` e ícono `h-5 w-5` (ok) o `h-[18px] w-[18px]` en móvil.
-- Input: reducir padding izquierda en móvil `pl-8` → `pl-4 sm:pl-8`, `text-base` → `text-sm sm:text-base`, y placeholder más corto en móvil (usar prop existente si ya se pasa, si no dejar el default).
-- Botón limpiar: `h-9 w-9` → `h-8 w-8 sm:h-9 sm:w-9`, `mr-2` sin cambios.
-- Cuchilla inclinada (`-right-4 w-8`) mantener; solo verificar que no rompa en móvil por el reducido padding.
-- Sin cambios de lógica, tracking Meta Pixel intacto.
+- Alto: ~40 px.
+- Fondo: Rich Black con leve tono (por ejemplo `#1a2540`) para diferenciarla del header principal.
+- Lado izquierdo: íconos de contacto (email, Instagram, WhatsApp) en blanco, tamaño compacto.
+- Centro/derecha: texto "ABRIMOS TODOS LOS DÍAS · Click para ver los horarios" — clickeable, abre un pequeño popover con los horarios de Lechería y Caracas.
+- Oculta en móvil (< 768 px) para no saturar; en móvil solo aparece a partir de tablet.
+- Nuevo componente: `src/components/TopBar.tsx`.
+- Integrado en `src/pages/Index.tsx` (y opcionalmente en las demás páginas públicas).
 
-Sin cambios en tokens de Tailwind ni en otros archivos.
+## 2) Footer reestructurado (imagen 1)
+
+Reemplaza el footer horizontal actual por un layout de **4 columnas** en desktop, apiladas en móvil.
+
+```text
+┌─────────────┬─────────────┬─────────────┬─────────────┐
+│  HORARIOS   │  DIRECCIÓN  │ CONTÁCTANOS │ INFORMACIÓN │
+├─────────────┼─────────────┼─────────────┼─────────────┤
+│ LECHERÍA:   │ LECHERÍA    │ WhatsApp    │ Políticas   │
+│ Lun-Dom     │ CC Aventura │ Lechería:   │ de          │
+│ 12pm–10pm   │ Plaza…      │ 0424-…      │ Privacidad  │
+│             │             │             │             │
+│ CARACAS:    │ CARACAS     │ WhatsApp    │ Términos    │
+│ Lun-Dom     │ Los Palos   │ Caracas:    │ de Servicio │
+│ 12pm–10pm   │ Grandes…    │ 0424-…      │             │
+│             │             │ [✉][ig][wa] │             │
+└─────────────┴─────────────┴─────────────┴─────────────┘
+     Powered by Catarsis © 2026        ·        Créditos
+```
+
+- Títulos de columna en Phudu, mayúsculas, tamaño pequeño.
+- Datos en DM Sans, con horarios en negrita.
+- Íconos sociales agrupados en la columna "Contáctanos" en pequeñas cápsulas raspberry (consistentes con el estilo actual).
+- Barra inferior con copyright a la izquierda y créditos ("Diseñado por Adrian Morales") a la derecha.
+- Se conservan todos los enlaces existentes (Instagram, Facebook, TikTok, YouTube, WhatsApp, Maps, Términos, Sitemap).
+- Se elimina el actual bloque de badges centralizados; los datos se reparten en las 4 columnas.
+- Archivo afectado: `src/components/Footer.tsx` (reescritura interna, misma export `Footer` y `TapeDivider`).
+
+## 3) Bloque de captación de correos / Newsletter (imagen 2)
+
+Sección nueva ubicada **justo antes del Footer**, después del `ReviewCTA`.
+
+- Contenedor ancho, fondo Rich Black con borde redondeado suave y sombra sutil.
+- Ícono avión de papel (Lucide `Send`) centrado en la parte superior.
+- Título "¡Suscríbete!" en Phudu blanco.
+- Formulario en una sola fila: input `Correo electrónico` + botón `Registrarme` (píldora blanca outline, con hover fucsia).
+- Subtítulo bajo el form: "Suscríbete a nuestro newsletter y recibe ofertas y noticias exclusivas."
+- Responsive: input y botón apilados en móvil.
+- Nuevo componente: `src/components/NewsletterSection.tsx`.
+- Backend: guarda los correos en una nueva tabla `newsletter_subscribers` en Lovable Cloud (con RLS + GRANT según convención del proyecto), con `email`, `created_at`, `source`. Tracking Meta Pixel `Lead` (canal `newsletter`).
+- Confirmación visual con toast al enviar; validación de email en el cliente.
+
+## 4) Sección de Testimonios (imagen 4)
+
+Nueva sección "Testimonios de nuestros clientes" ubicada **antes** del `ReviewCTA` (para reforzar prueba social antes del CTA de Google Review).
+
+- Título "Testimonios de nuestros clientes" a la izquierda, Phudu.
+- Card gris muy claro (`#F5F6F8`), grande, con bordes redondeados.
+- Contenido centrado: nombre del cliente (regular) + rol/etiqueta "Cliente" (más pequeño y suave) + testimonio en cursiva serif elegante.
+- Carrusel horizontal con flechas ‹ › y dots debajo (el activo alargado en negro).
+- 5–6 testimonios reales/placeholder editables.
+- Nuevo componente: `src/components/TestimonialsSection.tsx` usando el `Carousel` de shadcn ya presente.
+- Datos iniciales hardcodeados en un array dentro del componente; opcional futuro: mover a Supabase.
+
+## Orden final en `Index.tsx`
+
+```text
+TopBar
+MenuHeader
+Hero
+FeaturedProducts
+Search + Categorías
+TestimonialsSection      ← NUEVO
+ReviewCTA
+NewsletterSection        ← NUEVO
+TapeDivider
+SemanticSEOSection
+Footer (rediseñado)      ← REESTRUCTURADO
+```
+
+## Detalles técnicos
+
+- Archivos nuevos: `TopBar.tsx`, `NewsletterSection.tsx`, `TestimonialsSection.tsx`.
+- Archivo modificado: `Footer.tsx` (misma API pública), `Index.tsx` (orden y montaje).
+- Migración SQL: tabla `newsletter_subscribers` + RLS + GRANT (`INSERT` para `anon`, lectura solo para `authenticated` con rol admin vía `has_role`).
+- Tracking: `trackLead('newsletter')` y `trackViewContent('testimonials')` al aparecer en viewport.
+- Sin cambios en la paleta ni en los tokens de diseño.
+- Todos los componentes lazy-loaded siguiendo el patrón actual del `Index`.
+
+## Fuera de alcance
+
+- No se cambia el header principal, el hero ni las tarjetas de producto.
+- No se implementa aún el envío de emails transaccionales al suscriptor (se puede añadir después con Resend/Lovable AI si lo pides).
