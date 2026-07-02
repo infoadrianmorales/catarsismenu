@@ -1,7 +1,7 @@
 /**
  * TopBar — Barra superior con contacto rápido y horarios.
- * Se muestra sobre el MenuHeader en tablet/desktop (oculta en móvil para
- * no saturar el espacio superior).
+ * [2026-07-02] Ahora visible también en móvil con versión compacta
+ * (menos gap, texto acortado) para no saturar el header.
  */
 import { Instagram, Clock, MapPin } from 'lucide-react';
 import {
@@ -15,10 +15,10 @@ const MAPS_URL = 'https://maps.app.goo.gl/8Q9zJ2Y5Xk3fN7wF9';
 
 export const TopBar = () => {
   return (
-    <div className="hidden md:block bg-[#1a2540] border-b border-white/5">
-      <div className="container px-4 h-9 flex items-center justify-between text-xs text-white/80">
+    <div className="bg-[#1a2540] border-b border-white/5">
+      <div className="container px-3 md:px-4 h-8 md:h-9 flex items-center justify-between text-[11px] md:text-xs text-white/80">
         {/* Íconos de contacto rápido: solo Instagram y ubicación */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 md:gap-4">
           <a
             href="https://instagram.com/catarsislecheria"
             target="_blank"
@@ -26,7 +26,7 @@ export const TopBar = () => {
             aria-label="Instagram"
             className="hover:text-white transition-colors"
           >
-            <Instagram className="h-4 w-4" />
+            <Instagram className="h-3.5 w-3.5 md:h-4 md:w-4" />
           </a>
           <a
             href={MAPS_URL}
@@ -35,21 +35,26 @@ export const TopBar = () => {
             aria-label="Ubicación en Google Maps"
             className="hover:text-white transition-colors"
           >
-            <MapPin className="h-4 w-4" />
+            <MapPin className="h-3.5 w-3.5 md:h-4 md:w-4" />
           </a>
         </div>
 
-        {/* Horarios (popover) — solo Lechería */}
+        {/* Horarios (popover) — solo Lechería.
+            En móvil se muestra el copy corto "Ver horarios"; desde md
+            se muestra el texto completo original. */}
         <Popover>
           <PopoverTrigger asChild>
             <button
               type="button"
-              className="inline-flex items-center gap-2 hover:text-white transition-colors uppercase tracking-wide"
+              className="inline-flex items-center gap-1.5 md:gap-2 hover:text-white transition-colors uppercase tracking-wide"
             >
               <Clock className="h-3.5 w-3.5" />
-              <span>Abrimos todos los días</span>
-              <span className="opacity-60">|</span>
-              <span className="underline underline-offset-2">Click para ver los horarios</span>
+              <span className="hidden md:inline">Abrimos todos los días</span>
+              <span className="hidden md:inline opacity-60">|</span>
+              <span className="underline underline-offset-2">
+                <span className="md:hidden">Ver horarios</span>
+                <span className="hidden md:inline">Click para ver los horarios</span>
+              </span>
             </button>
           </PopoverTrigger>
           <PopoverContent
@@ -71,3 +76,4 @@ export const TopBar = () => {
 };
 
 export default TopBar;
+
