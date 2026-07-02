@@ -9,6 +9,8 @@ import { useViewMode } from '@/contexts/ViewModeContext';
 import { appConfig } from '@/data/config';
 import { MessageCircle, Instagram, MapPin } from 'lucide-react';
 import { trackContact, trackLead } from '@/lib/metaPixel';
+// [2026-07-02] CATARSIS — Menú hamburguesa con buscador, categorías, horario y contacto.
+import { HamburgerMenu } from '@/components/HamburgerMenu';
 import logoCatarsis from '@/assets/logo-catarsis.png';
 
 interface MenuHeaderProps {
