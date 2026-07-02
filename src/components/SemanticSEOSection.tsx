@@ -9,7 +9,7 @@
 // ACTUALIZAR SI CAMBIA horario, ubicación, carta o pagos.
 // Mantener sincronizado con RestaurantSchema.tsx, FAQSchema.tsx y
 // public/llms.txt.
-import { MapPin, Clock } from 'lucide-react';
+import { appConfig as _appConfig } from '@/data/config';
 import { appConfig } from '@/data/config';
 
 export const SemanticSEOSection = () => {
