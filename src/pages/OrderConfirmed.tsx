@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { MenuHeader } from '@/components/MenuHeader';
 import { Footer } from '@/components/Footer';
+import { ReviewCTA } from '@/components/ReviewCTA';
+
 import { useCurrency } from '@/hooks/useCurrency';
 
 const OrderConfirmed = () => {
@@ -70,10 +72,15 @@ const OrderConfirmed = () => {
             </div>
           </CardContent>
         </Card>
+
+        <div className="mt-8">
+          <ReviewCTA />
+        </div>
       </div>
       
       <Footer />
     </div>
+
   );
 };
 
