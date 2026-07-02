@@ -28,17 +28,22 @@ export const ExpandableText = memo(({ text, maxLines = 2, className }: Expandabl
   }, [text]);
 
   if (!text) {
-    return <p className={cn("text-xs text-muted-foreground", className)}>&nbsp;</p>;
+    // [2026-07-02] Reserva 2 líneas también cuando no hay descripción para
+    // que el precio + CTA queden alineados con las tarjetas que sí la tienen.
+    return <p className={cn("text-xs text-muted-foreground min-h-[2rem]", className)}>&nbsp;</p>;
   }
 
   const lineClampClass = maxLines === 2 ? 'line-clamp-2' : maxLines === 3 ? 'line-clamp-3' : 'line-clamp-2';
 
   return (
     <div className="space-y-1">
+      {/* [2026-07-02] min-h-[2rem] reserva SIEMPRE el espacio de 2 líneas
+          (~text-xs leading-relaxed) para que el CTA "AGREGAR AL CARRITO"
+          quede a la misma altura entre tarjetas vecinas. */}
       <p 
         ref={textRef}
         className={cn(
-          "text-xs text-muted-foreground leading-relaxed whitespace-normal transition-all duration-200",
+          "text-xs text-muted-foreground leading-relaxed whitespace-normal transition-all duration-200 min-h-[2rem]",
           !isExpanded && lineClampClass,
           className
         )}
