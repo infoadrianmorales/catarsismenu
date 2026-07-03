@@ -5,16 +5,23 @@
  *
  * NUNCA loguea el access token ni PII (raw o hasheada).
  */
-// CORS local: el cliente Supabase global inyecta `x-session-id` en TODAS
-// las requests (ver src/lib/supabaseHeaders.ts). El corsHeaders del SDK
-// no lo incluye, así que el preflight OPTIONS lo bloqueaba y tumbaba
-// AddToCart, InitiateCheckout, Lead, Search y Purchase.
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers':
-    'authorization, x-client-info, apikey, content-type, x-session-id',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
+// CORS dinámico (mismo patrón que track-visit): el cliente Supabase global
+// inyecta `x-session-id` (ver src/lib/supabaseHeaders.ts) y el SDK puede
+// agregar más headers internos (x-supabase-client-*). Reflejar los headers
+// pedidos en el preflight blinda la función contra futuros headers custom.
+const BASE_ALLOWED_HEADERS =
+  'authorization, x-client-info, apikey, content-type, x-session-id, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version';
+
+function buildCorsHeaders(req?: Request): Record<string, string> {
+  const requested = req?.headers.get('access-control-request-headers');
+  return {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': requested ?? BASE_ALLOWED_HEADERS,
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Max-Age': '86400',
+    Vary: 'Access-Control-Request-Headers',
+  };
+}
 import { z } from 'npm:zod@3.23.8';
 
 const PIXEL_ID = '1428549534945171';
