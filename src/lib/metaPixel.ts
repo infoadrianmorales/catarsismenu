@@ -12,6 +12,8 @@
  * la hace React vía initMetaPixel().
  */
 
+import { sendCapiEvent } from '@/lib/metaCapi';
+
 declare global {
   interface Window {
     fbq: (...args: unknown[]) => void;
@@ -23,7 +25,7 @@ type QueuedCall = unknown[];
 const queue: QueuedCall[] = [];
 
 /** UUID v4 corto para deduplicación CAPI ↔ Pixel */
-const generateEventId = (): string => {
+export const generateEventId = (): string => {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
     return crypto.randomUUID();
   }
@@ -108,17 +110,15 @@ const canTrack = (): boolean => isInitialized;
 // EVENTOS ESTÁNDAR
 // ============================================================
 
-/** PageView con modo opcional (delivery/local) */
+/** PageView con modo opcional (delivery/local) — DUPLICADO en CAPI */
 export const trackPageView = (mode?: 'delivery' | 'local'): void => {
   const eventID = generateEventId();
-  if (mode) {
-    safeFbq('track', 'PageView', { content_category: mode }, { eventID });
-  } else {
-    safeFbq('track', 'PageView', {}, { eventID });
-  }
+  const params = mode ? { content_category: mode } : {};
+  safeFbq('track', 'PageView', params, { eventID });
+  sendCapiEvent({ event_name: 'PageView', event_id: eventID, custom_data: params });
 };
 
-/** ViewContent — vista de producto */
+/** ViewContent — vista de producto — DUPLICADO en CAPI */
 export const trackViewContent = (product: {
   id: string;
   nombre: string;
@@ -126,42 +126,38 @@ export const trackViewContent = (product: {
   precio_usd: number;
 }): void => {
   if (!product?.id || typeof product.precio_usd !== 'number') return;
-  safeFbq(
-    'track',
-    'ViewContent',
-    {
-      content_ids: [product.id],
-      content_name: product.nombre,
-      content_category: product.categoria,
-      content_type: 'product',
-      value: product.precio_usd,
-      currency: 'USD',
-    },
-    { eventID: generateEventId() }
-  );
+  const eventID = generateEventId();
+  const params = {
+    content_ids: [product.id],
+    content_name: product.nombre,
+    content_category: product.categoria,
+    content_type: 'product',
+    value: product.precio_usd,
+    currency: 'USD',
+  };
+  safeFbq('track', 'ViewContent', params, { eventID });
+  sendCapiEvent({ event_name: 'ViewContent', event_id: eventID, custom_data: params });
 };
 
-/** AddToCart */
+/** AddToCart — DUPLICADO en CAPI */
 export const trackAddToCart = (
   product: { id: string; nombre: string; precio_usd: number },
   quantity: number = 1
 ): void => {
   if (!product?.id || typeof product.precio_usd !== 'number') return;
-  safeFbq(
-    'track',
-    'AddToCart',
-    {
-      content_ids: [product.id],
-      content_name: product.nombre,
-      content_type: 'product',
-      value: product.precio_usd * quantity,
-      currency: 'USD',
-    },
-    { eventID: generateEventId() }
-  );
+  const eventID = generateEventId();
+  const params = {
+    content_ids: [product.id],
+    content_name: product.nombre,
+    content_type: 'product',
+    value: product.precio_usd * quantity,
+    currency: 'USD',
+  };
+  safeFbq('track', 'AddToCart', params, { eventID });
+  sendCapiEvent({ event_name: 'AddToCart', event_id: eventID, custom_data: params });
 };
 
-/** InitiateCheckout */
+/** InitiateCheckout — solo browser (no está en el set CAPI de 6 eventos) */
 export const trackInitiateCheckout = (
   items: { id: string; precio_usd: number; quantity: number }[],
   subtotal: number
@@ -181,33 +177,32 @@ export const trackInitiateCheckout = (
   );
 };
 
-/** Purchase */
+/** Purchase — DUPLICADO en CAPI, orderId = order_number de la tabla orders */
 export const trackPurchase = (
   orderId: string,
   value: number,
   items: { id: string; quantity: number }[]
 ): void => {
   const numItems = items.reduce((sum, item) => sum + item.quantity, 0);
-  safeFbq(
-    'track',
-    'Purchase',
-    {
-      value,
-      currency: 'USD',
-      content_ids: items.map((i) => i.id),
-      order_id: orderId,
-      num_items: numItems,
-    },
-    { eventID: generateEventId() }
-  );
+  const eventID = generateEventId();
+  const params = {
+    value,
+    currency: 'USD',
+    content_ids: items.map((i) => i.id),
+    content_type: 'product',
+    order_id: orderId,
+    num_items: numItems,
+  };
+  safeFbq('track', 'Purchase', params, { eventID });
+  sendCapiEvent({ event_name: 'Purchase', event_id: eventID, custom_data: params });
 };
 
-/** Contact — click en WhatsApp desde cualquier surface */
+/** Contact — solo browser (no está en el set CAPI de 6 eventos) */
 export const trackContact = (source: string): void => {
   safeFbq('track', 'Contact', { content_category: source }, { eventID: generateEventId() });
 };
 
-/** Lead — primer click en WhatsApp de la sesión (1 vez por sessionStorage) */
+/** Lead — primer click en WhatsApp de la sesión — DUPLICADO en CAPI */
 export const trackLead = (source: string): void => {
   try {
     if (sessionStorage.getItem('__fb_lead_sent') === '1') return;
@@ -215,17 +210,17 @@ export const trackLead = (source: string): void => {
   } catch {
     /* storage no disponible: enviamos igualmente */
   }
-  safeFbq('track', 'Lead', { content_category: source }, { eventID: generateEventId() });
+  const eventID = generateEventId();
+  const params = { content_category: source };
+  safeFbq('track', 'Lead', params, { eventID });
+  sendCapiEvent({ event_name: 'Lead', event_id: eventID, custom_data: params });
 };
 
 /**
- * Search con:
+ * Search — DUPLICADO en CAPI.
  * - Validación (min 3 chars).
- * - Deduplicación: ignora la misma query dentro de 2s (evita doble disparo
- *   cuando el debounce del hook y el submit coinciden).
- * - Fallback vía sendBeacon/Image al endpoint `facebook.com/tr` para que el
- *   evento no se pierda si el usuario navega inmediatamente después
- *   (típico: escribir "coca" → click en producto → la request de fbq se cancela).
+ * - Dedup mismo query dentro de 2s.
+ * - Fallback sendBeacon/Image a facebook.com/tr para resistir cancelación.
  */
 let lastSearchQuery = '';
 let lastSearchAt = 0;
@@ -238,11 +233,11 @@ export const trackSearch = (query: string): void => {
   lastSearchAt = now;
 
   const eventID = generateEventId();
-  safeFbq('track', 'Search', { search_string: q }, { eventID });
+  const params = { search_string: q };
+  safeFbq('track', 'Search', params, { eventID });
+  sendCapiEvent({ event_name: 'Search', event_id: eventID, custom_data: params });
 
-  // Fallback resistente a cancelación de navegación: ping directo al endpoint
-  // de Meta. `id` = pixelId, `ev` = evento, `cd[...]` = custom data, `eid` = eventID
-  // (mismo eventID → Meta deduplica contra el fbq principal).
+  // Fallback resistente a cancelación de navegación
   try {
     const pid = getActivePixelId();
     if (!pid || typeof window === 'undefined') return;
@@ -253,7 +248,6 @@ export const trackSearch = (query: string): void => {
     if (typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
       navigator.sendBeacon(url);
     } else {
-      // Fallback ultra-legacy: pixel via Image
       const img = new Image(1, 1);
       img.src = url;
     }
