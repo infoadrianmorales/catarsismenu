@@ -4,6 +4,12 @@
 
 **URL**: https://lovable.dev/projects/7d9cc22c-0144-4b90-992f-788de1dd5d98
 
+## Hosting
+
+**Hosting actual:** Lovable (Publish). Los dominios `catarsisve.com` y `catarsiszone.com` están conectados directamente al hosting de Lovable.
+
+La configuración histórica de Vercel se conserva en `vercel.json.disabled` como referencia por si en el futuro se decide migrar el despliegue. Para reactivarla basta con renombrarla de vuelta a `vercel.json`.
+
 ## How can I edit this code?
 
 There are several ways of editing your application.
