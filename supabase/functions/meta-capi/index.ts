@@ -11,7 +11,7 @@ import { z } from 'npm:zod@3.23.8';
 const PIXEL_ID = '1428549534945171';
 const GRAPH_URL = `https://graph.facebook.com/v20.0/${PIXEL_ID}/events`;
 
-const ALLOWED_EVENTS = ['PageView', 'ViewContent', 'Lead', 'AddToCart', 'Search', 'Purchase'] as const;
+const ALLOWED_EVENTS = ['PageView', 'ViewContent', 'Lead', 'AddToCart', 'InitiateCheckout', 'Search', 'Purchase'] as const;
 
 const UserDataSchema = z.object({
   email: z.string().optional(),
