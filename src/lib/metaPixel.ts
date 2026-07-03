@@ -82,6 +82,14 @@ export const initMetaPixel = (pixelId: string): void => {
   if (typeof window === 'undefined' || typeof window.fbq !== 'function') return;
   if (!pixelId || !pixelId.trim()) return;
 
+  // Desactivar Auto-Config ANTES del init. Sin esto, fbevents.js escanea el DOM
+  // y dispara eventos "automáticos" (AddToCart, InitiateCheckout, Search...) al
+  // detectar textos tipo "Agregar al carrito"/"Pagar"/inputs de búsqueda. Esos
+  // clones llegan con `cs_est: true`, SIN `value` y SIN `event_id`, generando
+  // warnings en Events Manager y rompiendo la deduplicación con CAPI. Solo
+  // queremos los eventos explícitos que enviamos desde código.
+  // NOTA: no afecta "Coincidencias avanzadas automáticas" — es otra función.
+  window.fbq('set', 'autoConfig', false, pixelId);
   window.fbq('init', pixelId);
   isInitialized = true;
   activePixelId = pixelId.trim();
