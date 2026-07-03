@@ -11,7 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 const CAPI_TEST_EVENT_CODE: string | null = 'TEST71445';
 
-type CapiEventName = 'PageView' | 'ViewContent' | 'Lead' | 'AddToCart' | 'Search' | 'Purchase';
+type CapiEventName = 'PageView' | 'ViewContent' | 'Lead' | 'AddToCart' | 'InitiateCheckout' | 'Search' | 'Purchase';
 
 interface CapiUserData {
   email?: string;

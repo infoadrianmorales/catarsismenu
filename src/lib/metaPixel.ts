@@ -157,24 +157,23 @@ export const trackAddToCart = (
   sendCapiEvent({ event_name: 'AddToCart', event_id: eventID, custom_data: params });
 };
 
-/** InitiateCheckout — solo browser (no está en el set CAPI de 6 eventos) */
+/** InitiateCheckout — DUPLICADO en CAPI */
 export const trackInitiateCheckout = (
   items: { id: string; precio_usd: number; quantity: number }[],
   subtotal: number
 ): void => {
   if (!items?.length) return;
   const numItems = items.reduce((sum, item) => sum + item.quantity, 0);
-  safeFbq(
-    'track',
-    'InitiateCheckout',
-    {
-      content_ids: items.map((i) => i.id),
-      num_items: numItems,
-      value: subtotal,
-      currency: 'USD',
-    },
-    { eventID: generateEventId() }
-  );
+  const eventID = generateEventId();
+  const params = {
+    content_ids: items.map((i) => i.id),
+    content_type: 'product',
+    num_items: numItems,
+    value: subtotal,
+    currency: 'USD',
+  };
+  safeFbq('track', 'InitiateCheckout', params, { eventID });
+  sendCapiEvent({ event_name: 'InitiateCheckout', event_id: eventID, custom_data: params });
 };
 
 /** Purchase — DUPLICADO en CAPI, orderId = order_number de la tabla orders */
