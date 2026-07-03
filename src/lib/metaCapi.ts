@@ -3,13 +3,14 @@
  * Edge Function `meta-capi`. Nunca envía el access token: ese vive solo
  * en el servidor. El hashing de PII también ocurre en el servidor.
  *
- * NOTA testing: mientras validamos con "Probar eventos" en Events Manager,
- * CAPI_TEST_EVENT_CODE se adjunta a cada request. QUITAR ANTES DE PUBLICAR
- * EN PRODUCCIÓN DEFINITIVA (poner a null).
+ * PRODUCCIÓN: CAPI_TEST_EVENT_CODE = null → no se adjunta test_event_code
+ * al payload y los eventos llegan a "Información general" (no a "Probar
+ * eventos") de Events Manager. Para re-testear en el futuro, poner aquí
+ * un código temporal tipo 'TESTxxxxx' y volver a null antes de publicar.
  */
 import { supabase } from '@/integrations/supabase/client';
 
-const CAPI_TEST_EVENT_CODE: string | null = 'TEST71445';
+const CAPI_TEST_EVENT_CODE: string | null = null;
 
 type CapiEventName = 'PageView' | 'ViewContent' | 'Lead' | 'AddToCart' | 'InitiateCheckout' | 'Search' | 'Purchase';
 
