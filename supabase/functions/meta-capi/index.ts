@@ -5,7 +5,16 @@
  *
  * NUNCA loguea el access token ni PII (raw o hasheada).
  */
-import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+// CORS local: el cliente Supabase global inyecta `x-session-id` en TODAS
+// las requests (ver src/lib/supabaseHeaders.ts). El corsHeaders del SDK
+// no lo incluye, así que el preflight OPTIONS lo bloqueaba y tumbaba
+// AddToCart, InitiateCheckout, Lead, Search y Purchase.
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers':
+    'authorization, x-client-info, apikey, content-type, x-session-id',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
 import { z } from 'npm:zod@3.23.8';
 
 const PIXEL_ID = '1428549534945171';
