@@ -73,6 +73,7 @@ const hashIfNeeded = async (v: string | undefined, normalize: (x: string) => str
 };
 
 Deno.serve(async (req) => {
+  const corsHeaders = buildCorsHeaders(req);
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   if (req.method !== 'POST') {
