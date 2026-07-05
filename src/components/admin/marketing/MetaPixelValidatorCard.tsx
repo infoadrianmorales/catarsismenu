@@ -165,6 +165,17 @@ export const MetaPixelValidatorCard = () => {
     }
   };
 
+  // [2026-07-05] CATARSIS — limpia log de fallos CAPI de la sesión actual.
+  const handleClearCapiLog = () => {
+    try {
+      localStorage.removeItem(CAPI_FAIL_LOG_KEY);
+      setCapiLog({});
+      toast.success('Log de CAPI limpiado');
+    } catch {
+      /* noop */
+    }
+  };
+
   const handleCopy = (txt: string) => {
     navigator.clipboard.writeText(txt);
     toast.success(`"${txt}" copiado`);
