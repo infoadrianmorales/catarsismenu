@@ -36,7 +36,9 @@ import {
   APP_PIXEL_EVENTS,
   META_STANDARD_EVENTS,
   PIXEL_EVENT_LOG_KEY,
+  CAPI_FAIL_LOG_KEY,
   type PixelEventLog,
+  type CapiFailLog,
 } from '@/lib/metaPixelManifest';
 
 const formatRelative = (ts: number): string => {
@@ -60,6 +62,16 @@ const readLog = (): PixelEventLog => {
   }
 };
 
+// [2026-07-05] CATARSIS — lector del log de fallos CAPI (mismo shape).
+const readCapiLog = (): CapiFailLog => {
+  try {
+    const raw = localStorage.getItem(CAPI_FAIL_LOG_KEY);
+    return raw ? (JSON.parse(raw) as CapiFailLog) : {};
+  } catch {
+    return {};
+  }
+};
+
 export const MetaPixelValidatorCard = () => {
   const { config, updateConfig } = useConfig();
 
@@ -68,6 +80,8 @@ export const MetaPixelValidatorCard = () => {
   const [customInput, setCustomInput] = useState('');
   const [saving, setSaving] = useState(false);
   const [log, setLog] = useState<PixelEventLog>({});
+  // [2026-07-05] CATARSIS — log de fallos CAPI en sesión actual.
+  const [capiLog, setCapiLog] = useState<CapiFailLog>({});
   const [tick, setTick] = useState(0); // fuerza refresco del log cada 5s
 
   // Hidrata desde config
@@ -75,9 +89,10 @@ export const MetaPixelValidatorCard = () => {
     setConfiguredSet(new Set(config.meta_pixel_configured_events || []));
   }, [config.meta_pixel_configured_events]);
 
-  // Refresca log de la sesión
+  // Refresca log de la sesión (Pixel + CAPI en el mismo tick)
   useEffect(() => {
     setLog(readLog());
+    setCapiLog(readCapiLog());
     const i = setInterval(() => setTick((t) => t + 1), 5000);
     return () => clearInterval(i);
   }, [tick]);
@@ -145,6 +160,17 @@ export const MetaPixelValidatorCard = () => {
       localStorage.removeItem(PIXEL_EVENT_LOG_KEY);
       setLog({});
       toast.success('Log de la sesión limpiado');
+    } catch {
+      /* noop */
+    }
+  };
+
+  // [2026-07-05] CATARSIS — limpia log de fallos CAPI de la sesión actual.
+  const handleClearCapiLog = () => {
+    try {
+      localStorage.removeItem(CAPI_FAIL_LOG_KEY);
+      setCapiLog({});
+      toast.success('Log de CAPI limpiado');
     } catch {
       /* noop */
     }
@@ -430,6 +456,66 @@ export const MetaPixelValidatorCard = () => {
               </>
             )}
           </div>
+        </section>
+
+        {/* ============================================================ */}
+        {/* [2026-07-05] CATARSIS — Visibilidad de fallos CAPI en sesión */}
+        {/* actual, sin abrir consola.                                    */}
+        {/* ============================================================ */}
+        <section className="space-y-3">
+          {(() => {
+            const entries = Object.entries(capiLog);
+            const total = entries.reduce((sum, [, v]) => sum + (v?.count ?? 0), 0);
+            return (
+              <div
+                className={`rounded-lg border p-3 ${
+                  total === 0
+                    ? 'border-emerald-500/30 bg-emerald-500/5'
+                    : 'border-red-500/30 bg-red-500/5'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    {total === 0 ? (
+                      <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                    ) : (
+                      <AlertTriangle className="h-4 w-4 text-red-500" />
+                    )}
+                    <span className="text-sm font-medium">
+                      Estado de CAPI (sesión actual) · {total} {total === 1 ? 'fallo' : 'fallos'}
+                    </span>
+                  </div>
+                  {total > 0 && (
+                    <Button variant="ghost" size="sm" onClick={handleClearCapiLog}>
+                      <Trash2 className="h-3.5 w-3.5 mr-1" />
+                      Limpiar
+                    </Button>
+                  )}
+                </div>
+                {total === 0 ? (
+                  <p className="text-xs text-muted-foreground">
+                    Ningún evento CAPI falló en esta sesión. El envío server-side está sano.
+                  </p>
+                ) : (
+                  <div className="space-y-1">
+                    {entries
+                      .sort((a, b) => (b[1].lastFiredAt || 0) - (a[1].lastFiredAt || 0))
+                      .map(([name, v]) => (
+                        <div
+                          key={name}
+                          className="flex items-center justify-between text-xs font-mono"
+                        >
+                          <span>{name}</span>
+                          <span className="text-muted-foreground">
+                            {v.count}× · {formatRelative(v.lastFiredAt)}
+                          </span>
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </section>
       </CardContent>
     </Card>

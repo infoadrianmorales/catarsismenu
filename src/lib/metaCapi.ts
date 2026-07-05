@@ -8,10 +8,10 @@
  * eventos") de Events Manager. Para re-testear en el futuro, poner aquí
  * un código temporal tipo 'TESTxxxxx' y volver a null antes de publicar.
  */
-import { supabase } from '@/integrations/supabase/client';
 // [2026-07-05] CATARSIS — fbc/fbp vía librería oficial de Meta +
 // external_id persistente (ya hasheado client-side) en todos los eventos.
 import { getFbc, getFbp, getOrCreateExternalId } from '@/lib/metaClickIds';
+import { CAPI_FAIL_LOG_KEY, type CapiFailLog } from '@/lib/metaPixelManifest';
 
 const CAPI_TEST_EVENT_CODE: string | null = null;
 
@@ -60,6 +60,50 @@ const getUserDataFromSession = (): CapiUserData => {
   }
 };
 
+// [2026-07-05] CATARSIS — Registra un fallo de CAPI en localStorage.
+// SOLO event_name + timestamp + count. Nunca payload ni PII.
+const recordCapiFail = (event_name: string): void => {
+  try {
+    const raw = localStorage.getItem(CAPI_FAIL_LOG_KEY);
+    const log: CapiFailLog = raw ? JSON.parse(raw) : {};
+    const prev = log[event_name];
+    log[event_name] = {
+      lastFiredAt: Date.now(),
+      count: (prev?.count ?? 0) + 1,
+    };
+    localStorage.setItem(CAPI_FAIL_LOG_KEY, JSON.stringify(log));
+  } catch {
+    /* noop */
+  }
+};
+
+// [2026-07-05] CATARSIS — fetch keepalive + 1 retry a los 800ms;
+// registra fallos en __capi_fail_log tras agotar el reintento.
+const postCapi = async (payload: Record<string, unknown>, event_name: string): Promise<void> => {
+  const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/meta-capi`;
+  const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    apikey: key,
+    Authorization: `Bearer ${key}`,
+  };
+  const body = JSON.stringify(payload);
+
+  const attempt = async (): Promise<boolean> => {
+    try {
+      const res = await fetch(url, { method: 'POST', headers, body, keepalive: true });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  };
+
+  if (await attempt()) return;
+  await new Promise((r) => setTimeout(r, 800));
+  if (await attempt()) return;
+  recordCapiFail(event_name);
+};
+
 export const sendCapiEvent = ({ event_name, event_id, custom_data, user_data }: SendCapiArgs): void => {
   if (typeof window === 'undefined') return;
 
@@ -80,7 +124,5 @@ export const sendCapiEvent = ({ event_name, event_id, custom_data, user_data }: 
   if (CAPI_TEST_EVENT_CODE) payload.test_event_code = CAPI_TEST_EVENT_CODE;
 
   // Fire-and-forget. Nunca bloquea UI ni loguea PII.
-  supabase.functions.invoke('meta-capi', { body: payload }).catch(() => {
-    /* silent: CAPI es best-effort */
-  });
+  void postCapi(payload, event_name);
 };

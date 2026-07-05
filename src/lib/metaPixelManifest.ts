@@ -55,3 +55,8 @@ export const META_STANDARD_EVENTS: string[] = [
 export const PIXEL_EVENT_LOG_KEY = '__fb_event_log';
 
 export type PixelEventLog = Record<string, { lastFiredAt: number; count: number }>;
+
+// [2026-07-05] CATARSIS — log de fallos CAPI: solo event_name + timestamp + count.
+// Nunca payload ni PII. Mismo shape que PixelEventLog para reutilizar helpers.
+export const CAPI_FAIL_LOG_KEY = '__capi_fail_log';
+export type CapiFailLog = Record<string, { lastFiredAt: number; count: number }>;
