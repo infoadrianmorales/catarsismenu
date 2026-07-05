@@ -457,6 +457,66 @@ export const MetaPixelValidatorCard = () => {
             )}
           </div>
         </section>
+
+        {/* ============================================================ */}
+        {/* [2026-07-05] CATARSIS — Visibilidad de fallos CAPI en sesión */}
+        {/* actual, sin abrir consola.                                    */}
+        {/* ============================================================ */}
+        <section className="space-y-3">
+          {(() => {
+            const entries = Object.entries(capiLog);
+            const total = entries.reduce((sum, [, v]) => sum + (v?.count ?? 0), 0);
+            return (
+              <div
+                className={`rounded-lg border p-3 ${
+                  total === 0
+                    ? 'border-emerald-500/30 bg-emerald-500/5'
+                    : 'border-red-500/30 bg-red-500/5'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    {total === 0 ? (
+                      <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                    ) : (
+                      <AlertTriangle className="h-4 w-4 text-red-500" />
+                    )}
+                    <span className="text-sm font-medium">
+                      Estado de CAPI (sesión actual) · {total} {total === 1 ? 'fallo' : 'fallos'}
+                    </span>
+                  </div>
+                  {total > 0 && (
+                    <Button variant="ghost" size="sm" onClick={handleClearCapiLog}>
+                      <Trash2 className="h-3.5 w-3.5 mr-1" />
+                      Limpiar
+                    </Button>
+                  )}
+                </div>
+                {total === 0 ? (
+                  <p className="text-xs text-muted-foreground">
+                    Ningún evento CAPI falló en esta sesión. El envío server-side está sano.
+                  </p>
+                ) : (
+                  <div className="space-y-1">
+                    {entries
+                      .sort((a, b) => (b[1].lastFiredAt || 0) - (a[1].lastFiredAt || 0))
+                      .map(([name, v]) => (
+                        <div
+                          key={name}
+                          className="flex items-center justify-between text-xs font-mono"
+                        >
+                          <span>{name}</span>
+                          <span className="text-muted-foreground">
+                            {v.count}× · {formatRelative(v.lastFiredAt)}
+                          </span>
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+        </section>
       </CardContent>
     </Card>
   );
