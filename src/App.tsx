@@ -58,10 +58,10 @@ const PageLoader = () => (
 const AppContent = () => {
   useVisitorTracker();
 
-  // [2026-07-05] CATARSIS — Captura fbc/fbp lo antes posible (idempotente).
-  useEffect(() => {
-    initClickIdParams();
-  }, []);
+  // [2026-07-05] CATARSIS — init de fbc/fbp movido a src/main.tsx (antes
+  // de montar React) para garantizar cookies presentes en el primer PageView.
+
+
 
 
 
