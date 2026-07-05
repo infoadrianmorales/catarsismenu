@@ -46,6 +46,7 @@
         "input-otp": "^1.4.2",
         "jspdf": "^4.2.0",
         "lucide-react": "^0.462.0",
+        "meta-capi-param-builder-clientjs": "^1.3.1",
         "next-themes": "^0.3.0",
         "react": "^18.3.1",
         "react-day-picker": "^8.10.1",
@@ -738,6 +739,8 @@
     "magic-string": ["magic-string@0.30.12", "", { "dependencies": { "@jridgewell/sourcemap-codec": "^1.5.0" } }, "sha512-Ea8I3sQMVXr8JhN4z+H/d8zwo+tYDgHE9+5G4Wnrwhs0gaK9fXTKx0Tw5Xwsd/bCPTTZNRAdpyzvoeORe9LYpw=="],
 
     "merge2": ["merge2@1.4.1", "", {}, "sha512-8q7VEgMJW4J8tcfVPy8g09NcQwZdbwFEqhe/WZkoIzjn/3TGDwtOCYtXGxA3O8tPzpczCCDgv+P2P5y00ZJOOg=="],
+
+    "meta-capi-param-builder-clientjs": ["meta-capi-param-builder-clientjs@1.3.1", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/meta-capi-param-builder-clientjs/-/meta-capi-param-builder-clientjs-1.3.1.tgz", {}, "sha512-9KfOeZKvj5QF0Z+BP5mwuAswQh8iFfHXPCTauIukxE0wFkB48lD9nDM1rjK5iklQeRwD7J7HCDxg48KPOMIcaw=="],
 
     "micromatch": ["micromatch@4.0.8", "", { "dependencies": { "braces": "^3.0.3", "picomatch": "^2.3.1" } }, "sha512-PXwfBhYu0hBCPw8Dn0E+WDYb7af3dSLVWKi3HGv84IdF4TyFoC0ysxFd0Goxw7nSv4T/PzEJQxsYsEiFCKo2BA=="],
 
