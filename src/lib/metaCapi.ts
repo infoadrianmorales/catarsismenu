@@ -9,6 +9,9 @@
  * un código temporal tipo 'TESTxxxxx' y volver a null antes de publicar.
  */
 import { supabase } from '@/integrations/supabase/client';
+// [2026-07-05] CATARSIS — fbc/fbp vía librería oficial de Meta +
+// external_id persistente (ya hasheado client-side) en todos los eventos.
+import { getFbc, getFbp, getOrCreateExternalId } from '@/lib/metaClickIds';
 
 const CAPI_TEST_EVENT_CODE: string | null = null;
 
