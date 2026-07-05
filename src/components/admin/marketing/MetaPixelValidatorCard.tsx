@@ -62,6 +62,16 @@ const readLog = (): PixelEventLog => {
   }
 };
 
+// [2026-07-05] CATARSIS — lector del log de fallos CAPI (mismo shape).
+const readCapiLog = (): CapiFailLog => {
+  try {
+    const raw = localStorage.getItem(CAPI_FAIL_LOG_KEY);
+    return raw ? (JSON.parse(raw) as CapiFailLog) : {};
+  } catch {
+    return {};
+  }
+};
+
 export const MetaPixelValidatorCard = () => {
   const { config, updateConfig } = useConfig();
 
