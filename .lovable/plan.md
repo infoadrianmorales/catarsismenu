@@ -1,49 +1,51 @@
-## Contexto
-El sitio vive indefinidamente en Lovable. Los dominios `catarsisve.com` y `catarsiszone.com` ya apuntan al hosting de Lovable, así que sitemap, canonical, OG, robots y `facebook-domain-verification` **no cambian**. En vez de borrar la configuración de Vercel, la dejaremos **inactiva pero preservada como referencia comentada**, por si en el futuro se decide migrar de vuelta.
+# Integración librería oficial de Meta para CAPI
 
-## Cambios propuestos
+Reemplazar la lectura manual de cookies `_fbc`/`_fbp` en `src/lib/metaCapi.ts` por el wrapper oficial `meta-capi-param-builder-clientjs`, y agregar un `external_id` persistente hasheado client-side en todos los eventos CAPI.
 
-### 1. `vercel.json` — neutralizar sin borrar
-JSON no admite comentarios, así que no se puede "comentar el contenido" dentro del mismo archivo. Dos opciones válidas:
+Todos los archivos tocados llevarán un comentario `// [2026-07-05] CATARSIS — [descripción]`.
 
-- **Opción A (recomendada):** renombrar `vercel.json` → `vercel.json.disabled`. Vercel deja de leerlo, pero el contenido queda intacto en el repo como referencia histórica. Para reactivarlo en el futuro basta con renombrarlo de vuelta.
-- **Opción B:** mover el contenido a `docs/vercel.reference.json` con una nota al inicio explicando que está desactivado.
+## Cambios
 
-En ambos casos añadimos una nota corta en `README.md` explicando dónde vive la configuración de Vercel archivada.
+### 1. Dependencia
+- Instalar `meta-capi-param-builder-clientjs` con bun (equivalente a `npm install`, respetando la convención del proyecto de usar bun).
 
-### 2. `README.md` — nota informativa
-Agregar una sección breve tipo:
-> **Hosting actual:** Lovable (Publish). La configuración histórica de Vercel se conserva en `vercel.json.disabled` por si en el futuro se migra el despliegue.
+### 2. Nuevo archivo `src/lib/metaClickIds.ts`
+Wrapper con:
+- `initClickIdParams()` — idempotente, llama `processAndCollectAllParams()` una sola vez y cachea la promesa.
+- `getFbc()` / `getFbp()` — devuelven las cookies gestionadas por la librería (respeta cookies existentes, no las sobreescribe).
+- `getOrCreateExternalId()` — genera un UUID persistente en `localStorage` bajo la clave `__catarsis_ext_id` y devuelve el valor **ya normalizado y hasheado** vía `getNormalizedAndHashedPII(id, 'external_id')`.
+- **No** se usa `getIpFn`: la Edge Function `meta-capi` ya extrae `client_ip_address` de los headers server-side (más confiable).
 
-Sin tocar el resto del contenido.
+### 3. `src/App.tsx`
+- Llamar `initClickIdParams()` una sola vez al montar la app, antes del primer PageView. Se hará dentro de un `useEffect` en `AppContent` (que ya envuelve `MetaPixelProvider`) para disparar la captura de parámetros lo antes posible, respetando la recomendación de Meta.
+- Fire-and-forget (no bloquear render); el wrapper es idempotente y el PageView del pixel puede ejecutarse en paralelo — cuando el evento CAPI se dispare inmediatamente después, `getFbc/getFbp` ya devolverán los valores capturados.
 
-### 3. Memoria del proyecto (`mem://`) — actualizar, no eliminar
-- **Mantener** `mem://hosting/configuracion-dominios-vercel` y `mem://hosting/vercel-routing-and-caching`, pero editar la descripción/cuerpo para marcarlas como **"Referencia archivada — hosting actual es Lovable"**.
-- Añadir una nueva entrada `mem://hosting/lovable-hosting-actual` que declare que el despliegue vivo es Lovable Publish y que los dominios custom están conectados ahí.
-- Actualizar `mem://index.md` para reflejar el hosting actual y renombrar los ítems archivados.
+### 4. `src/lib/metaCapi.ts`
+- Eliminar `readCookie` y `getFbCookies` (lectura manual).
+- Importar `getFbc`, `getFbp`, `getOrCreateExternalId` desde `metaClickIds.ts`.
+- En `sendCapiEvent`, construir `merged` con:
+  - `fbc: getFbc()`, `fbp: getFbp()`
+  - `external_id: getOrCreateExternalId()` (ya hasheado — el server detecta el formato SHA-256 hex y no lo re-hashea, gracias a `isSha256Hex` + `hashIfNeeded`; pero `external_id` en el server usa `sha256Hex(user_data.external_id.trim())` sin ese check).
 
-### 4. URLs cortas (`/hamburguesas`, `/pizzas`, `/best-seller`, etc.)
-Estas rewrites vivían en `vercel.json`. Al desactivarlo dejarán de resolver como entrada directa (tecleada o enlace externo). La navegación interna vía React Router **no se ve afectada** porque ya usa `/categoria/<slug>`.
+**Nota técnica importante**: el servidor (`supabase/functions/meta-capi/index.ts`) actualmente re-hashea `external_id` incondicionalmente con `sha256Hex(user_data.external_id.trim())`. Si mandamos el valor ya hasheado desde el cliente, el server lo hashearía dos veces y romperíamos la deduplicación con `external_id` en otros contextos (aunque no afecta los 7 eventos actuales porque no dependen de external_id para dedupe — usan `event_id`).
 
-Recomiendo **replicarlas dentro de React Router** con `<Route path="/hamburguesas" element={<Navigate to="/categoria/hamburguesas" replace />}/>` para las 8 rutas del `vercel.json`. Así:
-- Enlaces externos ya compartidos siguen funcionando.
-- No dependemos de configuración del host.
-- Si mañana se vuelve a Vercel, las rewrites del JSON siguen ahí y también funcionan (doble red).
+Para evitar el doble hash sin tocar el contrato del server, se aplicará el patrón que ya usan `email`/`phone`/etc.: en el edge function, cambiar la línea de `external_id` para pasar por `hashIfNeeded` con normalización identidad, así detecta el hex SHA-256 y no lo re-hashea. Este es el único cambio en la Edge Function.
 
-### 5. Lo que **NO** se toca
-- `sitemap.xml`, `robots.txt`, canonical, OG, Twitter Card, `facebook-domain-verification`, geo tags.
-- `supabase/config.toml`, edge functions, `metaCapi.ts`, `metaPixel.ts`.
-- `.env`, integraciones Supabase.
+### 5. `supabase/functions/meta-capi/index.ts`
+- Cambiar `if (user_data.external_id) ud.external_id = [await sha256Hex(user_data.external_id.trim())];` por el mismo patrón `hashIfNeeded` que el resto de campos PII (normalización = trim + lowercase para consistencia con SHA-256 hex).
+- Añadir comentario `// [2026-07-05] CATARSIS — external_id puede venir ya hasheado desde el cliente (librería oficial de Meta); hashIfNeeded lo detecta.`
 
-## Preguntas antes de ejecutar
-1. Para preservar Vercel, ¿vamos con **Opción A** (`vercel.json.disabled`) o **Opción B** (`docs/vercel.reference.json`)?
-2. ¿Replico las URLs cortas dentro de React Router (recomendado) o las dejamos rotas hasta una futura migración?
+## Archivos afectados
+- `package.json` / `bun.lock` (via bun add)
+- `src/lib/metaClickIds.ts` (nuevo)
+- `src/App.tsx` (init en useEffect)
+- `src/lib/metaCapi.ts` (fbc/fbp + external_id)
+- `supabase/functions/meta-capi/index.ts` (external_id via hashIfNeeded)
 
-## Resumen técnico
-| Acción | Archivo/recurso |
-|---|---|
-| Renombrar (A) o mover (B) | `vercel.json` |
-| Editar leve | `README.md` |
-| Editar (marcar archivadas) | `mem://hosting/configuracion-dominios-vercel`, `mem://hosting/vercel-routing-and-caching` |
-| Crear | `mem://hosting/lovable-hosting-actual` + actualizar `mem://index.md` |
-| Opcional recomendado | Rutas espejo en `src/App.tsx` para short URLs |
+## Fuera de alcance
+- No se cambia `metaPixel.ts` — la librería es solo para CAPI/params, el pixel sigue disparando `fbq('track', ...)` normal.
+- No se toca el flujo de deduplicación existente (`event_id` compartido pixel↔CAPI).
+- No se activa `getIpFn` (IP se sigue capturando server-side).
+
+## Pregunta antes de implementar
+¿Confirmas que quieres el ajuste en la Edge Function (`meta-capi/index.ts`) para evitar el doble hash de `external_id`? Sin ese cambio, el `external_id` llegaría a Meta hasheado dos veces y no serviría para matching cross-device. Es un cambio mínimo (1 línea) y sigue el patrón existente de `hashIfNeeded`.

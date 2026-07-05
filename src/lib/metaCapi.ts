@@ -9,6 +9,9 @@
  * un código temporal tipo 'TESTxxxxx' y volver a null antes de publicar.
  */
 import { supabase } from '@/integrations/supabase/client';
+// [2026-07-05] CATARSIS — fbc/fbp vía librería oficial de Meta +
+// external_id persistente (ya hasheado client-side) en todos los eventos.
+import { getFbc, getFbp, getOrCreateExternalId } from '@/lib/metaClickIds';
 
 const CAPI_TEST_EVENT_CODE: string | null = null;
 
@@ -34,16 +37,9 @@ interface SendCapiArgs {
   user_data?: CapiUserData;
 }
 
-const readCookie = (name: string): string | undefined => {
-  if (typeof document === 'undefined') return undefined;
-  const m = document.cookie.match(new RegExp('(?:^|; )' + name.replace(/([.$?*|{}()[\]\\/+^])/g, '\\$1') + '=([^;]*)'));
-  return m ? decodeURIComponent(m[1]) : undefined;
-};
+// [2026-07-05] CATARSIS — fbc/fbp ahora provienen de metaClickIds.ts
+// (librería oficial de Meta). Se eliminó la lectura manual de cookies.
 
-const getFbCookies = () => ({
-  fbc: readCookie('_fbc'),
-  fbp: readCookie('_fbp'),
-});
 
 const getUserDataFromSession = (): CapiUserData => {
   try {
@@ -67,9 +63,11 @@ const getUserDataFromSession = (): CapiUserData => {
 export const sendCapiEvent = ({ event_name, event_id, custom_data, user_data }: SendCapiArgs): void => {
   if (typeof window === 'undefined') return;
 
-  const { fbc, fbp } = getFbCookies();
+  const fbc = getFbc();
+  const fbp = getFbp();
+  const external_id = getOrCreateExternalId() || undefined;
   const sessionUd = getUserDataFromSession();
-  const merged: CapiUserData = { ...sessionUd, ...user_data, fbc, fbp };
+  const merged: CapiUserData = { ...sessionUd, ...user_data, fbc, fbp, external_id };
 
   const payload: Record<string, unknown> = {
     event_name,
