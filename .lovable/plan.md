@@ -1,31 +1,36 @@
-# Fix orden de captura fbc/fbp — antes de montar React
+# CAPI: keepalive + retry + panel de fallos
 
-El error `Cannot read properties of undefined (reading 'processAndCollectAllParams')` indica que el default import `clientParamBuilder` del bundle UMD viene `undefined` en el contexto ESM/Vite. Aparte de mover la llamada al bootstrap, hay que hacer el import compatible con el bundle CJS/UMD del paquete.
+## 1. `src/lib/metaCapi.ts` — transporte keepalive con retry único
+- Reemplazar `supabase.functions.invoke('meta-capi', ...)` por `fetch` directo:
+  - URL: `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/meta-capi`
+  - Headers: `Content-Type: application/json`, `apikey: <VITE_SUPABASE_PUBLISHABLE_KEY>`, `Authorization: Bearer <VITE_SUPABASE_PUBLISHABLE_KEY>`
+  - `keepalive: true` para sobrevivir a navegación.
+- Función interna `postCapi(payload)`:
+  - Intento 1 → si network error o `!res.ok` → esperar 800ms → intento 2.
+  - Si el intento 2 también falla, registrar en el log de fallos (paso 2).
+- Sigue siendo fire-and-forget, sin bloquear UI, sin loguear PII/payload.
+- Comentario `// [2026-07-05] CATARSIS — fetch keepalive + 1 retry a los 800ms; registra fallos en __capi_fail_log.`
 
-## Cambios
+## 2. `src/lib/metaPixelManifest.ts` — nueva key + tipo compartido
+- Exportar `CAPI_FAIL_LOG_KEY = '__capi_fail_log'` y `type CapiFailLog = Record<string, { lastFiredAt: number; count: number }>` (mismo shape que `PixelEventLog` para reutilizar helpers en el card).
+- Comentario `// [2026-07-05] CATARSIS — log de fallos CAPI: solo event_name + timestamp + count. Nunca payload ni PII.`
 
-### 1. `src/App.tsx`
-- Eliminar el `useEffect` que llama `initClickIdParams()` dentro de `AppContent`.
-- Eliminar el import `initClickIdParams` de este archivo.
-- Quitar `useEffect` del import de React si ya no se usa.
+## 3. `src/lib/metaCapi.ts` — helper `recordCapiFail(event_name)`
+- Lee `__capi_fail_log` (try/catch), incrementa `count` y actualiza `lastFiredAt = Date.now()` para `event_name`, reescribe. Solo string + números — jamás payload ni PII.
 
-### 2. `src/main.tsx`
-- Importar `initClickIdParams` desde `@/lib/metaClickIds`.
-- Invocarlo (fire-and-forget) **antes** de `createRoot(...).render(...)`.
-- Añadir comentario `// [2026-07-05] CATARSIS — Captura fbc/fbp ANTES de montar React …` explicando por qué no puede vivir en un `useEffect` hijo.
-
-### 3. `src/lib/metaClickIds.ts` (fix del runtime error)
-El paquete expone un bundle UMD (`dist/clientParamBuilder.bundle.js`) cuyo default export bajo interop de Vite/ESM está resolviendo a `undefined`, por eso `clientParamBuilder.processAndCollectAllParams` truena. Ajustes:
-- Cambiar a `import * as ClientParamBuilderNS from 'meta-capi-param-builder-clientjs'` y resolver el objeto real con fallback: `const clientParamBuilder = (ClientParamBuilderNS as any).default ?? (ClientParamBuilderNS as any);`
-- Envolver `initClickIdParams` en un try/catch adicional que valide la existencia del método antes de llamarlo (evita crash si el bundle no expone lo esperado en algún entorno).
-- Mantener los guards existentes en `getFbc/getFbp/getOrCreateExternalId`, agregando check `typeof clientParamBuilder?.getFbc === 'function'` antes de invocar.
-- Añadir comentario `// [2026-07-05] CATARSIS — interop UMD/ESM: el paquete expone default vía bundle, tomar .default con fallback al namespace.`
-
-## Archivos afectados
-- `src/App.tsx` — quitar useEffect + import
-- `src/main.tsx` — invocar `initClickIdParams()` antes de render
-- `src/lib/metaClickIds.ts` — fix del import interop para eliminar el runtime error
+## 4. `src/components/admin/marketing/MetaPixelValidatorCard.tsx` — sección "Estado de CAPI"
+- Reutilizar el patrón existente `tick`/`setInterval(5000)`:
+  - Añadir `capiLog` state, `readCapiLog()` helper y refrescarlo en el mismo `useEffect` que ya hace tick (evita un segundo interval).
+- Nueva subsección al final de `CardContent` (antes del cierre) con:
+  - Título "Estado de CAPI (sesión actual)".
+  - Total de fallos: suma de `count` de todos los eventos en el log.
+  - Lista compacta por evento fallido: nombre + count + `formatRelative(lastFiredAt)` (helper ya existente).
+  - Estado "sin fallos" (verde) cuando el log está vacío.
+  - Botón "Limpiar log de CAPI" que hace `localStorage.removeItem(CAPI_FAIL_LOG_KEY)` y resetea state — análogo a `handleClearLog` del Pixel.
+- Comentario `// [2026-07-05] CATARSIS — visibilidad de fallos CAPI en sesión actual, sin abrir consola.`
 
 ## Fuera de alcance
-- No se toca `metaCapi.ts` ni la Edge Function.
-- No se cambia el contrato de `initClickIdParams` (sigue devolviendo `Promise<void>`).
+- No se toca la Edge Function `meta-capi` (contrato idéntico).
+- No se cambia deduplicación ni event_id.
+- No se persiste el log fuera de localStorage (es telemetría de sesión).
+- No se loguean payload ni PII en el log de fallos — solo `event_name`.
