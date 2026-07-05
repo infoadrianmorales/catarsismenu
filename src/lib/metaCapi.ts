@@ -8,10 +8,10 @@
  * eventos") de Events Manager. Para re-testear en el futuro, poner aquí
  * un código temporal tipo 'TESTxxxxx' y volver a null antes de publicar.
  */
-import { supabase } from '@/integrations/supabase/client';
 // [2026-07-05] CATARSIS — fbc/fbp vía librería oficial de Meta +
 // external_id persistente (ya hasheado client-side) en todos los eventos.
 import { getFbc, getFbp, getOrCreateExternalId } from '@/lib/metaClickIds';
+import { CAPI_FAIL_LOG_KEY, type CapiFailLog } from '@/lib/metaPixelManifest';
 
 const CAPI_TEST_EVENT_CODE: string | null = null;
 
