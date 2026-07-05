@@ -135,7 +135,11 @@ Deno.serve(async (req) => {
   if (ct) ud.ct = [ct];
   if (st) ud.st = [st];
   if (country) ud.country = [country];
-  if (user_data.external_id) ud.external_id = [await sha256Hex(user_data.external_id.trim())];
+  // [2026-07-05] CATARSIS — external_id puede venir ya hasheado desde el cliente
+  // (librería oficial de Meta hashea client-side); hashIfNeeded detecta el SHA-256 hex
+  // y evita el doble hash. Normaliza con trim+lowercase para valores en claro.
+  const ext = await hashIfNeeded(user_data.external_id, (v) => v.trim().toLowerCase());
+  if (ext) ud.external_id = [ext];
   if (user_data.fbc) ud.fbc = user_data.fbc;
   if (user_data.fbp) ud.fbp = user_data.fbp;
   if (clientIp) ud.client_ip_address = clientIp;
