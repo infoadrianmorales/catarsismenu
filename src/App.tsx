@@ -60,6 +60,13 @@ const PageLoader = () => (
 const AppContent = () => {
   useVisitorTracker();
 
+  // [2026-07-05] CATARSIS — Captura fbc/fbp lo antes posible (idempotente).
+  useEffect(() => {
+    initClickIdParams();
+  }, []);
+
+
+
   return (
     <ViewModeProvider>
       <MetaPixelProvider>
