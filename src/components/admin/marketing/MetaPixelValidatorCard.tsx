@@ -80,6 +80,8 @@ export const MetaPixelValidatorCard = () => {
   const [customInput, setCustomInput] = useState('');
   const [saving, setSaving] = useState(false);
   const [log, setLog] = useState<PixelEventLog>({});
+  // [2026-07-05] CATARSIS — log de fallos CAPI en sesión actual.
+  const [capiLog, setCapiLog] = useState<CapiFailLog>({});
   const [tick, setTick] = useState(0); // fuerza refresco del log cada 5s
 
   // Hidrata desde config
@@ -87,9 +89,10 @@ export const MetaPixelValidatorCard = () => {
     setConfiguredSet(new Set(config.meta_pixel_configured_events || []));
   }, [config.meta_pixel_configured_events]);
 
-  // Refresca log de la sesión
+  // Refresca log de la sesión (Pixel + CAPI en el mismo tick)
   useEffect(() => {
     setLog(readLog());
+    setCapiLog(readCapiLog());
     const i = setInterval(() => setTick((t) => t + 1), 5000);
     return () => clearInterval(i);
   }, [tick]);
