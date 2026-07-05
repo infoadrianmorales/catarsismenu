@@ -37,16 +37,9 @@ interface SendCapiArgs {
   user_data?: CapiUserData;
 }
 
-const readCookie = (name: string): string | undefined => {
-  if (typeof document === 'undefined') return undefined;
-  const m = document.cookie.match(new RegExp('(?:^|; )' + name.replace(/([.$?*|{}()[\]\\/+^])/g, '\\$1') + '=([^;]*)'));
-  return m ? decodeURIComponent(m[1]) : undefined;
-};
+// [2026-07-05] CATARSIS — fbc/fbp ahora provienen de metaClickIds.ts
+// (librería oficial de Meta). Se eliminó la lectura manual de cookies.
 
-const getFbCookies = () => ({
-  fbc: readCookie('_fbc'),
-  fbp: readCookie('_fbp'),
-});
 
 const getUserDataFromSession = (): CapiUserData => {
   try {
