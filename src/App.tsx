@@ -15,6 +15,8 @@ import { ScrollToTop } from "./components/ScrollToTop";
 import { MetricoolProvider } from "./components/MetricoolProvider";
 // [MARKETING-PANEL] Inyecta GTM, GA4, Google Ads y Search Console según config
 import { GoogleTagsProvider } from "./components/GoogleTagsProvider";
+// [2026-07-05] CATARSIS — Inicializa fbc/fbp vía librería oficial de Meta lo antes posible.
+import { initClickIdParams } from "@/lib/metaClickIds";
 import { useVisitorTracker } from "./hooks/useVisitorTracker";
 
 // Lazy load non-critical pages
