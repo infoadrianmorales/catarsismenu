@@ -63,9 +63,11 @@ const getUserDataFromSession = (): CapiUserData => {
 export const sendCapiEvent = ({ event_name, event_id, custom_data, user_data }: SendCapiArgs): void => {
   if (typeof window === 'undefined') return;
 
-  const { fbc, fbp } = getFbCookies();
+  const fbc = getFbc();
+  const fbp = getFbp();
+  const external_id = getOrCreateExternalId() || undefined;
   const sessionUd = getUserDataFromSession();
-  const merged: CapiUserData = { ...sessionUd, ...user_data, fbc, fbp };
+  const merged: CapiUserData = { ...sessionUd, ...user_data, fbc, fbp, external_id };
 
   const payload: Record<string, unknown> = {
     event_name,
