@@ -36,7 +36,9 @@ import {
   APP_PIXEL_EVENTS,
   META_STANDARD_EVENTS,
   PIXEL_EVENT_LOG_KEY,
+  CAPI_FAIL_LOG_KEY,
   type PixelEventLog,
+  type CapiFailLog,
 } from '@/lib/metaPixelManifest';
 
 const formatRelative = (ts: number): string => {
