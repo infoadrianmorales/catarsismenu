@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect } from 'react';
+import { lazy, Suspense } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -15,8 +15,6 @@ import { ScrollToTop } from "./components/ScrollToTop";
 import { MetricoolProvider } from "./components/MetricoolProvider";
 // [MARKETING-PANEL] Inyecta GTM, GA4, Google Ads y Search Console según config
 import { GoogleTagsProvider } from "./components/GoogleTagsProvider";
-// [2026-07-05] CATARSIS — Inicializa fbc/fbp vía librería oficial de Meta lo antes posible.
-import { initClickIdParams } from "@/lib/metaClickIds";
 import { useVisitorTracker } from "./hooks/useVisitorTracker";
 
 // Lazy load non-critical pages
@@ -60,10 +58,10 @@ const PageLoader = () => (
 const AppContent = () => {
   useVisitorTracker();
 
-  // [2026-07-05] CATARSIS — Captura fbc/fbp lo antes posible (idempotente).
-  useEffect(() => {
-    initClickIdParams();
-  }, []);
+  // [2026-07-05] CATARSIS — init de fbc/fbp movido a src/main.tsx (antes
+  // de montar React) para garantizar cookies presentes en el primer PageView.
+
+
 
 
 
