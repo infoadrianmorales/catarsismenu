@@ -3,6 +3,10 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { ToolContext } from "@lovable.dev/mcp-js";
 
+// El bundle final corre en Deno (edge function); `process.env` está disponible allí.
+declare const process: { env: Record<string, string | undefined> };
+
+
 export function supabaseForUser(ctx: ToolContext): SupabaseClient {
   const url = process.env.SUPABASE_URL!;
   const key = process.env.SUPABASE_PUBLISHABLE_KEY!;
