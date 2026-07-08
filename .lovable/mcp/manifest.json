@@ -1,0 +1,223 @@
+{
+  "version": 1,
+  "sdk_version": "0.20.0",
+  "path": "/functions/v1/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://qucqigemdbyclxqjzkbs.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "catarsis-mcp",
+      "version": "0.1.0",
+      "title": "Catarsis MCP"
+    },
+    "tools": [
+      {
+        "name": "list_products",
+        "title": "Listar productos",
+        "description": "Lista productos del menú de Catarsis. Permite filtrar por categoría y estado activo.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "categoria": {
+              "description": "Filtro por categoría (bebidas, hamburguesas, etc.)",
+              "type": "string"
+            },
+            "activo": {
+              "description": "true = solo activos, false = solo inactivos, omitir = todos",
+              "type": "boolean"
+            },
+            "limit": {
+              "description": "Máximo de resultados (default 100)",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "update_product",
+        "title": "Actualizar producto",
+        "description": "Modifica un producto de Catarsis (precio, nombre, descripción, activo, destacado, orden).",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "description": "UUID del producto a modificar"
+            },
+            "nombre": {
+              "type": "string",
+              "minLength": 1
+            },
+            "descripcion_corta": {
+              "type": "string"
+            },
+            "precio_usd": {
+              "description": "Precio en USD",
+              "type": "number",
+              "minimum": 0
+            },
+            "activo": {
+              "type": "boolean"
+            },
+            "destacado": {
+              "type": "boolean"
+            },
+            "orden": {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "id"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_sales_summary",
+        "title": "Resumen de ventas",
+        "description": "Métricas de ventas de Catarsis en un rango de fechas: ventas por categoría, top productos y por fuente (menú/local/etc.).",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "days": {
+              "description": "Últimos N días (default 30). Alternativa a date_from/date_to.",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 365
+            },
+            "date_from": {
+              "description": "ISO 8601 inicio",
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+            },
+            "date_to": {
+              "description": "ISO 8601 fin",
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_visits_summary",
+        "title": "Resumen de visitas",
+        "description": "Métricas de tráfico web de Catarsis: total de visitas, visitantes únicos, páginas más populares, países y fuentes de tráfico.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "days": {
+              "description": "Últimos N días (default 30)",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 365
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_recent_orders",
+        "title": "Órdenes recientes",
+        "description": "Lista las órdenes más recientes de Catarsis con estado, cliente, total y método de pago.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "limit": {
+              "description": "Cantidad de órdenes (default 20)",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "NEW",
+                "CONFIRMED",
+                "PREPARING",
+                "READY",
+                "DELIVERED",
+                "CANCELED"
+              ]
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "update_config",
+        "title": "Actualizar configuración",
+        "description": "Lee (sin value) o actualiza (con value) una clave de configuración global de Catarsis (ej: tasa_ves, whatsapp, instagram_url).",
+        "annotations": {
+          "readOnlyHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "key": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Clave de configuración"
+            },
+            "value": {
+              "description": "Nuevo valor. Omitir para solo leer.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "key"
+          ]
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
