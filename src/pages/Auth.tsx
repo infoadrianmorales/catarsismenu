@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,21 +14,35 @@ const authSchema = z.object({
   password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres').max(72),
 });
 
+// [MCP OAUTH] Validador de `next`: solo aceptamos rutas relativas del mismo origen
+// (empiezan con "/" pero no con "//") para evitar open-redirects.
+const isSafeNext = (v: string | null): v is string =>
+  !!v && v.startsWith('/') && !v.startsWith('//');
+
 const Auth = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  
+
   const { user, isAdmin, loading, roleLoading, signIn } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
 
+  // Destino post-login: consent OAuth (via ?next=...) o /admin por defecto.
+  const nextParam = searchParams.get('next');
+  const nextTarget = isSafeNext(nextParam) ? nextParam : null;
+
   useEffect(() => {
-    if (!loading && !roleLoading && user && isAdmin) {
-      navigate('/admin');
+    if (loading || roleLoading || !user) return;
+    if (nextTarget) {
+      // El destino ?next puede ser la ruta de consentimiento OAuth, que no exige admin.
+      window.location.href = nextTarget;
+      return;
     }
-  }, [user, isAdmin, loading, roleLoading, navigate]);
+    if (isAdmin) navigate('/admin');
+  }, [user, isAdmin, loading, roleLoading, navigate, nextTarget]);
 
   const validateForm = () => {
     try {

@@ -31,6 +31,8 @@ const ProductRedirect = lazy(() => import("./pages/ProductRedirect"));
 const MenuLocal = lazy(() => import("./pages/MenuLocal"));
 // Página de menú — URL independiente para SEO e indexación por IA
 const Menu = lazy(() => import("./pages/Menu"));
+// [MCP OAUTH] Consentimiento OAuth para clientes MCP externos (ChatGPT, Claude, etc.)
+const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
 
 // Configure QueryClient with optimized defaults
 const queryClient = new QueryClient({
@@ -95,6 +97,8 @@ const AppContent = () => {
             <Route path="/:categoria/:slug" element={<ProductPage />} />
             <Route path="/terminos-y-condiciones" element={<Legal />} />
             <Route path="/auth" element={<Auth />} />
+            {/* [MCP OAUTH] Ruta de consentimiento del servidor OAuth de Supabase */}
+            <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/carrito" element={<Cart />} />
             <Route path="/checkout" element={<Checkout />} />
