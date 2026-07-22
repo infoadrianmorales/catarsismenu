@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { MenuItem } from '@/types/menu';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { OptimizedImage } from '@/components/OptimizedImage';
 
 interface SuggestionCarouselProps {
   items: MenuItem[];
@@ -89,16 +90,14 @@ export const SuggestionCarousel = ({
               ...(!compact ? { width: isMobile ? 'calc((100% - 30px) / 3.5)' : '150px' } : {}),
             }}
           >
-            <div className={`${compact ? 'h-20' : isMobile ? 'h-[80px]' : 'h-24'}`}>
-              <img
-                src={product.imagen}
+            <OptimizedImage
+                src={product.imagen?.trim() || '/placeholder.svg'}
                 alt={product.nombre}
                 loading="lazy"
-                width="150"
-                height="100"
+                variant="thumb"
+                containerClassName={`${compact ? 'h-20' : isMobile ? 'h-[80px]' : 'h-24'} bg-white`}
                 className="w-full h-full object-cover"
               />
-            </div>
             <div className="p-1.5">
               <p className="font-medium text-[#F7F8F9] text-[10px] md:text-[11px] leading-tight line-clamp-2 min-h-[24px]">
                 {product.nombre}

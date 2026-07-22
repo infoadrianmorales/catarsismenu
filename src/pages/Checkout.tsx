@@ -309,19 +309,6 @@ const Checkout = () => {
   // FEATURE [EXTRAS]: El mensaje de WhatsApp agrupa productos por categoría
   // y destaca los extras en una línea con precio individual.
   const generateWhatsAppMessage = (orderNum: string): string => {
-    // Emojis por categoría (fallback 🍽️ si no coincide)
-    const categoryEmoji: Record<string, string> = {
-      hamburguesas: '🍔',
-      pizzas: '🍕',
-      entradas: '🥟',
-      bebidas: '🥤',
-      postres: '🍰',
-      emparedados: '🥪',
-      combos: '🍽️',
-      ensaladas: '🥗',
-      pastas: '🍝',
-    };
-
     // Agrupar items por categoría preservando orden de inserción
     const grouped = new Map<string, typeof items>();
     items.forEach(item => {
@@ -337,8 +324,7 @@ const Checkout = () => {
 
     const sections: string[] = [];
     grouped.forEach((catItems, catKey) => {
-      const emoji = categoryEmoji[catKey] || '🍽️';
-      const header = `*${emoji} ${catKey.toUpperCase()}*`;
+      const header = `*${catKey.toUpperCase()}*`;
       const lines = catItems.map(item => {
         const extrasTotal = (item.extras || []).reduce((s, e) => s + e.precio_usd, 0);
         const lineTotal = (item.precio_usd + extrasTotal) * item.quantity;
@@ -354,7 +340,7 @@ const Checkout = () => {
           });
         }
         if (item.notes?.trim()) {
-          line += `\n   📝 ${item.notes.trim()}`;
+          line += `\n   Nota: ${item.notes.trim()}`;
         }
         return line;
       }).join('\n');
@@ -370,7 +356,7 @@ const Checkout = () => {
     // Build delivery/pickup section
     let entregaSection = '';
     if (deliveryType === 'delivery') {
-      entregaSection = `\n\n*Entrega: Delivery 🛵*`;
+      entregaSection = `\n\n*Entrega: Delivery*`;
       if (formData.deliveryAddress.trim()) {
         entregaSection += `\nDirección: ${formData.deliveryAddress.trim()}`;
       }
@@ -380,9 +366,9 @@ const Checkout = () => {
       if (formData.notes.trim()) {
         entregaSection += `\nReferencia: ${formData.notes.trim()}`;
       }
-      entregaSection += `\n⚠️ _El costo del delivery NO está incluido y será coordinado por este chat._`;
+      entregaSection += `\n_El costo del delivery NO está incluido y será coordinado por este chat._`;
     } else {
-      entregaSection = `\n\n*Entrega: Pickup (Retiro en local) 🏪*`;
+      entregaSection = `\n\n*Entrega: Pickup (Retiro en local)*`;
       if (formData.notes.trim()) {
         entregaSection += `\nNotas: ${formData.notes.trim()}`;
       }
@@ -390,7 +376,7 @@ const Checkout = () => {
 
     const paymentMethodLabel = getPaymentMethodLabel(formData.paymentMethod);
 
-    const message = `Hola 👋 Soy ${formData.firstName} ${formData.lastName}. Quiero realizar el siguiente pedido en Catarsis.
+    const message = `Hola. Soy ${formData.firstName} ${formData.lastName}. Quiero realizar el siguiente pedido en Catarsis.
 
 *Orden:* ${orderNum}
 
@@ -399,11 +385,11 @@ ${itemLines}
 
 *Total: ${totalStr}*${entregaSection}
 
-*💳 Método de pago preferido:*
+*Método de pago preferido:*
 Moneda: ${paymentCurrency === 'USD' ? 'Dólares (USD)' : 'Bolívares (VES)'}
 Método: ${paymentMethodLabel}
 
-_Por favor envíame los datos para realizar el pago_ 🙏
+_Por favor envíame los datos para realizar el pago_
 
 *Datos del cliente:*
 Teléfono: ${normalizePhone(formData.phone)}
@@ -456,15 +442,31 @@ Correo: ${formData.email.toLowerCase()}`;
 
       const customerId = customerResult || null;
 
-      // Create order using SECURITY DEFINER function to bypass RLS
+      // Create order and items atomically using SECURITY DEFINER function.
+      // [2026-07-22] Esto evita que la orden se cree pero los items fallen por
+      // headers/RLS intermedios, que era lo que terminaba bloqueando WhatsApp.
       const newOrderId = crypto.randomUUID();
       
       // Generate WhatsApp message with placeholder for order number
       const placeholderOrderNum = 'CAT-XXXX';
       const whatsappMessageTemplate = generateWhatsAppMessage(placeholderOrderNum);
       
-      const { data: generatedOrderNumber, error: orderError } = await supabase
-        .rpc('create_order_and_return_number', {
+      const sessionId = getSessionId();
+      const orderItemsPayload = items.map(item => {
+        const extrasTotal = (item.extras || []).reduce((s, e) => s + e.precio_usd, 0);
+        return {
+          product_id: item.id,
+          product_name_snapshot: item.nombre,
+          unit_price_snapshot: item.precio_usd,
+          quantity: item.quantity,
+          line_total: (item.precio_usd + extrasTotal) * item.quantity,
+          extras_snapshot: item.extras && item.extras.length > 0 ? JSON.parse(JSON.stringify(item.extras)) : null,
+          source: item.source || 'menu',
+        };
+      });
+
+      const { data: orderResult, error: orderError } = await (supabase as any)
+        .rpc('create_order_with_items', {
           p_id: newOrderId,
           p_customer_id: customerId,
           p_first_name: formData.firstName.trim(),
@@ -481,8 +483,9 @@ Correo: ${formData.email.toLowerCase()}`;
           p_delivery_maps_url: deliveryType === 'delivery' ? formData.deliveryMapsUrl.trim() || null : null,
           p_subtotal: subtotal,
           p_total: subtotal,
-          p_session_id: getSessionId(),
+          p_session_id: sessionId,
           p_whatsapp_message: whatsappMessageTemplate.replace(placeholderOrderNum, '{{ORDER_NUMBER}}'),
+          p_items: orderItemsPayload,
         });
 
       if (orderError) {
@@ -495,7 +498,11 @@ Correo: ${formData.email.toLowerCase()}`;
         throw orderError;
       }
 
-      const orderNum = generatedOrderNumber || `#${newOrderId.slice(0, 8).toUpperCase()}`;
+      if (!orderResult?.success) {
+        throw new Error(`create_order_with_items:${orderResult?.error || 'unknown_error'}`);
+      }
+
+      const orderNum = orderResult.order_number || `#${newOrderId.slice(0, 8).toUpperCase()}`;
       
       // SEGURIDAD [C3]: session_id se pasa al crear la orden (línea 431).
       // Siempre usar el session_id existente de la sesión actual.
@@ -513,7 +520,7 @@ Correo: ${formData.email.toLowerCase()}`;
         {
           p_order_id: newOrderId,
           p_message: whatsappMessage,
-          p_session_id: getSessionId(),
+          p_session_id: sessionId,
         }
       );
 
@@ -522,28 +529,6 @@ Correo: ${formData.email.toLowerCase()}`;
       } else if (updateResult && !(updateResult as any).success) {
         console.error('Error al actualizar mensaje WhatsApp:', (updateResult as any).error);
       }
-
-      // FEATURE [EXTRAS]: order_items incluye extras_snapshot con los extras seleccionados
-      // [2026-04-08] SOURCE TRACKING: Persistir source en order_items para analytics
-      const orderItems = items.map(item => {
-        const extrasTotal = (item.extras || []).reduce((s, e) => s + e.precio_usd, 0);
-        return {
-          order_id: newOrderId,
-          product_id: item.id,
-          product_name_snapshot: item.nombre,
-          unit_price_snapshot: item.precio_usd,
-          quantity: item.quantity,
-          line_total: (item.precio_usd + extrasTotal) * item.quantity,
-          extras_snapshot: item.extras && item.extras.length > 0 ? JSON.parse(JSON.stringify(item.extras)) : null,
-          source: item.source || 'menu',
-        };
-      });
-
-      const { error: itemsError } = await supabase
-        .from('order_items')
-        .insert(orderItems);
-
-      if (itemsError) throw itemsError;
 
       // Save customer data for future checkouts
       try {
