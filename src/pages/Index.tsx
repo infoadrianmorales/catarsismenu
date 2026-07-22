@@ -142,6 +142,27 @@ const Index = () => {
         selectedCategory={selectedCategory}
         onCategoryChange={setSelectedCategory}
       />
+
+      {/* [2026-07-22] Banner de degradación: se muestra sólo si productos o
+          categorías no pudieron leerse desde Cloud. La página sigue funcional
+          gracias al fallback de menuItems.ts + fallbackDbCategories. */}
+      {hasBackendIssue && (
+        <div className="container px-4 py-3">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-xl border border-secondary/40 bg-secondary/10 px-4 py-3 text-sm">
+            <p className="text-foreground">
+              Estamos teniendo problemas para cargar el menú actualizado. Estás viendo una versión de respaldo.
+            </p>
+            <button
+              onClick={handleRetry}
+              className="shrink-0 rounded-full bg-secondary px-4 py-2 font-medium text-secondary-foreground transition-colors hover:bg-secondary/90"
+            >
+              Reintentar
+            </button>
+          </div>
+        </div>
+      )}
+
+
       
       {/* Conditional rendering: filtered grid or category sections */}
       {loading ? (
