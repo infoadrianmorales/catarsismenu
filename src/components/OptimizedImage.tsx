@@ -17,7 +17,7 @@ interface OptimizedImageProps {
 
 // Check if URL is from our product storage
 const isProductStorageUrl = (url: string): boolean => {
-  return url.includes('/product-images/products/') || url.includes('product-images/products');
+  return url.includes('/product-images/');
 };
 
 // Parse product image URL to get base path and detect format
@@ -31,15 +31,15 @@ const parseProductUrl = (url: string): { basePath: string; isWebP: boolean; quer
   // Remove query string for parsing
   const cleanUrl = url.replace(/\?.*$/, '');
   
-  // Match patterns like: slug.webp, slug_400.webp, slug.jpg, slug_400.jpg
-  const match = cleanUrl.match(/\/products\/([^/]+?)(_\d+)?\.(webp|jpg|jpeg)$/i);
+  // Match patterns like: /product-images/products/slug.webp or /product-images/slug.webp
+  const match = cleanUrl.match(/\/product-images\/(?:products\/)?([^/]+?)(_\d+)?\.(webp|jpg|jpeg|png)$/i);
   if (!match) return null;
   
   const [, slug, , format] = match;
   const isWebP = format.toLowerCase() === 'webp';
   
-  // Extract base URL (everything before /products/)
-  const baseUrlMatch = cleanUrl.match(/^(.+\/products\/)/);
+  // Extract base URL (everything before the file name)
+  const baseUrlMatch = cleanUrl.match(/^(.+\/)([^/]+)$/);
   if (!baseUrlMatch) return null;
   
   return {
@@ -114,10 +114,12 @@ export const OptimizedImage = memo(({
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
   const [fallbackToOriginal, setFallbackToOriginal] = useState(false);
-  const { ref, isIntersecting } = useIntersectionObserver();
+  const { ref } = useIntersectionObserver();
   const safeSrc = src?.trim() || '/placeholder.svg';
 
-  const shouldLoad = loading === 'eager' || isIntersecting;
+  // [2026-07-22] Móvil Safari: no bloquear el render del <img> con
+  // IntersectionObserver. El navegador ya gestiona loading="lazy".
+  const shouldLoad = true;
 
   // [2026-07-22] RESILIENCIA IMÁGENES: si cambia el src (carruseles/fallbacks),
   // reiniciar estado para no dejar una imagen nueva marcada como error previo.
@@ -141,7 +143,7 @@ export const OptimizedImage = memo(({
       };
     }
 
-    // For JPEG (legacy images), use original URL directly without variants
+    // For non-WebP (legacy images), use original URL directly without variants
     if (!parsed.isWebP) {
       return { 
         src: safeSrc, 

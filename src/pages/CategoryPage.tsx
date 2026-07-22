@@ -28,10 +28,10 @@ const CategoryPage = () => {
   const slug = paramSlug || location.pathname.replace('/', '');
   const { currency, toggleCurrency, displayMode } = useCurrency();
   const { products, bestSellers, loading: productsLoading } = useProducts();
-  const { getCategoryBySlug, loading: categoriesLoading } = usePublicCategories();
+  const { getCategoryBySlug } = usePublicCategories();
   const [searchQuery, setSearchQuery] = useState('');
 
-  const loading = productsLoading || categoriesLoading;
+  const loading = productsLoading;
 
   // Get category info from DB
   const categoryInfo = getCategoryBySlug(slug || '');

@@ -64,13 +64,14 @@ const Index = () => {
     hasFilters
   } = useSearch(products, bestSellers);
 
-  const loading = productsLoading || categoriesLoading;
+  const loading = productsLoading;
   // [2026-07-22 v2] Sólo mostramos banner ante error REAL de red/BD.
   // `usingFallback` (respuesta vacía) queda como señal silenciosa en consola
   // porque puede activarse por cache vacío o latencia sin que el usuario lo
   // note, y taparía la percepción de una home que sí está renderizando
   // categorías correctamente.
-  const hasBackendIssue = !loading && (!!productsError || !!categoriesError);
+  const hasRenderableMenu = products.length > 0 && sectionCategories.length > 0;
+  const hasBackendIssue = !loading && !hasRenderableMenu && (!!productsError || !!categoriesError);
 
   useEffect(() => {
     if (!loading && (hasBackendIssue || usingFallback)) {

@@ -121,7 +121,7 @@ export const usePublicCategories = () => {
 
   // [2026-07-22] Si la query terminó (no loading) y no trajo datos,
   // usar el fallback hardcoded para blindar la home.
-  const effectiveDbCategories = !isLoading && dbCategories.length === 0
+  const effectiveDbCategories = dbCategories.length === 0
     ? fallbackDbCategories
     : dbCategories;
 
@@ -157,7 +157,7 @@ export const usePublicCategories = () => {
     categoryLabels,
     loading: isLoading,
     error: error as Error | null,
-    usingFallback: !isLoading && dbCategories.length === 0,
+    usingFallback: dbCategories.length === 0,
     getCategoryBySlug,
   };
 };
