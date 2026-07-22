@@ -1,42 +1,33 @@
 ## Diagnóstico confirmado
-- El backend está activo y saludable; no hay saturación de memoria, conexiones ni disco.
-- Las consultas públicas de productos responden con datos, pero la página móvil muestra banner de respaldo y placeholders porque el frontend trata algunos estados parciales como error visible.
-- Las imágenes nuevas de bebidas usan una ruta distinta (`product-images/...`) a la ruta antigua (`product-images/products/...`); el componente actual no las maneja de forma óptima.
-- Las páginas individuales dependen de cargar todo el catálogo global para encontrar un producto; si esa carga está lenta o en retry, la página puede quedar en skeleton o terminar en “Producto no encontrado”.
-- La home carga varias consultas y scripts desde el inicio; el banner hero y `best_sellers_food` aparecen como puntos de costo/latencia relevantes.
+
+- El backend sí tiene catálogo disponible: 86 productos activos, 30 bebidas activas y ordenables, 8 categorías activas y la categoría `bebidas` activa.
+- Las políticas de lectura pública para `products` y `categories` están activas, así que el problema no parece ser de permisos/RLS.
+- En la vista previa, la petición del catálogo responde 200 y trae productos, incluyendo bebidas. El síntoma visible en móvil apunta más a render/carga de imágenes y a lógica de sugerencias que a datos inexistentes.
+- Las sugerencias de bebidas dependen de que el hook móvil detecte categorías/productos en el momento correcto; si hay un estado transitorio, puede quedarse mostrando solo comida aunque existan bebidas.
 
 ## Plan de implementación
-1. **Separar carga crítica de carga secundaria en home**
-   - Hacer que el menú principal dependa solo de productos + categorías.
-   - Cargar best sellers como mejora secundaria, sin bloquear categorías ni productos.
-   - Mostrar el banner de error solo si realmente no hay productos renderizables después de agotar fallbacks.
 
-2. **Optimizar carga de productos**
-   - Pedir solo las columnas necesarias en `useProducts`, en vez de `select('*')`.
-   - Aumentar resiliencia sin dejar la pantalla vacía: si hay catálogo estático o datos previos, usarlos mientras se reintenta.
-   - Evitar que una respuesta lenta de best sellers marque toda la home como cargando.
+1. **Reproducir en viewport móvil antes de editar**
+   - Abrir home, página individual y carrito en tamaño móvil.
+   - Verificar si el problema real es: tarjetas sin imagen, secciones vacías, sugerencias sin bebidas, o una combinación.
 
-3. **Arreglar páginas individuales de producto**
-   - Crear una consulta puntual por `slug` para `ProductPage`, en vez de depender únicamente del catálogo completo.
-   - Mantener validación de categoría y redirección canónica `/{categoria}/{slug}`.
-   - Si el catálogo global falla, la página individual seguirá cargando por su propio producto.
+2. **Blindar la carga principal del menú móvil**
+   - Ajustar `useProducts` para que no mezcle estados transitorios de backend con fallback de forma que deje secciones incompletas.
+   - Mantener el catálogo visible incluso si una query secundaria como best sellers/categorías tarda o falla.
+   - Asegurar que `best-seller` y categorías reales no bloqueen el render de productos.
 
-4. **Corregir imágenes y placeholders en móvil**
-   - Ampliar `OptimizedImage` para reconocer tanto rutas antiguas como nuevas de imágenes.
-   - Mantener fallback seguro, pero evitar mostrar placeholder si la URL original sí existe.
-   - Revisar el hero para que, si una imagen de banner falla, use el banner local de respaldo y no quede el ícono roto.
+3. **Corregir imágenes rotas/placeholder en móvil**
+   - Revisar `OptimizedImage` y el uso de imágenes en carrito/sugerencias.
+   - Aplicar fallback inmediato y estable: si una imagen externa falla, no dejar skeleton ni icono roto; usar placeholder local consistente.
+   - Evitar que errores de imagen hagan parecer que “no cargó el producto”.
 
-5. **Mejorar rendimiento percibido en móvil**
-   - Reducir bloqueo inicial del hero en móvil si los slides tardan.
-   - Priorizar productos visibles y no bloquear el menú por datos decorativos/marketing.
-   - Mantener lazy loading para secciones inferiores.
+4. **Hacer que bebidas siempre aparezca como sugerencia cuando aplique**
+   - Actualizar `useCartSuggestions` y `useProductSuggestions` para que detecten bebidas desde el catálogo activo, no solo desde categorías.
+   - En carrito móvil, cuando el usuario abra “Complementar pedido”, mostrar explícitamente el bloque de bebidas si hay bebidas ordenables y el producto actual no es bebida.
+   - Evitar que agregar 1 bebida o estados de carga oculten todo el carrusel de bebidas.
 
-6. **Validación**
-   - Probar home móvil, home desktop y varias URLs de producto (`/hamburguesas/thousand-smash`, `/entradas/tequenos-clasicos`, `/bebidas/jugo-de-fresa`).
-   - Confirmar que no aparece el banner de respaldo cuando los productos sí cargan.
-   - Confirmar que imágenes reales sustituyen placeholders y que las páginas individuales abren correctamente.
-
-## Detalles técnicos
-- Archivos principales a modificar: `src/hooks/useProducts.ts`, `src/pages/Index.tsx`, `src/pages/ProductPage.tsx`, `src/components/OptimizedImage.tsx`, `src/components/HeroSection.tsx` y posiblemente `src/hooks/useHeroSlides.ts`.
-- No cambiaré precios, productos ni estructura de base de datos salvo que durante la implementación aparezca un índice claramente necesario para rendimiento.
-- No eliminaré configuraciones históricas de Vercel ni tocaré URLs canónicas actuales.
+5. **Validación final en móvil**
+   - Probar home móvil: productos visibles y categorías con contenido.
+   - Probar página individual: producto visible, imagen/fallback estable y sugerencias visibles.
+   - Probar carrito móvil con una comida: sección de complementos + sección de bebidas disponible.
+   - Confirmar que no aparezca el banner de “versión de respaldo” salvo error real.
