@@ -13,6 +13,9 @@ const fetchProducts = async () => {
     .order('orden', { ascending: true });
 
   if (error) throw error;
+  // [2026-07-22 v2] Respuesta vacía = fallo transitorio: forzamos retry en
+  // vez de cachear una lista vacía que dispararía el fallback estático.
+  if (!data || data.length === 0) throw new Error('products:empty-response');
   return data;
 };
 
