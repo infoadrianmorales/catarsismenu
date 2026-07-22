@@ -4,11 +4,15 @@ import { supabase } from '@/integrations/supabase/client';
 import { MenuItem, MenuCategory } from '@/types/menu';
 import { menuItems as staticMenuItems } from '@/data/menuItems';
 
+// [2026-07-22] PERFORMANCE: columna explícitas para evitar payloads grandes
+// en móvil. Mantener sincronizado con transformProduct.
+const PRODUCT_SELECT = 'id,nombre,slug,descripcion_corta,precio_usd,categoria,imagen_url,tags,orden,destacado,is_orderable';
+
 // Fetch products from Supabase
 const fetchProducts = async () => {
   const { data, error } = await supabase
     .from('products')
-    .select('*')
+    .select(PRODUCT_SELECT)
     .eq('activo', true)
     .order('orden', { ascending: true });
 
@@ -30,7 +34,7 @@ const fetchBestSellers = async () => {
 };
 
 // Transform DB product to MenuItem
-const transformProduct = (product: any): MenuItem => ({
+export const transformProduct = (product: any): MenuItem => ({
   id: product.id,
   nombre: product.nombre,
   slug: product.slug,
@@ -44,6 +48,20 @@ const transformProduct = (product: any): MenuItem => ({
   destacado: product.destacado || false,
   is_orderable: product.is_orderable !== false,
 });
+
+// Consulta puntual para páginas individuales: evita depender del catálogo
+// completo cuando la red móvil está lenta o React Query está reintentando.
+const fetchProductBySlug = async (slug: string): Promise<MenuItem | null> => {
+  const { data, error } = await supabase
+    .from('products')
+    .select(PRODUCT_SELECT)
+    .eq('activo', true)
+    .eq('slug', slug)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data ? transformProduct(data) : null;
+};
 
 export const useProducts = () => {
   // Cached query for products - stale for 2 minutes
@@ -108,14 +126,42 @@ export const useProducts = () => {
       if (featured.length > 0) return featured.slice(0, 8);
       return productsData.slice(0, 8).map(transformProduct);
     }
-    return [];
+    const staticFeatured = staticMenuItems.filter(p => p.destacado);
+    return (staticFeatured.length > 0 ? staticFeatured : staticMenuItems).slice(0, 8);
   }, [bestSellersData, productsData]);
 
   return {
     products,
     featuredProducts,
     bestSellers,
-    loading: productsLoading || bestSellersLoading,
+    // [2026-07-22] Best sellers ya tiene fallback; no debe bloquear la home.
+    // Si aún no llegó Cloud, `products` ya contiene fallback estático para no
+    // dejar móvil vacío esperando retries de red.
+    loading: productsLoading && products.length === 0,
+    bestSellersLoading,
     error: (productsError as Error | null) || null,
+  };
+};
+
+export const useProductBySlug = (slug?: string) => {
+  const staticFallback = useMemo(
+    () => staticMenuItems.find(item => item.slug === slug) ?? null,
+    [slug],
+  );
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['product', slug],
+    queryFn: () => fetchProductBySlug(slug as string),
+    enabled: Boolean(slug),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    retry: 2,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 5000),
+  });
+
+  return {
+    product: data ?? staticFallback,
+    loading: Boolean(slug) && isLoading && !staticFallback,
+    error: (error as Error | null) || null,
   };
 };

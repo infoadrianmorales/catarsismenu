@@ -7,10 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCurrency } from '@/hooks/useCurrency';
-import { useProducts } from '@/hooks/useProducts';
+import { useProductBySlug } from '@/hooks/useProducts';
 import { useCart } from '@/contexts/CartContext';
 import { toast } from 'sonner';
-import { useMemo, useEffect } from 'react';
+import { useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { trackViewContent, trackAddToCart } from '@/lib/metaPixel';
 import { SEO } from '@/components/SEO';
@@ -25,12 +25,8 @@ const ProductPage = () => {
   const { categoria, slug } = useParams<{ categoria: string; slug: string }>();
   const navigate = useNavigate();
   const { currency, toggleCurrency, displayMode, getPrices } = useCurrency();
-  const { products, loading } = useProducts();
+  const { product, loading } = useProductBySlug(slug);
   const { addToCart, getItemQuantity, updateQuantity, isProductOrderable } = useCart();
-
-  const product = useMemo(() => {
-    return products.find(p => p.slug === slug);
-  }, [products, slug]);
 
   // [2026-07-02] CATARSIS — Si la categoría en la URL no coincide con la real
   // del producto, redirigimos a la URL canónica. Evita contenido duplicado

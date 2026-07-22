@@ -12,7 +12,7 @@ interface HeroSectionProps {
 }
 
 export const HeroSection = ({ mode = 'delivery' }: HeroSectionProps) => {
-  const { activeSlides, loading } = useHeroSlides();
+  const { activeSlides } = useHeroSlides();
   const isLocalMode = mode === 'local';
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
@@ -85,19 +85,8 @@ export const HeroSection = ({ mode = 'delivery' }: HeroSectionProps) => {
     }));
   };
 
-  if (loading) {
-    return (
-      <section className="relative min-h-[60vh] md:min-h-[70vh] flex items-end justify-center overflow-hidden bg-background">
-        <div className="absolute inset-0 animate-pulse bg-muted/30" />
-        <div className="relative z-10 container px-4 pb-16 pt-8 text-center">
-          <div className="flex flex-wrap items-center justify-center gap-3">
-            <div className="h-11 w-48 rounded-md bg-muted/40 animate-pulse" />
-            <div className="h-11 w-40 rounded-md bg-muted/40 animate-pulse" />
-          </div>
-        </div>
-      </section>
-    );
-  }
+  // [2026-07-22] No bloquear el primer viewport por la consulta de slides:
+  // mientras Cloud responde, se usa el banner local de respaldo.
 
   {/* OPTIMIZACIÓN DE PERFORMANCE — HeroSection
       Cambios aplicados:
@@ -138,6 +127,12 @@ export const HeroSection = ({ mode = 'delivery' }: HeroSectionProps) => {
                 alt={index === 0 ? 'Catarsis Drinks & Food — Restaurante en CC Aventura Plaza, Lechería' : `Catarsis Drinks & Food Banner ${index + 1}`}
                 className="w-full h-full object-cover"
                 loading={index === 0 ? 'eager' : 'lazy'}
+                onError={(event) => {
+                  if (event.currentTarget.dataset.fallbackApplied !== 'true') {
+                    event.currentTarget.dataset.fallbackApplied = 'true';
+                    event.currentTarget.src = heroImageFallback;
+                  }
+                }}
                 {...(index === 0 ? { fetchpriority: 'high' } : {})}
                 width="1200"
                 height="600"
