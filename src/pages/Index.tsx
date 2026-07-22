@@ -48,9 +48,10 @@ const LazyTopBar = lazy(() =>
 
 
 const Index = () => {
+  const queryClient = useQueryClient();
   const { currency, toggleCurrency, displayMode } = useCurrency();
-  const { products, featuredProducts, bestSellers, loading: productsLoading } = useProducts();
-  const { sectionCategories, categoryLabels, loading: categoriesLoading } = usePublicCategories();
+  const { products, featuredProducts, bestSellers, loading: productsLoading, error: productsError } = useProducts();
+  const { sectionCategories, categoryLabels, loading: categoriesLoading, error: categoriesError, usingFallback } = usePublicCategories();
   
   // Use search hook for filtering - pass bestSellers for virtual category
   const {
@@ -64,6 +65,28 @@ const Index = () => {
   } = useSearch(products, bestSellers);
 
   const loading = productsLoading || categoriesLoading;
+  // [2026-07-22] Estado de degradación: la home no logró leer datos frescos.
+  // Mostramos banner + botón "Reintentar" y dejamos que el fallback estático
+  // + fallback de categorías rendericen algo útil en vez de página en blanco.
+  const hasBackendIssue = !loading && (!!productsError || !!categoriesError || usingFallback);
+
+  useEffect(() => {
+    if (!loading && hasBackendIssue) {
+      console.error('[HOME_DEGRADED]', {
+        productsError: productsError?.message,
+        categoriesError: categoriesError?.message,
+        usingFallback,
+        productsCount: products.length,
+      });
+    }
+  }, [loading, hasBackendIssue, productsError, categoriesError, usingFallback, products.length]);
+
+  const handleRetry = () => {
+    queryClient.invalidateQueries({ queryKey: ['products'] });
+    queryClient.invalidateQueries({ queryKey: ['best-sellers'] });
+    queryClient.invalidateQueries({ queryKey: ['public-categories'] });
+  };
+
 
   const groupedProducts = useMemo(() => {
     const groups: Record<string, typeof products> = {};
