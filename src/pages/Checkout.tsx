@@ -306,30 +306,59 @@ const Checkout = () => {
     return phone.replace(/[\s\-\(\)]/g, '');
   };
 
-  // FEATURE [EXTRAS]: El mensaje de WhatsApp incluye extras seleccionados debajo de cada producto
+  // FEATURE [EXTRAS]: El mensaje de WhatsApp agrupa productos por categoría
+  // y destaca los extras en una línea con precio individual.
   const generateWhatsAppMessage = (orderNum: string): string => {
-    const itemLines = items.map(item => {
-      const extrasTotal = (item.extras || []).reduce((s, e) => s + e.precio_usd, 0);
-      const lineTotal = (item.precio_usd + extrasTotal) * item.quantity;
-      const linePrices = getPrices(lineTotal);
-      const priceStr = paymentCurrency === 'USD' 
-        ? linePrices.formattedUSD
-        : linePrices.formattedVES;
-      let line = `- ${item.quantity}x ${item.nombre} — ${priceStr}`;
-      // FEATURE [EXTRAS]: listar extras seleccionados
-      if (item.extras && item.extras.length > 0) {
-        const extrasStr = item.extras.map(e => {
-          const ep = getPrices(e.precio_usd);
-          const epStr = paymentCurrency === 'USD' ? ep.formattedUSD : ep.formattedVES;
-          return `   ➕ ${e.nombre} (+${epStr})`;
-        }).join('\n');
-        line += '\n' + extrasStr;
-      }
-      if (item.notes?.trim()) {
-        line += `\n   📝 ${item.notes.trim()}`;
-      }
-      return line;
-    }).join('\n');
+    // Emojis por categoría (fallback 🍽️ si no coincide)
+    const categoryEmoji: Record<string, string> = {
+      hamburguesas: '🍔',
+      pizzas: '🍕',
+      entradas: '🥟',
+      bebidas: '🥤',
+      postres: '🍰',
+      emparedados: '🥪',
+      combos: '🍽️',
+      ensaladas: '🥗',
+      pastas: '🍝',
+    };
+
+    // Agrupar items por categoría preservando orden de inserción
+    const grouped = new Map<string, typeof items>();
+    items.forEach(item => {
+      const key = (item.categoria || 'otros').toLowerCase();
+      if (!grouped.has(key)) grouped.set(key, []);
+      grouped.get(key)!.push(item);
+    });
+
+    const formatPrice = (usd: number) => {
+      const p = getPrices(usd);
+      return paymentCurrency === 'USD' ? p.formattedUSD : p.formattedVES;
+    };
+
+    const sections: string[] = [];
+    grouped.forEach((catItems, catKey) => {
+      const emoji = categoryEmoji[catKey] || '🍽️';
+      const header = `*${emoji} ${catKey.toUpperCase()}*`;
+      const lines = catItems.map(item => {
+        const extrasTotal = (item.extras || []).reduce((s, e) => s + e.precio_usd, 0);
+        const lineTotal = (item.precio_usd + extrasTotal) * item.quantity;
+        let line = `• ${item.quantity}x ${item.nombre} — ${formatPrice(lineTotal)}`;
+        if (item.extras && item.extras.length > 0) {
+          const extrasStr = item.extras
+            .map(e => `${e.nombre} (+${formatPrice(e.precio_usd)})`)
+            .join(', ');
+          line += `\n   ➕ Extras: ${extrasStr}`;
+        }
+        if (item.notes?.trim()) {
+          line += `\n   📝 ${item.notes.trim()}`;
+        }
+        return line;
+      }).join('\n');
+      sections.push(`${header}\n${lines}`);
+    });
+
+    const itemLines = sections.join('\n\n');
+
 
     const totalStr = paymentCurrency === 'USD' ? prices.formattedUSD : prices.formattedVES;
 
