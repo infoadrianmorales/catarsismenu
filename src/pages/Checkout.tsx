@@ -146,6 +146,14 @@ const Checkout = () => {
   const prices = getPrices(subtotal);
   const whatsappNumber = config?.whatsapp || '584249056438';
 
+  // [2026-07-22] Evita navegar durante render cuando el carrito queda vacío
+  // después de completar una compra y antes de redirigir a WhatsApp.
+  useEffect(() => {
+    if (items.length === 0 && step === 'form') {
+      navigate('/carrito', { replace: true });
+    }
+  }, [items.length, navigate, step]);
+
   // Track InitiateCheckout once when entering checkout
   const hasTrackedCheckoutRef = useRef(false);
   
@@ -291,7 +299,6 @@ const Checkout = () => {
   };
 
   if (items.length === 0) {
-    navigate('/carrito');
     return null;
   }
 
