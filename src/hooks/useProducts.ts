@@ -113,6 +113,6 @@ export const useProducts = () => {
     featuredProducts,
     bestSellers,
     loading: productsLoading || bestSellersLoading,
-    error: productsError?.message || null,
+    error: (productsError as Error | null) || null,
   };
 };
