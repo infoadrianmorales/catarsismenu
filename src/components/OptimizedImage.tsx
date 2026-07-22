@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, memo, useMemo } from 'react';
 import { cn } from '@/lib/utils';
-import { IMAGE_SIZES, ImageVariant } from '@/lib/imageProcessor';
+import { ImageVariant } from '@/lib/imageProcessor';
 
 interface OptimizedImageProps {
   src: string;
@@ -47,12 +47,6 @@ const parseProductUrl = (url: string): { basePath: string; isWebP: boolean; quer
     isWebP,
     queryString,
   };
-};
-
-// Generate srcset for responsive images (includes query string for cache busting)
-const generateSrcSet = (basePath: string, format: 'webp' | 'jpg', queryString: string = ''): string => {
-  const ext = format;
-  return `${basePath}_200.${ext}${queryString} 200w, ${basePath}_400.${ext}${queryString} 400w, ${basePath}.${ext}${queryString} 800w`;
 };
 
 // Mobile-friendly Intersection Observer with fallbacks
@@ -116,23 +110,31 @@ export const OptimizedImage = memo(({
   containerClassName,
   loading = 'lazy',
   onLoad,
-  variant = 'card',
-  sizes,
 }: OptimizedImageProps) => {
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
+  const [fallbackToOriginal, setFallbackToOriginal] = useState(false);
   const { ref, isIntersecting } = useIntersectionObserver();
+  const safeSrc = src?.trim() || '/placeholder.svg';
 
   const shouldLoad = loading === 'eager' || isIntersecting;
 
+  // [2026-07-22] RESILIENCIA IMÁGENES: si cambia el src (carruseles/fallbacks),
+  // reiniciar estado para no dejar una imagen nueva marcada como error previo.
+  useEffect(() => {
+    setLoaded(false);
+    setError(false);
+    setFallbackToOriginal(false);
+  }, [safeSrc]);
+
   // Calculate responsive image data
   const imageData = useMemo(() => {
-    const parsed = parseProductUrl(src);
+    const parsed = parseProductUrl(safeSrc);
     
     if (!parsed) {
       // Not a product image or can't parse - use original src
       return { 
-        src, 
+        src: safeSrc, 
         srcSet: undefined, 
         sizes: undefined,
         usesPicture: false,
@@ -142,39 +144,23 @@ export const OptimizedImage = memo(({
     // For JPEG (legacy images), use original URL directly without variants
     if (!parsed.isWebP) {
       return { 
-        src, 
+        src: safeSrc, 
         srcSet: undefined, 
         sizes: undefined,
         usesPicture: false,
       };
     }
 
-    // For WebP (new optimized images), use variants with query string
-    const srcSet = generateSrcSet(parsed.basePath, 'webp', parsed.queryString);
-    
-    // Default sizes based on variant
-    const defaultSizes = variant === 'thumb' 
-      ? '100px' 
-      : variant === 'card' 
-        ? '(max-width: 640px) 150px, 185px' 
-        : '400px';
-
-    // Get the appropriate variant URL with query string
-    const variantSize = IMAGE_SIZES[variant];
-    const variantSrc = variantSize === 800 
-      ? `${parsed.basePath}.webp${parsed.queryString}`
-      : `${parsed.basePath}_${variantSize}.webp${parsed.queryString}`;
-
+    // [2026-07-22] Muchas imágenes recientes se guardan como WebP único
+    // optimizado, sin variantes _200/_400. Usar la URL original evita requests
+    // 404 y placeholders intermitentes en móvil/carrito.
     return {
-      src: variantSrc,
-      srcSet,
-      sizes: sizes || defaultSizes,
-      usesPicture: true,
-      format: 'webp',
-      basePath: parsed.basePath,
-      queryString: parsed.queryString,
+      src: safeSrc,
+      srcSet: undefined,
+      sizes: undefined,
+      usesPicture: false,
     };
-  }, [src, variant, sizes]);
+  }, [safeSrc]);
 
   const handleLoad = () => {
     setLoaded(true);
@@ -182,12 +168,20 @@ export const OptimizedImage = memo(({
   };
 
   const handleError = () => {
+    // [2026-07-22] Si falla una variante generada (_200/_400), intentar primero
+    // con la URL original guardada en Cloud antes de mostrar placeholder.
+    if (imageData.usesPicture && !fallbackToOriginal && imageData.src !== safeSrc) {
+      setFallbackToOriginal(true);
+      setLoaded(false);
+      return;
+    }
     setError(true);
     setLoaded(true);
   };
 
-  // Fallback to original src on error
-  const displaySrc = error ? '/placeholder.svg' : imageData.src;
+  // Fallback: variante optimizada → original → placeholder.
+  const displaySrc = error ? '/placeholder.svg' : fallbackToOriginal ? safeSrc : imageData.src;
+  const shouldUsePicture = imageData.usesPicture && !error && !fallbackToOriginal;
 
   return (
     <div ref={ref} className={cn("relative overflow-hidden bg-muted/20", containerClassName)}>
@@ -198,10 +192,10 @@ export const OptimizedImage = memo(({
       
       {/* Actual image - only renders when in viewport */}
       {shouldLoad && (
-        imageData.usesPicture && !error ? (
+        shouldUsePicture ? (
           <picture>
             {/* WebP source with srcset */}
-            {imageData.format === 'webp' && imageData.srcSet && (
+            {imageData.srcSet && (
               <source
                 type="image/webp"
                 srcSet={imageData.srcSet}

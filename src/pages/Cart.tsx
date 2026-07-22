@@ -358,7 +358,7 @@ const Cart = () => {
                 </button>
                 <div
                   className={`overflow-hidden transition-[max-height] duration-500 ease-out ${
-                    suggestionsOpen ? 'max-h-[520px]' : 'max-h-0'
+                      suggestionsOpen ? 'max-h-[80vh] overflow-y-auto' : 'max-h-0'
                   }`}
                 >
                   <div className="pt-2">

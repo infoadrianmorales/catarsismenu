@@ -14,6 +14,7 @@ import { useViewMode } from '@/contexts/ViewModeContext';
 import { ExpandableText } from '@/components/ExpandableText';
 import { CartItemSource } from '@/contexts/CartContext';
 import { trackViewContent } from '@/lib/metaPixel';
+import { OptimizedImage } from '@/components/OptimizedImage';
 
 // Set global para deduplicar ViewContent por sesión
 const viewedProductIds = new Set<string>();
@@ -29,6 +30,7 @@ export const MenuCard = ({ item, currency, displayMode = 'ambas', source = 'menu
   const { isLocalMode } = useViewMode();
   const { getPrices } = useCurrency();
   const prices = getPrices(item.precio_usd);
+  const imageSrc = item.imagen?.trim() || '/placeholder.svg';
 
   const renderPrices = () => {
     if (displayMode === 'solo_usd') {
@@ -83,7 +85,7 @@ export const MenuCard = ({ item, currency, displayMode = 'ambas', source = 'menu
   const handleEnter = () => {
     // Precarga la imagen
     const img = new Image();
-    img.src = item.imagen;
+    img.src = imageSrc;
     // ViewContent solo si el hover persiste 600ms (intención real)
     if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
     hoverTimerRef.current = setTimeout(triggerViewContent, 600);
@@ -98,18 +100,14 @@ export const MenuCard = ({ item, currency, displayMode = 'ambas', source = 'menu
       <CardContent className="p-0 flex flex-col flex-1">
         {/* [2026-07-02] Imagen clickable → página de producto */}
         <Link to={`/${item.categoria}/${item.slug}`} className="block relative p-1.5 sm:p-2">
-          <div className="relative aspect-square overflow-hidden rounded-lg bg-white border border-foreground/10 shadow-md sm:transition-transform sm:duration-300 sm:ease-out sm:group-hover:scale-105">
-            <img 
-              src={item.imagen} 
+          <OptimizedImage
+              src={imageSrc}
               alt={`${item.nombre} — Catarsis Drinks & Food, Lechería`}
               loading="lazy"
-              width="400"
-              height="400"
+              variant="card"
+              containerClassName="relative aspect-square overflow-hidden rounded-lg bg-white border border-foreground/10 shadow-md sm:transition-transform sm:duration-300 sm:ease-out sm:group-hover:scale-105"
               className="h-full w-full object-cover p-1.5 sm:p-2"
             />
-            {/* LAZY: Esta imagen está fuera de la pantalla inicial.
-                Se carga solo cuando el usuario hace scroll hasta ella. */}
-          </div>
         </Link>
         
         {/* Content — flex column full height para empujar CTA al fondo */}

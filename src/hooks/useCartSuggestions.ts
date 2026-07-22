@@ -65,14 +65,21 @@ export const useCartSuggestions = (maxItems: number = 6): CartSuggestionsResult 
     const cartIds = new Set(items.map(i => i.id));
     const categoriesInCart = new Set(items.map(i => i.categoria));
     const hasFoodItems = items.some(i => i.categoria !== 'bebidas');
-    const hasBeverages = items.some(i => i.categoria === 'bebidas');
 
     // [2026-04-08] Verificar si "bebidas" está activa en la DB
     // Se lee dinámicamente — cuando se active, las sugerencias aparecen solas
-    const bebidasActive = categories.some(c => c.slug === 'bebidas');
+    // [2026-07-22] RESILIENCIA: si categorías viene en estado transitorio pero
+    // el catálogo sí trae bebidas activas, no ocultar el upsell de bebidas.
+    const hasBeverageProducts = products.some(p => p.categoria === 'bebidas' && p.is_orderable !== false);
+    const bebidasActive = categories.some(c => c.slug === 'bebidas') || hasBeverageProducts;
 
     // Set de categorías activas en DB (para filtrar productos de categorías desactivadas)
-    const activeCategorySlugs = new Set(categories.map(c => c.slug));
+    // Si categorías aún no incluye categorías reales, permitir las categorías presentes
+    // en products para evitar carruseles vacíos mientras se recupera la query.
+    const activeCategorySlugs = new Set([
+      ...categories.map(c => c.slug),
+      ...products.map(p => p.categoria),
+    ]);
 
     const bestSellerIds = new Set(bestSellers.map(b => b.id));
 

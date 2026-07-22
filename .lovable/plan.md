@@ -1,41 +1,42 @@
-## Diagnóstico
+## Diagnóstico confirmado
 
-El banner "Reintentar" aparece por la condición añadida en la revisión móvil anterior:
+- El backend está activo y saludable; no parece ser una caída de Cloud.
+- La consulta pública de productos responde con 86 productos activos y la categoría `bebidas` tiene 30 productos activos.
+- Las imágenes del catálogo cargan correctamente en navegador local para los primeros productos revisados.
+- Hay 2 productos activos sin imagen (`Brownie con Helado`, `Sweet Bites`), ambos en `postres`; no explican que toda la home se vea vacía, pero sí pueden producir placeholders si aparecen.
+- Las funciones y permisos básicos para crear pedidos están disponibles, pero el flujo de checkout aún puede fallar por una de estas causas:
+  - la llamada RPC con parámetros nuevos no coincide bien con las sobrecargas existentes;
+  - la inserción de `order_items` depende de `x-session-id` y puede fallar si el header no llega igual que el `session_id` de la orden;
+  - el error actual del checkout está oculto detrás del toast genérico.
 
-```ts
-hasBackendIssue = !loading && (productsError || categoriesError || usingFallback)
-```
+## Plan de corrección
 
-Donde `usingFallback` se activa apenas la consulta a `categories` devuelve un array vacío — incluso sin error real (ej. respuesta cacheada vacía, latencia, o un solo fallo transitorio antes de que arranquen los reintentos). Cuando eso pasa:
+1. **Productos e imágenes**
+   - Hacer el render de tarjetas más tolerante a imágenes nulas o inválidas usando fallback visual consistente.
+   - Ajustar la generación de URLs responsive para no asumir que todos los WebP tienen variantes `_200/_400`, porque algunas imágenes nuevas están en la raíz del bucket y no siguen el patrón antiguo.
+   - Mantener el producto visible aunque la imagen falle.
 
-- Se pinta el banner amarillo.
-- Se renderiza el fallback estático de 8 categorías.
-- Pero los productos vienen del fallback `menuItems.ts`, que puede no coincidir con la BD real y da la sensación de página "vacía / sólo banner".
+2. **Sugerencias de bebidas en carrito y checkout**
+   - Corregir `useCartSuggestions` para que no dependa de estados transitorios de categorías si ya hay productos `bebidas` activos en el catálogo cargado.
+   - Usar fallback desde productos cuando la lista de categorías venga lenta/vacía.
+   - Mostrar sugerencias aunque la sección de comida no tenga resultados, siempre que haya bebidas disponibles y el carrito tenga comida.
 
-El cambio del mensaje de WhatsApp está aislado en `Checkout.tsx` y no puede afectar la home (verificado: typecheck OK, sin imports cruzados).
+3. **Checkout y envío de WhatsApp**
+   - Simplificar la creación de pedido para llamar una única firma RPC de forma estable.
+   - Mover la creación de `order_items` a un RPC seguro o ajustar el flujo para garantizar que `session_id` y `x-session-id` coincidan antes de insertar items.
+   - Mejorar el log y el mensaje de error para distinguir: creación de cliente, creación de orden, actualización de WhatsApp e inserción de items.
+   - Mantener `window.location.href` para abrir WhatsApp, como está definido en la memoria del proyecto.
 
-## Cambios propuestos (mínimos y sólo en frontend)
+4. **Validación**
+   - Probar en navegador: home con productos visibles, imágenes visibles/fallback correcto, carrito con sección `¿Algo para tomar?`, checkout con sugerencias y envío sin error.
+   - Revisar consola/red para confirmar que no quedan errores de REST/RPC ni imágenes 404 relevantes.
 
-### 1. `src/pages/Index.tsx`
-- Cambiar `hasBackendIssue` para que **sólo** dispare con error real (`productsError || categoriesError`), no con `usingFallback`.
-- Dejar `usingFallback` como señal silenciosa (sólo log en consola), sin banner.
+## Archivos a tocar
 
-### 2. `src/hooks/usePublicCategories.ts`
-- No cachear resultados vacíos: si `data.length === 0`, tratarlo como error para que React Query reintente en vez de guardarlo 5 min.
-- Reducir `staleTime` de 5 min a 60 s para que un estado degradado se auto-corrija rápido en la próxima visita.
-
-### 3. `src/hooks/useProducts.ts`
-- Misma protección: si `productsData` viene vacío, lanzar error para forzar reintento en lugar de cachear vacío.
-
-### 4. Botón "Reintentar" (si por error real se muestra)
-- Además de `invalidateQueries`, llamar `refetchQueries` para forzar red inmediata (hoy `invalidate` sólo marca stale y no siempre refetchea si la vista no lo pide).
-
-## Fuera de alcance
-- No se modifica `Checkout.tsx` ni la lógica del mensaje de WhatsApp.
-- No se toca UI ni estilos; sólo condiciones de carga.
-- No se toca backend, RLS ni Edge Functions.
-
-## Verificación post-cambio
-1. Recargar la home — no debe aparecer el banner en operación normal.
-2. Simular fallo (DevTools → Network → Offline + reload) → banner sí aparece y "Reintentar" recupera al volver online.
-3. Confirmar en consola que ya no salen `[HOME_DEGRADED]` cuando la BD responde bien.
+- `src/components/MenuCard.tsx`
+- `src/components/OptimizedImage.tsx` si se decide reutilizarlo para tarjetas/sugerencias
+- `src/hooks/useCartSuggestions.ts`
+- `src/components/cart/UpsellSuggestions.tsx`
+- `src/components/shared/SuggestionCarousel.tsx` si aplica
+- `src/pages/Checkout.tsx`
+- Una migración de backend solo si hace falta crear/ajustar el RPC seguro para insertar los items del pedido.

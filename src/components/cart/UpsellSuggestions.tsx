@@ -13,6 +13,7 @@ import { Plus, TrendingUp, GlassWater, ChevronLeft, ChevronRight } from 'lucide-
 import { MenuItem } from '@/types/menu';
 import { useCartSuggestions } from '@/hooks/useCartSuggestions';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { OptimizedImage } from '@/components/OptimizedImage';
 
 interface UpsellSuggestionsProps {
   maxItems?: number;
@@ -109,16 +110,14 @@ const SuggestionCarousel = ({
             }}
           >
             {/* [2026-04-10] Imagen */}
-            <div className={`${compact ? 'h-20' : isMobile ? 'h-[80px]' : 'h-24'}`}>
-              <img
-                src={product.imagen}
+            <OptimizedImage
+                src={product.imagen?.trim() || '/placeholder.svg'}
                 alt={product.nombre}
                 loading="lazy"
-                width="150"
-                height="100"
+                variant="thumb"
+                containerClassName={`${compact ? 'h-20' : isMobile ? 'h-[80px]' : 'h-24'} bg-white`}
                 className="w-full h-full object-cover"
               />
-            </div>
             {/* [2026-04-10] Info: nombre + precio + botón */}
             <div className="p-1.5">
               <p className="font-medium text-[#F7F8F9] text-[10px] md:text-[11px] leading-tight line-clamp-2 min-h-[24px]">
@@ -177,7 +176,7 @@ export const UpsellSuggestions = ({ maxItems = 10, compact = false }: UpsellSugg
   const { addToCart } = useCart();
   const { currency, displayMode, getPrices } = useCurrency();
 
-  const { foodSuggestions, beverageSuggestions } = useCartSuggestions(maxItems);
+  const { foodSuggestions, beverageSuggestions, isLoading } = useCartSuggestions(maxItems);
 
   const formatPrice = (priceUsd: number) => {
     const p = getPrices(priceUsd);
@@ -186,7 +185,11 @@ export const UpsellSuggestions = ({ maxItems = 10, compact = false }: UpsellSugg
     return currency === 'USD' ? p.formattedUSD : p.formattedVES;
   };
 
-  if (foodSuggestions.length === 0 && beverageSuggestions.length === 0) return null;
+  if (!isLoading && foodSuggestions.length === 0 && beverageSuggestions.length === 0) return null;
+
+  if (isLoading && foodSuggestions.length === 0 && beverageSuggestions.length === 0) {
+    return null;
+  }
 
   return (
     <div className={compact ? 'py-3' : 'py-2 md:py-4'} style={{ overflow: 'hidden' }}>
