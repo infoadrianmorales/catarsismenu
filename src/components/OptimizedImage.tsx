@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, memo, useMemo } from 'react';
 import { cn } from '@/lib/utils';
-import { IMAGE_SIZES, ImageVariant } from '@/lib/imageProcessor';
+import { ImageVariant } from '@/lib/imageProcessor';
 
 interface OptimizedImageProps {
   src: string;
@@ -47,12 +47,6 @@ const parseProductUrl = (url: string): { basePath: string; isWebP: boolean; quer
     isWebP,
     queryString,
   };
-};
-
-// Generate srcset for responsive images (includes query string for cache busting)
-const generateSrcSet = (basePath: string, format: 'webp' | 'jpg', queryString: string = ''): string => {
-  const ext = format;
-  return `${basePath}_200.${ext}${queryString} 200w, ${basePath}_400.${ext}${queryString} 400w, ${basePath}.${ext}${queryString} 800w`;
 };
 
 // Mobile-friendly Intersection Observer with fallbacks
@@ -116,8 +110,6 @@ export const OptimizedImage = memo(({
   containerClassName,
   loading = 'lazy',
   onLoad,
-  variant = 'card',
-  sizes,
 }: OptimizedImageProps) => {
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
@@ -168,7 +160,7 @@ export const OptimizedImage = memo(({
       sizes: undefined,
       usesPicture: false,
     };
-  }, [safeSrc, variant, sizes]);
+  }, [safeSrc]);
 
   const handleLoad = () => {
     setLoaded(true);
