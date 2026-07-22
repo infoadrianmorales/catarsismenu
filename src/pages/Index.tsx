@@ -51,7 +51,7 @@ const Index = () => {
   const queryClient = useQueryClient();
   const { currency, toggleCurrency, displayMode } = useCurrency();
   const { products, featuredProducts, bestSellers, loading: productsLoading, error: productsError } = useProducts();
-  const { sectionCategories, categoryLabels, error: categoriesError, usingFallback } = usePublicCategories();
+  const { sectionCategories, categoryLabels, loading: categoriesLoading, error: categoriesError, usingFallback } = usePublicCategories();
   
   // Use search hook for filtering - pass bestSellers for virtual category
   const {
@@ -74,7 +74,7 @@ const Index = () => {
   const hasBackendIssue = !loading && !hasRenderableMenu && (!!productsError || !!categoriesError);
 
   useEffect(() => {
-    if (!loading && (hasBackendIssue || usingFallback)) {
+    if (!loading && !categoriesLoading && (hasBackendIssue || usingFallback)) {
       console.warn('[HOME_DEGRADED]', {
         productsError: productsError?.message,
         categoriesError: categoriesError?.message,
@@ -82,7 +82,7 @@ const Index = () => {
         productsCount: products.length,
       });
     }
-  }, [loading, hasBackendIssue, usingFallback, productsError, categoriesError, products.length]);
+  }, [loading, categoriesLoading, hasBackendIssue, usingFallback, productsError, categoriesError, products.length]);
 
   const handleRetry = () => {
     // refetchQueries fuerza la petición inmediata;
