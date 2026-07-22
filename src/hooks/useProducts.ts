@@ -44,12 +44,17 @@ const transformProduct = (product: any): MenuItem => ({
 
 export const useProducts = () => {
   // Cached query for products - stale for 2 minutes
+  // [2026-07-22] retry: 3 con backoff exponencial para blindar contra fallos
+  // transitorios (Safari iOS, red intermitente). Sin esto, un solo fetch
+  // fallido dejaba la home vacía hasta el próximo staleTime.
   const { data: productsData, isLoading: productsLoading, error: productsError } = useQuery({
     queryKey: ['products'],
     queryFn: fetchProducts,
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: false,
+    retry: 3,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 8000),
   });
 
   // Cached query for best sellers
@@ -59,7 +64,10 @@ export const useProducts = () => {
     staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
+    retry: 3,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 8000),
   });
+
 
   // Memoized transformed products
   const products = useMemo(() => {
