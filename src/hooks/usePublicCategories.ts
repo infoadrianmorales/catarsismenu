@@ -75,8 +75,24 @@ const virtualCategories: CategoryWithIcon[] = [
   },
 ];
 
+// [2026-07-22] FALLBACK ROBUSTO: si la consulta a DB falla o retorna vacío
+// (ej. Safari iOS bloqueando fetch, error de red intermitente), usamos esta
+// lista hardcoded para que la home NUNCA quede sin categorías y los
+// productos (aún los estáticos de menuItems.ts) siempre tengan dónde
+// renderizarse. Mantener sincronizado con la tabla `categories`.
+const fallbackDbCategories: PublicCategory[] = [
+  { id: 'fb-entradas',    slug: 'entradas',    nombre: 'Entradas',    descripcion: null, icono: 'Soup',    orden: 1 },
+  { id: 'fb-hamburguesas',slug: 'hamburguesas',nombre: 'Hamburguesas',descripcion: null, icono: 'Beef',    orden: 2 },
+  { id: 'fb-emparedados', slug: 'emparedados', nombre: 'Emparedados', descripcion: null, icono: 'Sandwich',orden: 3 },
+  { id: 'fb-pizzas',      slug: 'pizzas',      nombre: 'Pizzas',      descripcion: null, icono: 'Pizza',   orden: 4 },
+  { id: 'fb-parrilla',    slug: 'parrilla',    nombre: 'Parrilla',    descripcion: null, icono: 'Flame',   orden: 5 },
+  { id: 'fb-ensaladas',   slug: 'ensaladas',   nombre: 'Ensaladas',   descripcion: null, icono: 'Salad',   orden: 6 },
+  { id: 'fb-bebidas',     slug: 'bebidas',     nombre: 'Bebidas',     descripcion: null, icono: 'GlassWater', orden: 7 },
+  { id: 'fb-cocteleria',  slug: 'cocteleria',  nombre: 'Coctelería',  descripcion: null, icono: 'Wine',    orden: 8 },
+];
+
 export const usePublicCategories = () => {
-  const { data: dbCategories = [], isLoading } = useQuery({
+  const { data: dbCategories = [], isLoading, error } = useQuery({
     queryKey: ['public-categories'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -93,10 +109,18 @@ export const usePublicCategories = () => {
       return (data || []) as PublicCategory[];
     },
     staleTime: 5 * 60 * 1000, // 5 minutes cache
+    retry: 3,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 8000),
   });
 
+  // [2026-07-22] Si la query terminó (no loading) y no trajo datos,
+  // usar el fallback hardcoded para blindar la home.
+  const effectiveDbCategories = !isLoading && dbCategories.length === 0
+    ? fallbackDbCategories
+    : dbCategories;
+
   // Map DB categories to include icon components
-  const categoriesWithIcons: CategoryWithIcon[] = dbCategories.map(cat => ({
+  const categoriesWithIcons: CategoryWithIcon[] = effectiveDbCategories.map(cat => ({
     ...cat,
     icon: iconMap[cat.icono] || Utensils,
   }));
@@ -126,6 +150,9 @@ export const usePublicCategories = () => {
     sectionCategories,
     categoryLabels,
     loading: isLoading,
+    error: error as Error | null,
+    usingFallback: !isLoading && dbCategories.length === 0,
     getCategoryBySlug,
   };
 };
+
