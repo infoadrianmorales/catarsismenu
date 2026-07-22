@@ -135,13 +135,20 @@ export const useProducts = () => {
     featuredProducts,
     bestSellers,
     // [2026-07-22] Best sellers ya tiene fallback; no debe bloquear la home.
-    loading: productsLoading && !productsData,
+    // Si aún no llegó Cloud, `products` ya contiene fallback estático para no
+    // dejar móvil vacío esperando retries de red.
+    loading: productsLoading && products.length === 0,
     bestSellersLoading,
     error: (productsError as Error | null) || null,
   };
 };
 
 export const useProductBySlug = (slug?: string) => {
+  const staticFallback = useMemo(
+    () => staticMenuItems.find(item => item.slug === slug) ?? null,
+    [slug],
+  );
+
   const { data, isLoading, error } = useQuery({
     queryKey: ['product', slug],
     queryFn: () => fetchProductBySlug(slug as string),
@@ -153,8 +160,8 @@ export const useProductBySlug = (slug?: string) => {
   });
 
   return {
-    product: data ?? null,
-    loading: Boolean(slug) && isLoading,
+    product: data ?? staticFallback,
+    loading: Boolean(slug) && isLoading && !staticFallback,
     error: (error as Error | null) || null,
   };
 };
