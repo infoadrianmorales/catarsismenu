@@ -128,7 +128,8 @@ export const HeroSection = ({ mode = 'delivery' }: HeroSectionProps) => {
                 className="w-full h-full object-cover"
                 loading={index === 0 ? 'eager' : 'lazy'}
                 onError={(event) => {
-                  if (event.currentTarget.src !== heroImageFallback) {
+                  if (event.currentTarget.dataset.fallbackApplied !== 'true') {
+                    event.currentTarget.dataset.fallbackApplied = 'true';
                     event.currentTarget.src = heroImageFallback;
                   }
                 }}
