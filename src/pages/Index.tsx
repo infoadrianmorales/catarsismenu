@@ -1,4 +1,6 @@
-import { useMemo, lazy, Suspense } from 'react';
+import { useMemo, useEffect, lazy, Suspense } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+
 import { Link } from 'react-router-dom';
 import { MenuHeader } from '@/components/MenuHeader';
 import { HeroSection } from '@/components/HeroSection';
