@@ -114,6 +114,7 @@ export const OptimizedImage = memo(({
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
   const [fallbackToOriginal, setFallbackToOriginal] = useState(false);
+  const [fallbackToCleanUrl, setFallbackToCleanUrl] = useState(false);
   const { ref } = useIntersectionObserver();
   const safeSrc = src?.trim() || '/placeholder.svg';
 
@@ -127,6 +128,7 @@ export const OptimizedImage = memo(({
     setLoaded(false);
     setError(false);
     setFallbackToOriginal(false);
+    setFallbackToCleanUrl(false);
   }, [safeSrc]);
 
   // Calculate responsive image data
@@ -177,12 +179,21 @@ export const OptimizedImage = memo(({
       setLoaded(false);
       return;
     }
+    // [2026-07-22] Algunos navegadores móviles pueden fallar con URLs firmadas
+    // o cache-busters antiguos. Antes del placeholder, probar la misma imagen
+    // sin query string para no romper productos ni sugerencias.
+    if (!fallbackToCleanUrl && safeSrc.includes('?')) {
+      setFallbackToCleanUrl(true);
+      setLoaded(false);
+      return;
+    }
     setError(true);
     setLoaded(true);
   };
 
   // Fallback: variante optimizada → original → placeholder.
-  const displaySrc = error ? '/placeholder.svg' : fallbackToOriginal ? safeSrc : imageData.src;
+  const cleanSrc = safeSrc.replace(/\?.*$/, '');
+  const displaySrc = error ? '/placeholder.svg' : fallbackToCleanUrl ? cleanSrc : fallbackToOriginal ? safeSrc : imageData.src;
   const shouldUsePicture = imageData.usesPicture && !error && !fallbackToOriginal;
 
   return (

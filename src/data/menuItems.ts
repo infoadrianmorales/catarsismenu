@@ -13,7 +13,14 @@ const generateUUID = (slug: string): string => {
   return `${hex.slice(0, 8)}-${hex.slice(0, 4)}-4${hex.slice(1, 4)}-a${hex.slice(1, 4)}-${hex.padEnd(12, '0').slice(0, 12)}`;
 };
 
-export const menuItems: MenuItem[] = [
+// [2026-07-22] RESILIENCIA MÓVIL: URLs de storage construidas desde ENV.
+// Evita dejar el catálogo de respaldo con placeholders si Cloud tarda.
+const storageUrl = (path: string): string => {
+  const baseUrl = import.meta.env.VITE_SUPABASE_URL;
+  return `${baseUrl}/storage/v1/object/public/product-images/${path}`;
+};
+
+const baseMenuItems: MenuItem[] = [
   // ENTRADAS
   {
     id: generateUUID('alitas-de-pollo-catarsis'),
@@ -618,3 +625,101 @@ export const menuItems: MenuItem[] = [
     orden: 2,
   },
 ];
+
+const imageOverrides: Record<string, string> = {
+  'chicken-crunch': storageUrl('products/chicken-crunch.jpg?t=1768612674269'),
+  'shrimp-crunch': storageUrl('products/shrimp-crunch.jpg?t=1768613937786'),
+  'bbq-champions': storageUrl('products/bbq-champions.jpg?t=1768612492741'),
+  'smash-catarsis': storageUrl('products/smash-catarsis.jpg?t=1771902395701'),
+  'honeyholic-burger': storageUrl('products/honeyholic-burger.jpg?t=1768613423535'),
+  'clasica-americana': storageUrl('products/clasica-americana.jpg?t=1768613137613'),
+  texmex: storageUrl('products/texmex.jpg?t=1768614088909'),
+  'chicken-spicy': storageUrl('products/chicken-spicy.jpg?t=1768612912399'),
+  'onion-queen': storageUrl('products/onion-queen.jpg?t=1768614571503'),
+  'double-cheesy': storageUrl('products/double-cheesy.jpg?t=1768613227238'),
+  'margarita-catarsis': storageUrl('products/margarita-catarsis.webp?t=1771546229700'),
+  paradise: storageUrl('products/paradise.jpg?t=1768581291616'),
+  pepperoni: storageUrl('products/pepperoni.webp?t=1771546040892'),
+  tasty: storageUrl('products/tasty.webp?t=1771871196388'),
+  veggie: storageUrl('products/veggie.jpg?t=1768581616701'),
+  'tequenos-clasicos': storageUrl('products/tequenos-clasicos.jpg?t=1768580273906'),
+  'alitas-de-pollo-catarsis': storageUrl('products/alitas-de-pollo-catarsis.jpg?t=1768578715598'),
+  'ceviche-mixto-tropical': storageUrl('ceviche-mixto.webp'),
+  'crispy-bites': storageUrl('products/crispy-bites.jpg?t=1768580485130'),
+  'papas-queso-tocineta': storageUrl('products/papas-queso-tocineta.webp?t=1771547242341'),
+  'rebozados-del-mar': storageUrl('products/rebozados-del-mar.jpg?t=1768580747349'),
+  'aros-de-cebolla': storageUrl('products/aros-de-cebolla.jpg?t=1768580174853'),
+  'chili-con-papas': storageUrl('products/chili-con-papas.jpg?t=1768580371150'),
+  'racion-de-papas': storageUrl('products/racion-de-papas.jpg?t=1768580940020'),
+  'tenders-de-pollo': storageUrl('products/tenders-de-pollo.jpg?t=1768580825092'),
+  'ensalada-cesar-clasica': storageUrl('products/ensalada-cesar-clasica.jpg?t=1768612281911'),
+  'ensalada-cesar-langostinos': storageUrl('products/ensalada-cesar-langostinos.jpg?t=1768612264967'),
+  'ensalada-cesar-pollo': storageUrl('products/ensalada-cesar-pollo.jpg?t=1768612295902'),
+  'chicken-crunch-americano': storageUrl('products/chicken-crunch-americano.jpg?t=1768452613380'),
+  'perla-negra': storageUrl('products/perla-negra.jpg?t=1768452715169'),
+  'fondue-de-lomito': storageUrl('products/fondue-de-lomito.jpg?t=1768452412773'),
+  'parrilla-mar-y-tierra': storageUrl('products/parrilla-mar-y-tierra.webp?t=1771689957742'),
+  'parrilla-de-lomito': storageUrl('products/parrilla-de-lomito.webp?t=1771689974323'),
+  'parrilla-de-mariscos': storageUrl('products/parrilla-de-mariscos.webp?t=1771689993249'),
+  'parrilla-de-pollo': storageUrl('products/parrilla-de-pollo.webp?t=1771690010216'),
+  'parrilla-mixta': storageUrl('products/parrilla-mixta.webp?t=1771690027474'),
+  'catarsis-punch': storageUrl('products/catarsis-punch.webp?t=1771864467250'),
+  whipped: storageUrl('products/whipped.webp?t=1771864632452'),
+  'le-fraisier': storageUrl('products/le-fraisier.webp?t=1771864391133'),
+  flowers: storageUrl('products/flowers.webp?t=1771872360211'),
+  'rum-old-fashioned-tonic': storageUrl('products/rum-old-fashioned-tonic.webp?t=1771864067810'),
+  sangria: storageUrl('products/sangria.webp?t=1771864770372'),
+  'long-island-tea': storageUrl('products/long-island-tea.webp?t=1771864093206'),
+  'margarita-on-the-rocks': storageUrl('products/margarita-on-the-rocks.webp?t=1774471043925'),
+  'green-gin': storageUrl('products/green-gin.webp?t=1771872068828'),
+  'southside-berry': storageUrl('products/southside-berry.webp?t=1771864506919'),
+};
+
+const additionalMenuItems: MenuItem[] = [
+  { id: 'e620987a-a779-454a-a690-5e385e1498db', nombre: 'Thousand Smash', slug: 'thousand-smash', descripcion_corta: 'Triple carne smash, cheddar, tocineta, pepinillos y salsa thousand island.', precio_usd: 13.99, categoria: 'hamburguesas', imagen: storageUrl('products/thousand-smash.webp?t=1772142198216'), ratio: '1x1', tags: [], orden: 0, destacado: true, is_orderable: true },
+  { id: '3708fd81-9495-4897-bdbd-3c9b85847a47', nombre: 'Thousand Cheesy', slug: 'thousand-cheesy', descripcion_corta: 'Doble carne smash, queso facilista, pepinillos y salsa thousand island.', precio_usd: 8.5, categoria: 'hamburguesas', imagen: storageUrl('products/thousand-cheesy.jpg?t=1771907105305'), ratio: '1x1', tags: [], orden: 7, destacado: true, is_orderable: true },
+  { id: '32c5b7aa-e74a-429b-b238-81d115307d0f', nombre: 'Chicken Mayo', slug: 'chicken-mayo', descripcion_corta: 'Pollo frito, lechuga, mayonesa, queso facilista y tocineta.', precio_usd: 7.99, categoria: 'hamburguesas', imagen: storageUrl('products/chicken-mayo.jpg?t=1771906906541'), ratio: '1x1', tags: [], orden: 10, destacado: true, is_orderable: true },
+  { id: 'c11ac592-733b-4a48-a85a-0e1776d31313', nombre: 'Hot Honey', slug: 'hot-honey', descripcion_corta: 'Salsa napoli, mozzarella, jamón ahumado, pepperoni, manchego y miel picante.', precio_usd: 9.5, categoria: 'pizzas', imagen: storageUrl('products/hot-honey.webp?t=1771546013533'), ratio: '1x1', tags: [], orden: 5, destacado: true, is_orderable: true },
+  { id: '649cb551-a570-4b46-8401-71fd36cbc16b', nombre: 'Jugo de Fresa', slug: 'jugo-de-fresa', descripcion_corta: 'Jugo de fresa dulce y frutal, fresco para acompañar cualquier comida.', precio_usd: 4, categoria: 'bebidas', imagen: storageUrl('jugo-de-fresa.webp'), ratio: '1x1', tags: ['Nuevo'], orden: 0, destacado: false, is_orderable: true },
+  { id: 'cc4abca0-80f9-4000-bb42-35047631cd38', nombre: 'Jugo de Parchita', slug: 'jugo-de-parchita', descripcion_corta: 'Jugo de parchita frío y tropical, con balance entre acidez y dulzura.', precio_usd: 4, categoria: 'bebidas', imagen: storageUrl('jugo-de-parchita.webp'), ratio: '1x1', tags: ['Nuevo'], orden: 1, destacado: false, is_orderable: true },
+  { id: 'd7a44a83-1cd7-4ca1-9a49-bd404b8221a6', nombre: 'Jugo de Piña', slug: 'jugo-de-pina', descripcion_corta: 'Jugo de piña suave, dulce y refrescante.', precio_usd: 4, categoria: 'bebidas', imagen: storageUrl('jugo-de-pina.webp'), ratio: '1x1', tags: ['Nuevo'], orden: 2, destacado: false, is_orderable: true },
+  { id: '20b86e7f-d7a3-4cff-8407-9f2c14da3b08', nombre: 'Limonada', slug: 'limonada', descripcion_corta: 'Limonada fría y refrescante con toque cítrico.', precio_usd: 4, categoria: 'bebidas', imagen: storageUrl('limonada.webp'), ratio: '1x1', tags: ['Nuevo'], orden: 3, destacado: false, is_orderable: true },
+  { id: '90a5d368-eb0b-4f19-920e-fbe8b131670e', nombre: 'Coca-Cola Sabor Original 2L', slug: 'coca-cola-menos-azucar-2l', descripcion_corta: 'Refresco de cola sabor original con menos azúcar 2L.', precio_usd: 3.5, categoria: 'bebidas', imagen: storageUrl('products/coca-cola-menos-azucar-2l.webp'), ratio: '1x1', tags: [], orden: 4, destacado: false, is_orderable: true },
+  { id: '09d20bb2-6577-429e-bbff-68a6bf7c5175', nombre: 'Coca-Cola Sabor Original 1.5L', slug: 'coca-cola-menos-azucar-1-5l', descripcion_corta: 'Refresco de cola sabor original con menos azúcar 1.5L.', precio_usd: 3, categoria: 'bebidas', imagen: storageUrl('products/coca-cola-menos-azucar-1-5l.webp'), ratio: '1x1', tags: [], orden: 5, destacado: false, is_orderable: true },
+  { id: '8d6c0a90-1da5-448b-a9d4-187a0a43bcbb', nombre: 'Coca-Cola Sabor Original 1L', slug: 'coca-cola-menos-azucar-1l', descripcion_corta: 'Coca-Cola sabor original con menos azúcar 1 litro.', precio_usd: 2.5, categoria: 'bebidas', imagen: storageUrl('products/coca-cola-menos-azucar-1l.webp'), ratio: '1x1', tags: ['menos-azucar'], orden: 6, destacado: false, is_orderable: true },
+  { id: 'd9d1a707-d81a-4e16-9bae-43ad0f1c8443', nombre: 'Coca-Cola Sabor Original 355ml', slug: 'coca-cola-original-600ml', descripcion_corta: 'Refresco de cola sabor original 355ml.', precio_usd: 1.5, categoria: 'bebidas', imagen: storageUrl('products/coca-cola-original-600ml.webp'), ratio: '1x1', tags: [], orden: 7, destacado: false, is_orderable: true },
+  { id: '62c78446-b617-4893-8b0e-3205967fa568', nombre: 'Coca-Cola Sin Azúcar 2L', slug: 'coca-cola-sin-azucar-2l', descripcion_corta: 'Coca-Cola sin azúcar 2 litros.', precio_usd: 3.5, categoria: 'bebidas', imagen: storageUrl('products/coca-cola-sin-azucar-2l.webp'), ratio: '1x1', tags: ['sin-azucar', 'familiar'], orden: 8, destacado: false, is_orderable: true },
+  { id: '8ab4d7ca-1b0d-4bd0-8807-18ac4aac14eb', nombre: 'Coca-Cola Sin Azúcar 1L', slug: 'coca-cola-sin-azucar-1l', descripcion_corta: 'Coca-Cola sin azúcar 1 litro.', precio_usd: 2.5, categoria: 'bebidas', imagen: storageUrl('products/coca-cola-sin-azucar-1l.webp'), ratio: '1x1', tags: ['sin-azucar'], orden: 9, destacado: false, is_orderable: true },
+  { id: 'feffaba9-027b-4220-81b3-5f17d4c1e68b', nombre: 'Coca-Cola Zero 355ml', slug: 'coca-cola-zero-500ml', descripcion_corta: 'Refresco Coca-Cola Zero sin azúcar 355 ml.', precio_usd: 1.5, categoria: 'bebidas', imagen: storageUrl('products/coca-cola-zero-355ml.webp?t=1783534793'), ratio: '1x1', tags: ['sin-azucar'], orden: 10, destacado: false, is_orderable: true },
+  { id: 'c716698d-d09e-439b-a776-c03c2332db16', nombre: 'Agua Mineral Nevada 600ml', slug: 'agua-nevada-600ml', descripcion_corta: 'Agua mineral Nevada 600ml.', precio_usd: 1.5, categoria: 'bebidas', imagen: storageUrl('products/agua-nevada-600ml.webp?v=1778879563'), ratio: '1x1', tags: [], orden: 11, destacado: false, is_orderable: true },
+  { id: 'c0e0d610-54b5-4117-9c4e-acb2a11d8140', nombre: 'Cerveza Polar Light 250ml', slug: 'cerveza-polar-light-250ml', descripcion_corta: 'Cerveza Polar Light tipo pilsen, lata 250 ml.', precio_usd: 2, categoria: 'bebidas', imagen: storageUrl('products/cerveza-polar-light-250ml.webp'), ratio: '1x1', tags: ['cerveza light'], orden: 12, destacado: false, is_orderable: true },
+  { id: '3a8b35d4-e3a3-4fdd-8ea6-5fe7b173a6ea', nombre: 'Cerveza Polar Pilsen 219ml', slug: 'cerveza-polar-pilsen-219ml', descripcion_corta: 'Cerveza tipo Pilsen, dorada y refrescante 219ml.', precio_usd: 2, categoria: 'bebidas', imagen: storageUrl('products/cerveza-polar-pilsen-219ml.webp'), ratio: '1x1', tags: [], orden: 13, destacado: false, is_orderable: true },
+  { id: '41d5ab07-cf79-4c1c-9c37-02453c32fb14', nombre: 'Cerveza Solera Classic 250ml', slug: 'cerveza-solera-classic-250ml', descripcion_corta: 'Cerveza Solera Classic 250 ml.', precio_usd: 2, categoria: 'bebidas', imagen: storageUrl('products/cerveza-solera-classic-250ml.webp'), ratio: '1x1', tags: ['cerveza'], orden: 14, destacado: false, is_orderable: true },
+  { id: 'f5dfecab-fc3a-4310-92de-661281bc3d15', nombre: 'Cerveza Solera Light 250ml', slug: 'cerveza-solera-light-250ml', descripcion_corta: 'Cerveza Solera Light premium 250ml.', precio_usd: 2, categoria: 'bebidas', imagen: storageUrl('products/cerveza-solera-light-250ml.webp'), ratio: '1x1', tags: [], orden: 15, destacado: false, is_orderable: true },
+  { id: '128106dc-24ec-4338-93b3-8925ee8e721c', nombre: 'Chinotto 1.5L', slug: 'chinotto-1-5l', descripcion_corta: 'Refresco sabor a limón, ideal para compartir.', precio_usd: 3, categoria: 'bebidas', imagen: storageUrl('products/chinotto-1-5l.webp'), ratio: '1x1', tags: [], orden: 16, destacado: false, is_orderable: true },
+  { id: 'e7df4b91-10f8-4e05-860e-8406413c514f', nombre: 'Chinotto 1L', slug: 'chinotto-1l', descripcion_corta: 'Refresco sabor a limón, burbujeante y ligero.', precio_usd: 2.5, categoria: 'bebidas', imagen: storageUrl('products/chinotto-1l.webp'), ratio: '1x1', tags: [], orden: 17, destacado: false, is_orderable: true },
+  { id: '43381b99-dc94-4569-b534-99743198c1e4', nombre: 'Chinotto 355 ml', slug: 'chinotto-355ml', descripcion_corta: 'Presentación personal de Chinotto.', precio_usd: 1.5, categoria: 'bebidas', imagen: storageUrl('products/chinotto-355ml.webp'), ratio: '1x1', tags: [], orden: 18, destacado: false, is_orderable: true },
+  { id: 'c2c1e752-27e1-4af4-bca0-e950b15385ad', nombre: '7UP 2 Litros', slug: '7up-2l', descripcion_corta: 'Bebida gaseosa sabor lima-limón, ideal para compartir.', precio_usd: 3.5, categoria: 'bebidas', imagen: storageUrl('products/7up-2l.webp'), ratio: '1x1', tags: [], orden: 19, destacado: false, is_orderable: true },
+  { id: 'e4a35fff-90cb-4d38-8c49-f41de5dc3263', nombre: 'Fanta Naranja 355 ml', slug: 'fanta-naranja-355ml', descripcion_corta: 'Bebida gaseosa sabor naranja.', precio_usd: 1.5, categoria: 'bebidas', imagen: storageUrl('products/fanta-naranja-355ml.webp'), ratio: '1x1', tags: [], orden: 20, destacado: false, is_orderable: true },
+  { id: '3e0c5e65-5315-4bc0-8cb4-db6b81ab2bc5', nombre: 'Frescolita 355 ml', slug: 'frescolita-355ml', descripcion_corta: 'Clásica bebida gaseosa venezolana.', precio_usd: 1.5, categoria: 'bebidas', imagen: storageUrl('products/frescolita-355ml.webp'), ratio: '1x1', tags: [], orden: 21, destacado: false, is_orderable: true },
+  { id: 'bf94395f-c3c8-4c10-9292-988d34ef699b', nombre: 'Frescolita 1 Litro', slug: 'frescolita-1l', descripcion_corta: 'Frescolita en presentación familiar.', precio_usd: 2.5, categoria: 'bebidas', imagen: storageUrl('products/frescolita-1l.webp'), ratio: '1x1', tags: [], orden: 22, destacado: false, is_orderable: true },
+  { id: '2cffd1aa-8246-44ef-9b20-254cfa71905d', nombre: 'Frescolita 1.5 Litros', slug: 'frescolita-1-5l', descripcion_corta: 'Bebida gaseosa sabor kolita para compartir.', precio_usd: 3, categoria: 'bebidas', imagen: storageUrl('products/frescolita-1-5l.webp'), ratio: '1x1', tags: [], orden: 23, destacado: false, is_orderable: true },
+  { id: 'a372a271-7994-4416-a501-cd01ae0c099a', nombre: 'Pepsi 1.5 Litros', slug: 'pepsi-1-5l', descripcion_corta: 'Gaseosa clásica de cola para acompañar cualquier plato.', precio_usd: 3, categoria: 'bebidas', imagen: storageUrl('products/pepsi-1-5l.webp'), ratio: '1x1', tags: [], orden: 24, destacado: false, is_orderable: true },
+  { id: '91174194-c799-4044-83af-ac2a38bbf16b', nombre: 'Lipton Té Frío Durazno', slug: 'lipton-durazno', descripcion_corta: 'Té frío sabor durazno, suave y refrescante.', precio_usd: 2.5, categoria: 'bebidas', imagen: storageUrl('products/lipton-durazno.webp'), ratio: '1x1', tags: [], orden: 25, destacado: false, is_orderable: true },
+  { id: '1bc39fd2-110b-4d5f-9c2c-08b9c5a62dd3', nombre: 'Golden Manzana 1.5 Litros', slug: 'golden-manzana-1-5l', descripcion_corta: 'Bebida gaseosa sabor manzana para compartir.', precio_usd: 3, categoria: 'bebidas', imagen: storageUrl('products/golden-manzana-1-5l.webp'), ratio: '1x1', tags: [], orden: 26, destacado: false, is_orderable: true },
+  { id: '68226012-0cb5-4a9d-b9e1-9d1fb54f0f8c', nombre: 'Nevada Manzana 355 ml', slug: 'nevada-manzana-355ml', descripcion_corta: 'Bebida gaseosa sabor manzana en presentación personal.', precio_usd: 1.5, categoria: 'bebidas', imagen: storageUrl('products/nevada-manzana-355ml.webp'), ratio: '1x1', tags: [], orden: 27, destacado: false, is_orderable: true },
+  { id: '91256d9f-6f69-4e77-bf09-ebf5b1e72265', nombre: 'Nevada Parchita 355 ml', slug: 'nevada-parchita-355ml', descripcion_corta: 'Bebida gaseosa sabor parchita, tropical y refrescante.', precio_usd: 1.5, categoria: 'bebidas', imagen: storageUrl('products/nevada-parchita-355ml.webp'), ratio: '1x1', tags: [], orden: 28, destacado: false, is_orderable: true },
+  { id: 'c95ce1fe-0a6e-42fb-a584-5d3c8c9700ac', nombre: 'Lipton Té Frío Limón', slug: 'lipton-limon', descripcion_corta: 'Té frío sabor limón, refrescante y ligero.', precio_usd: 2.5, categoria: 'bebidas', imagen: storageUrl('products/lipton-limon.webp'), ratio: '1x1', tags: [], orden: 29, destacado: false, is_orderable: true },
+];
+
+const mergedMenuItems = baseMenuItems.map(item => ({
+  ...item,
+  imagen: imageOverrides[item.slug] || item.imagen,
+}));
+
+const existingSlugs = new Set(mergedMenuItems.map(item => item.slug));
+
+export const menuItems: MenuItem[] = [
+  ...mergedMenuItems,
+  ...additionalMenuItems.filter(item => !existingSlugs.has(item.slug)),
+].sort((a, b) => a.categoria.localeCompare(b.categoria) || a.orden - b.orden);
