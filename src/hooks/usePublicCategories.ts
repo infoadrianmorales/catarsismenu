@@ -106,9 +106,15 @@ export const usePublicCategories = () => {
         throw error;
       }
 
-      return (data || []) as PublicCategory[];
+      // [2026-07-22 v2] Tratar respuesta vacía como fallo transitorio para
+      // que React Query reintente en vez de cachearlo 5 minutos.
+      if (!data || data.length === 0) {
+        throw new Error('categories:empty-response');
+      }
+
+      return data as PublicCategory[];
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes cache
+    staleTime: 60 * 1000, // 60 s (antes 5 min) para autocorregir estados degradados
     retry: 3,
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 8000),
   });
