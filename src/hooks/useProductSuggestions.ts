@@ -53,8 +53,15 @@ export const useProductSuggestions = (
       return { complementSuggestions: [], beverageSuggestions: [], isLoading };
     }
 
-    const activeCategorySlugs = new Set(categories.map(c => c.slug));
-    const bebidasActive = categories.some(c => c.slug === 'bebidas');
+    // [2026-07-22] RESILIENCIA MÓVIL: si la query secundaria de categorías
+    // llega tarde, el catálogo real sigue siendo la fuente de verdad para
+    // mostrar bebidas en sugerencias.
+    const hasBeverageProducts = products.some(p => p.categoria === 'bebidas' && p.is_orderable !== false);
+    const activeCategorySlugs = new Set([
+      ...categories.map(c => c.slug),
+      ...products.map(p => p.categoria),
+    ]);
+    const bebidasActive = categories.some(c => c.slug === 'bebidas') || hasBeverageProducts;
     const bestSellerIds = new Set(bestSellers.map(b => b.id));
 
     // Filtro base: no es el producto actual, es ordenable, categoría activa
