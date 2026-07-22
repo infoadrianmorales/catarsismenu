@@ -344,16 +344,21 @@ const Checkout = () => {
         const lineTotal = (item.precio_usd + extrasTotal) * item.quantity;
         let line = `• ${item.quantity}x ${item.nombre} — ${formatPrice(lineTotal)}`;
         if (item.extras && item.extras.length > 0) {
-          const extrasStr = item.extras
-            .map(e => `${e.nombre} (+${formatPrice(e.precio_usd)})`)
-            .join(', ');
-          line += `\n   ➕ Extras: ${extrasStr}`;
+          // NOTA: se usa formato multi-línea (una línea por extra) para máxima
+          // legibilidad en WhatsApp. Se evitan emojis como ➕ porque algunos
+          // dispositivos receptores los renderizan como rombos (◇/◆) por falta
+          // de glifo en su set de emojis; el marcador *Extras:* siempre renderiza.
+          line += `\n   *Extras:*`;
+          item.extras.forEach(e => {
+            line += `\n   - ${e.nombre} (+${formatPrice(e.precio_usd)})`;
+          });
         }
         if (item.notes?.trim()) {
           line += `\n   📝 ${item.notes.trim()}`;
         }
         return line;
       }).join('\n');
+
       sections.push(`${header}\n${lines}`);
     });
 

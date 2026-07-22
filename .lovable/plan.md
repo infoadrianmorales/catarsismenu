@@ -1,41 +1,41 @@
-## Reorganizar sección "Pedido" del mensaje de WhatsApp
+## Cambios en el mensaje de WhatsApp
 
-Agrupar los productos por categoría con encabezados destacados, y resaltar los extras seleccionados en una línea separada con su precio.
+Archivo único: `src/pages/Checkout.tsx`, función `generateWhatsAppMessage` (líneas ~309-360).
 
-### Formato nuevo
+### 1. Nueva estructura de extras (multi-línea)
+
+Reemplazar la línea única `➕ Extras: a (+$x), b (+$y)` por un bloque de varias líneas, uno por extra, como en la referencia enviada:
 
 ```text
-*Pedido:*
-
 *🍔 HAMBURGUESAS*
-• 1x Double Cheesy — $12.00
-   ➕ Extras: carne (+$2.50), queso (+$1.50), tocineta (+$1.50)
-   📝 Sin cebolla
+• 1x Thousand Smash — Bs 12156.96
+   *Extras:*
+   - Tocineta (+Bs 1105.85)
+   - Pepinillos (+Bs 737.23)
 
-• 1x Classic — $10.00
-
-*🥤 BEBIDAS*
-• 2x Coca-Cola 355ml — $3.00
+*🍕 PIZZAS*
+• 1x Hot Honey — Bs 9215.40
+   *Extras:*
+   - Tocineta (+Bs 1105.85)
+   - Maíz (+Bs 1105.85)
 ```
 
-- Los productos se agrupan por `categoria` (mismo orden en que aparecen en el carrito).
-- Cada categoría muestra un encabezado en negrita con emoji e ícono en mayúsculas.
-- Los extras se listan en una sola línea con `➕ Extras:` y su precio entre paréntesis.
-- Las notas del item se mantienen debajo con `📝`.
-- El resto del mensaje (saludo, total, entrega, pago, datos) se mantiene igual.
+- La palabra `*Extras:*` va en negrita, en su propia línea, indentada bajo el ítem.
+- Cada extra ocupa una línea con guion `- nombre (+precio)`.
+- Las notas del ítem (`📝 ...`) se mantienen debajo de los extras.
 
-### Cambios técnicos
+### 2. Arreglar los emojis que aparecen como rombos (◇ / ◆)
 
-**Archivo único:** `src/pages/Checkout.tsx` — función `generateWhatsAppMessage` (líneas 310-379).
+En el WhatsApp del cliente los emojis 🍔🍕🥤 y ➕ se están viendo como rombos porque el dispositivo receptor no tiene glifos para algunos de ellos (o los está reemplazando en tránsito).
 
-1. Sustituir el bloque que genera `itemLines` por una agrupación:
-   - Reducir `items` a un `Map<categoria, CartItem[]>` preservando el orden de inserción.
-   - Mapear cada emoji por categoría (reutilizar mapping ya usado en `useCategories`/`CategorySection` si existe, o hardcodear: hamburguesas 🍔, pizzas 🍕, entradas 🥟, bebidas 🥤, postres 🍰, emparedados 🥪, etc.).
-   - Para cada categoría emitir encabezado `*{emoji} {NOMBRE_UPPER}*` y luego cada item.
-2. Cambiar el formato de extras a una sola línea: `   ➕ Extras: {nombre} (+{precio}), ...` usando el mismo `formatUSD`/`formatVES` que ya se usa en el archivo.
-3. Mantener intacto: saludo, `*Orden:*`, `*Total:*`, sección de entrega, método de pago, datos del cliente, y el disclaimer del delivery.
+Cambios para asegurar renderizado universal:
 
-### Fuera de alcance
+- Quitar `➕` (se cambia a `*Extras:*` sin emoji — ver punto 1).
+- Sustituir el emoji por categoría por un set 100% estándar y ampliamente soportado, y como respaldo agregar un marcador de texto en negrita para que, aunque el emoji falle, el encabezado siga siendo claro. Formato final del encabezado: `*🍔 HAMBURGUESAS*` (sin cambios visuales cuando renderiza) pero validando que la cadena se envíe correctamente vía `encodeURIComponent` (ya se hace en la línea 566, se confirma que no hay doble codificación).
+- Añadir un pequeño comentario en el código señalando que si algún cliente sigue viendo rombos, es limitación del set de emojis del dispositivo/OS receptor, no del código.
 
-- No se modifica el carrito, ni el cálculo de totales, ni la persistencia del pedido.
-- No se toca el flujo de confirmación ni el número de orden.
+### 3. Fuera de alcance
+
+- Sin cambios en carrito, totales, RPC de guardado, ni URL de WhatsApp.
+- Sin cambios en el saludo, total, sección de entrega, método de pago ni datos del cliente.
+- Sin cambios en la vista previa colapsable (usa la misma función, así que refleja el nuevo formato automáticamente).
