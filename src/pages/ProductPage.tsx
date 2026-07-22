@@ -10,7 +10,7 @@ import { useCurrency } from '@/hooks/useCurrency';
 import { useProductBySlug } from '@/hooks/useProducts';
 import { useCart } from '@/contexts/CartContext';
 import { toast } from 'sonner';
-import { useMemo, useEffect } from 'react';
+import { useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { trackViewContent, trackAddToCart } from '@/lib/metaPixel';
 import { SEO } from '@/components/SEO';

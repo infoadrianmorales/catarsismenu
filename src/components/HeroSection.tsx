@@ -12,7 +12,7 @@ interface HeroSectionProps {
 }
 
 export const HeroSection = ({ mode = 'delivery' }: HeroSectionProps) => {
-  const { activeSlides, loading } = useHeroSlides();
+  const { activeSlides } = useHeroSlides();
   const isLocalMode = mode === 'local';
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);

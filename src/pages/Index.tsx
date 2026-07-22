@@ -51,7 +51,7 @@ const Index = () => {
   const queryClient = useQueryClient();
   const { currency, toggleCurrency, displayMode } = useCurrency();
   const { products, featuredProducts, bestSellers, loading: productsLoading, error: productsError } = useProducts();
-  const { sectionCategories, categoryLabels, loading: categoriesLoading, error: categoriesError, usingFallback } = usePublicCategories();
+  const { sectionCategories, categoryLabels, error: categoriesError, usingFallback } = usePublicCategories();
   
   // Use search hook for filtering - pass bestSellers for virtual category
   const {
