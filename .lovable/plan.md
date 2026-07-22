@@ -1,30 +1,41 @@
-# Plan: Añadir 3 productos Chinotto a Bebidas
+## Reorganizar sección "Pedido" del mensaje de WhatsApp
 
-Crear los 3 refrescos Chinotto en la categoría `bebidas` usando las imágenes subidas, insertándolos directamente en la base de datos (mismo resultado que crearlos desde el panel admin).
+Agrupar los productos por categoría con encabezados destacados, y resaltar los extras seleccionados en una línea separada con su precio.
 
-## Productos
+### Formato nuevo
 
-| Nombre | Slug | Precio USD | Imagen |
-|---|---|---|---|
-| Chinotto 1.5L | `chinotto-1-5l` | 3.00 | Chinotto_1.5L.jpg |
-| Chinotto 1L | `chinotto-1l` | 2.50 | Chinotto_1L.jpg |
-| Chinotto 355 ml | `chinotto-355ml` | 1.50 | Chinotto_355ml.png |
+```text
+*Pedido:*
 
-Descripciones (≤120 chars) tal como las proporcionó el usuario:
-- 1.5L: "Refresco sabor a limón, libre de calorías, ideal para compartir en mesa o acompañar tus comidas favoritas."
-- 1L: "Refresco sabor a limón, ligero y burbujeante, perfecto para acompañar tus pedidos de Catarsis."
-- 355 ml: "Presentación personal de Chinotto, refrescante y práctica para disfrutar con cualquier plato."
+*🍔 HAMBURGUESAS*
+• 1x Double Cheesy — $12.00
+   ➕ Extras: carne (+$2.50), queso (+$1.50), tocineta (+$1.50)
+   📝 Sin cebolla
 
-Todos: `categoria = 'bebidas'`, `activo = true`, `destacado = false`, `tags = []`, `orden` = siguiente disponible al final de bebidas.
+• 1x Classic — $10.00
 
-## Pasos
+*🥤 BEBIDAS*
+• 2x Coca-Cola 355ml — $3.00
+```
 
-1. **Subir imágenes al storage** `product-images` del bucket público, en las 3 resoluciones que usa el sistema (thumb 200 / card 400 / full 800), reusando cada archivo tal cual (ya vienen 1:1 con fondo blanco). Rutas: `<slug>/full.jpg|png`, `<slug>/card.jpg|png`, `<slug>/thumb.jpg|png`.
-2. **Insertar 3 filas** en `public.products` con `imagen_url` apuntando al `full` con cache-buster (`?t=<ts>`), mismo formato que produce `ProductForm`.
-3. **Verificar** con un SELECT que los 3 productos aparecen activos en `bebidas`.
+- Los productos se agrupan por `categoria` (mismo orden en que aparecen en el carrito).
+- Cada categoría muestra un encabezado en negrita con emoji e ícono en mayúsculas.
+- Los extras se listan en una sola línea con `➕ Extras:` y su precio entre paréntesis.
+- Las notas del item se mantienen debajo con `📝`.
+- El resto del mensaje (saludo, total, entrega, pago, datos) se mantiene igual.
 
-## Notas técnicas
+### Cambios técnicos
 
-- No se toca esquema ni RLS — solo INSERT de datos y upload a storage.
-- No se modifica código de la app; los productos aparecen automáticamente en `/` (categoría Bebidas) vía `useProducts`.
-- Las imágenes originales (1024x1024, fondo blanco) cumplen la regla 1:1 del proyecto, así que se suben tal cual a las 3 rutas sin reprocesar (el pipeline de resize solo aplica cuando se sube desde el form; aquí basta con que las 3 URLs existan — el frontend usa la URL `full` como `imagen_url`).
+**Archivo único:** `src/pages/Checkout.tsx` — función `generateWhatsAppMessage` (líneas 310-379).
+
+1. Sustituir el bloque que genera `itemLines` por una agrupación:
+   - Reducir `items` a un `Map<categoria, CartItem[]>` preservando el orden de inserción.
+   - Mapear cada emoji por categoría (reutilizar mapping ya usado en `useCategories`/`CategorySection` si existe, o hardcodear: hamburguesas 🍔, pizzas 🍕, entradas 🥟, bebidas 🥤, postres 🍰, emparedados 🥪, etc.).
+   - Para cada categoría emitir encabezado `*{emoji} {NOMBRE_UPPER}*` y luego cada item.
+2. Cambiar el formato de extras a una sola línea: `   ➕ Extras: {nombre} (+{precio}), ...` usando el mismo `formatUSD`/`formatVES` que ya se usa en el archivo.
+3. Mantener intacto: saludo, `*Orden:*`, `*Total:*`, sección de entrega, método de pago, datos del cliente, y el disclaimer del delivery.
+
+### Fuera de alcance
+
+- No se modifica el carrito, ni el cálculo de totales, ni la persistencia del pedido.
+- No se toca el flujo de confirmación ni el número de orden.
