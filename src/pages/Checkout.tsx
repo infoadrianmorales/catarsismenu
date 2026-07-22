@@ -938,6 +938,31 @@ Correo: ${formData.email.toLowerCase()}`;
                   Máximo 3 sugerencias en modo compact. */}
               <UpsellSuggestions maxItems={3} compact />
 
+              {/* PREVIEW [WA-MSG]: Vista previa en vivo del mensaje que se enviará
+                  por WhatsApp. Usa CAT-XXXX como placeholder del número de orden
+                  y refleja formData/paymentCurrency/deliveryType en tiempo real.
+                  El <details> mantiene la UI compacta hasta que el usuario decida
+                  verificar el formato antes de comprar. */}
+              <details className="group rounded-lg border border-border bg-muted/30 overflow-hidden">
+                <summary className="cursor-pointer select-none px-3 py-2 text-sm font-medium flex items-center justify-between hover:bg-muted/50 transition-colors">
+                  <span className="flex items-center gap-2">
+                    <MessageCircle className="h-4 w-4 text-primary" />
+                    Vista previa del mensaje
+                  </span>
+                  <span className="text-xs text-muted-foreground group-open:hidden">Mostrar</span>
+                  <span className="text-xs text-muted-foreground hidden group-open:inline">Ocultar</span>
+                </summary>
+                <div className="p-3 border-t border-border bg-background">
+                  <pre className="whitespace-pre-wrap break-words font-sans text-xs leading-relaxed text-foreground max-h-72 overflow-y-auto">
+{generateWhatsAppMessage('CAT-XXXX')}
+                  </pre>
+                  <p className="mt-2 text-[10px] text-muted-foreground italic">
+                    El número de orden real se generará al enviar el pedido.
+                  </p>
+                </div>
+              </details>
+
+
               <Button 
                 className="w-full gap-2" 
                 size="lg"
