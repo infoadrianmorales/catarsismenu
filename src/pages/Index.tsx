@@ -65,26 +65,30 @@ const Index = () => {
   } = useSearch(products, bestSellers);
 
   const loading = productsLoading || categoriesLoading;
-  // [2026-07-22] Estado de degradación: la home no logró leer datos frescos.
-  // Mostramos banner + botón "Reintentar" y dejamos que el fallback estático
-  // + fallback de categorías rendericen algo útil en vez de página en blanco.
-  const hasBackendIssue = !loading && (!!productsError || !!categoriesError || usingFallback);
+  // [2026-07-22 v2] Sólo mostramos banner ante error REAL de red/BD.
+  // `usingFallback` (respuesta vacía) queda como señal silenciosa en consola
+  // porque puede activarse por cache vacío o latencia sin que el usuario lo
+  // note, y taparía la percepción de una home que sí está renderizando
+  // categorías correctamente.
+  const hasBackendIssue = !loading && (!!productsError || !!categoriesError);
 
   useEffect(() => {
-    if (!loading && hasBackendIssue) {
-      console.error('[HOME_DEGRADED]', {
+    if (!loading && (hasBackendIssue || usingFallback)) {
+      console.warn('[HOME_DEGRADED]', {
         productsError: productsError?.message,
         categoriesError: categoriesError?.message,
         usingFallback,
         productsCount: products.length,
       });
     }
-  }, [loading, hasBackendIssue, productsError, categoriesError, usingFallback, products.length]);
+  }, [loading, hasBackendIssue, usingFallback, productsError, categoriesError, products.length]);
 
   const handleRetry = () => {
-    queryClient.invalidateQueries({ queryKey: ['products'] });
-    queryClient.invalidateQueries({ queryKey: ['best-sellers'] });
-    queryClient.invalidateQueries({ queryKey: ['public-categories'] });
+    // refetchQueries fuerza la petición inmediata;
+    // invalidate sólo marca stale y puede no refetchear si nadie observa.
+    queryClient.refetchQueries({ queryKey: ['products'] });
+    queryClient.refetchQueries({ queryKey: ['best-sellers'] });
+    queryClient.refetchQueries({ queryKey: ['public-categories'] });
   };
 
 
