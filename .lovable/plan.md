@@ -1,33 +1,30 @@
-## Diagnóstico confirmado
+## Objetivo
+Mejorar la legibilidad del mensaje de WhatsApp generado en el checkout, igualando el formato del ejemplo enviado:
+- Nombre del producto **en negrita** (`*Nombre*`).
+- **Línea en blanco** entre cada producto dentro de una misma categoría.
+- Mantener extras y notas con la misma sangría que ya usan.
 
-- El backend sí tiene catálogo disponible: 86 productos activos, 30 bebidas activas y ordenables, 8 categorías activas y la categoría `bebidas` activa.
-- Las políticas de lectura pública para `products` y `categories` están activas, así que el problema no parece ser de permisos/RLS.
-- En la vista previa, la petición del catálogo responde 200 y trae productos, incluyendo bebidas. El síntoma visible en móvil apunta más a render/carga de imágenes y a lógica de sugerencias que a datos inexistentes.
-- Las sugerencias de bebidas dependen de que el hook móvil detecte categorías/productos en el momento correcto; si hay un estado transitorio, puede quedarse mostrando solo comida aunque existan bebidas.
+## Cambios
+Archivo único: `src/pages/Checkout.tsx`, dentro de `generateWhatsAppMessage` (líneas ~333-355).
 
-## Plan de implementación
+1. Formato de cada producto: `• 1x *Thousand Smash* — Bs 13631.42` (envolver `item.nombre` en `*...*`).
+2. Unir los productos de una categoría con `\n\n` (línea en blanco) en lugar de `\n`.
+3. La separación entre categorías (`\n\n` entre secciones) se mantiene igual.
+4. La vista previa en vivo del checkout (línea 954) refleja el cambio automáticamente porque usa la misma función.
 
-1. **Reproducir en viewport móvil antes de editar**
-   - Abrir home, página individual y carrito en tamaño móvil.
-   - Verificar si el problema real es: tarjetas sin imagen, secciones vacías, sugerencias sin bebidas, o una combinación.
+## Resultado esperado
 
-2. **Blindar la carga principal del menú móvil**
-   - Ajustar `useProducts` para que no mezcle estados transitorios de backend con fallback de forma que deje secciones incompletas.
-   - Mantener el catálogo visible incluso si una query secundaria como best sellers/categorías tarda o falla.
-   - Asegurar que `best-seller` y categorías reales no bloqueen el render de productos.
+```
+*HAMBURGUESAS*
+• 1x *Thousand Smash* — Bs 13631.42
+   *Extras:*
+   - Tocineta (+Bs 1105.85)
+   - Carne 150gr (+Bs 2211.70)
 
-3. **Corregir imágenes rotas/placeholder en móvil**
-   - Revisar `OptimizedImage` y el uso de imágenes en carrito/sugerencias.
-   - Aplicar fallback inmediato y estable: si una imagen externa falla, no dejar skeleton ni icono roto; usar placeholder local consistente.
-   - Evitar que errores de imagen hagan parecer que “no cargó el producto”.
+• 1x *Chicken Crunch* — Bs 9576.64
+   *Extras:*
+   - Queso facilista (+Bs 1105.85)
+   - Pollo crispy (+Bs 1843.08)
+```
 
-4. **Hacer que bebidas siempre aparezca como sugerencia cuando aplique**
-   - Actualizar `useCartSuggestions` y `useProductSuggestions` para que detecten bebidas desde el catálogo activo, no solo desde categorías.
-   - En carrito móvil, cuando el usuario abra “Complementar pedido”, mostrar explícitamente el bloque de bebidas si hay bebidas ordenables y el producto actual no es bebida.
-   - Evitar que agregar 1 bebida o estados de carga oculten todo el carrusel de bebidas.
-
-5. **Validación final en móvil**
-   - Probar home móvil: productos visibles y categorías con contenido.
-   - Probar página individual: producto visible, imagen/fallback estable y sugerencias visibles.
-   - Probar carrito móvil con una comida: sección de complementos + sección de bebidas disponible.
-   - Confirmar que no aparezca el banner de “versión de respaldo” salvo error real.
+Sin cambios en la Edge Function, CAPI, ni en la lógica de pedido — solo formato del texto.

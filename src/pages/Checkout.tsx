@@ -335,7 +335,7 @@ const Checkout = () => {
       const lines = catItems.map(item => {
         const extrasTotal = (item.extras || []).reduce((s, e) => s + e.precio_usd, 0);
         const lineTotal = (item.precio_usd + extrasTotal) * item.quantity;
-        let line = `• ${item.quantity}x ${item.nombre} — ${formatPrice(lineTotal)}`;
+        let line = `• ${item.quantity}x *${item.nombre}* — ${formatPrice(lineTotal)}`;
         if (item.extras && item.extras.length > 0) {
           // NOTA: se usa formato multi-línea (una línea por extra) para máxima
           // legibilidad en WhatsApp. Se evitan emojis como ➕ porque algunos
@@ -350,7 +350,8 @@ const Checkout = () => {
           line += `\n   Nota: ${item.notes.trim()}`;
         }
         return line;
-      }).join('\n');
+        // [2026-07-23] Línea en blanco entre productos para mejor legibilidad.
+      }).join('\n\n');
 
       sections.push(`${header}\n${lines}`);
     });
