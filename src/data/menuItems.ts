@@ -676,6 +676,8 @@ const imageOverrides: Record<string, string> = {
 };
 
 const additionalMenuItems: MenuItem[] = [
+  // [2026-08-28] Nueva pizza Chistorrini — primera de la categoría.
+  { id: 'eef1fe02-bf84-4071-b7ed-b4717635bd6d', nombre: 'Chistorrini', slug: 'chistorrini', descripcion_corta: 'Base cremosa de queso crema y mozzarella, cubierta con chistorra, jamón ahumado, tocineta, cebolla y maíz, finalizada con un toque de pimienta negra.', precio_usd: 12.5, categoria: 'pizzas', imagen: storageUrl('products/chistorrini.webp'), ratio: '1x1', tags: ['Nuevo'], orden: 1, destacado: true, is_orderable: true },
   { id: 'e620987a-a779-454a-a690-5e385e1498db', nombre: 'Thousand Smash', slug: 'thousand-smash', descripcion_corta: 'Triple carne smash, cheddar, tocineta, pepinillos y salsa thousand island.', precio_usd: 13.99, categoria: 'hamburguesas', imagen: storageUrl('products/thousand-smash.webp?t=1772142198216'), ratio: '1x1', tags: [], orden: 0, destacado: true, is_orderable: true },
   { id: '3708fd81-9495-4897-bdbd-3c9b85847a47', nombre: 'Thousand Cheesy', slug: 'thousand-cheesy', descripcion_corta: 'Doble carne smash, queso facilista, pepinillos y salsa thousand island.', precio_usd: 8.5, categoria: 'hamburguesas', imagen: storageUrl('products/thousand-cheesy.jpg?t=1771907105305'), ratio: '1x1', tags: [], orden: 7, destacado: true, is_orderable: true },
   { id: '32c5b7aa-e74a-429b-b238-81d115307d0f', nombre: 'Chicken Mayo', slug: 'chicken-mayo', descripcion_corta: 'Pollo frito, lechuga, mayonesa, queso facilista y tocineta.', precio_usd: 7.99, categoria: 'hamburguesas', imagen: storageUrl('products/chicken-mayo.jpg?t=1771906906541'), ratio: '1x1', tags: [], orden: 10, destacado: true, is_orderable: true },
