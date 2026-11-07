@@ -961,8 +961,9 @@ Correo: ${formData.email.toLowerCase()}`;
               </details>
 
 
+              {/* [2026-11-07] Escritorio (lg+): botón en el resumen; en móvil se usa la barra fija */}
               <Button 
-                className="w-full gap-2" 
+                className="w-full gap-2 hidden lg:flex" 
                 size="lg"
                 onClick={handleSubmit}
                 disabled={isSubmitting}
@@ -980,6 +981,34 @@ Correo: ${formData.email.toLowerCase()}`;
           </Card>
         </div>
       </div>
+
+      {/* [2026-11-07] Móvil (<lg): barra fija con total y botón de envío.
+          Solo uno de los dos botones es visible por breakpoint; mismo id/data-meta-event. */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-card/95 backdrop-blur-md border-t border-border">
+        <div className="px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] space-y-2">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">Total · {items.reduce((n, i) => n + i.quantity, 0)} productos</span>
+            <span className="text-lg font-bold text-secondary">
+              {paymentCurrency === 'USD' ? prices.formattedUSD : prices.formattedVES}
+            </span>
+          </div>
+          <Button
+            className="w-full gap-2"
+            size="lg"
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            data-meta-event="Purchase"
+            id="checkout-submit-btn"
+          >
+            {isSubmitting ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <MessageCircle className="h-5 w-5" />
+            )}
+            {isSubmitting ? 'Enviando...' : 'Enviar pedido por WhatsApp'}
+          </Button>
+        </div>
+      </div>
     </>
   );
 
@@ -991,7 +1020,7 @@ Correo: ${formData.email.toLowerCase()}`;
         displayMode={displayMode}
       />
       
-      <div className="container px-4 py-8">
+      <div className={`container px-4 py-8 ${step === 'form' ? 'pb-[calc(140px+env(safe-area-inset-bottom))] lg:pb-8' : ''}`}>
         {step === 'form' && renderFormStep()}
 
         {step === 'success' && (
