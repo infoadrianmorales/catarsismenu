@@ -124,11 +124,32 @@ export const CartDrawer = ({ variant = 'header' }: CartDrawerProps) => {
       )}
     </Button>
   ) : totalItems > 0 ? (
-    <div
-      className="relative hidden sm:block"
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
+    <div className="relative">
+      {/* [2026-11-07] Móvil (<sm): botón con contador y total, sin popup hover */}
+    <Button
+        id="cart-btn-header"
+        data-meta-event="ViewCart"
+        onClick={handleHeaderClick}
+        className={cn(
+          "relative gap-2 px-3 h-10 rounded-full bg-secondary hover:bg-secondary/90 text-secondary-foreground font-bold sm:hidden",
+          isAnimating && "scale-110",
+          "transition-all duration-300"
+        )}
+        aria-label={`Carrito con ${totalItems} items`}
+      >
+        <ShoppingCart className="h-5 w-5" />
+        <Badge 
+          className="h-5 min-w-5 flex items-center justify-center p-0 px-1 text-xs bg-primary text-primary-foreground"
+        >
+          {totalItems > 99 ? '99+' : totalItems}
+        </Badge>
+        <span className="text-sm">{formatPrice(subtotal)}</span>
+      </Button>
+      <div
+        className="relative hidden sm:block"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
       <Button
         id="cart-btn-header"
         data-meta-event="ViewCart"
@@ -206,28 +227,8 @@ export const CartDrawer = ({ variant = 'header' }: CartDrawerProps) => {
           </Button>
         </div>
       </div>
+      </div>
     </div>
-  ) : totalItems > 0 ? (
-    // Mobile fallback (no hover)
-    <Button
-      id="cart-btn-header"
-      data-meta-event="ViewCart"
-      onClick={handleHeaderClick}
-      className={cn(
-        "relative gap-2 px-3 h-10 rounded-full bg-secondary hover:bg-secondary/90 text-secondary-foreground font-bold sm:hidden",
-        isAnimating && "scale-110",
-        "transition-all duration-300"
-      )}
-      aria-label={`Carrito con ${totalItems} items`}
-    >
-      <ShoppingCart className="h-5 w-5" />
-      <Badge 
-        className="h-5 min-w-5 flex items-center justify-center p-0 px-1 text-xs bg-primary text-primary-foreground"
-      >
-        {totalItems > 99 ? '99+' : totalItems}
-      </Badge>
-      <span className="text-sm">{formatPrice(subtotal)}</span>
-    </Button>
   ) : (
     <Button
       id="cart-btn-header"

@@ -16,23 +16,24 @@ import { MetricoolProvider } from "./components/MetricoolProvider";
 // [MARKETING-PANEL] Inyecta GTM, GA4, Google Ads y Search Console según config
 import { GoogleTagsProvider } from "./components/GoogleTagsProvider";
 import { useVisitorTracker } from "./hooks/useVisitorTracker";
+import { lazyWithRetry } from "./lib/lazyWithRetry";
 
 // Lazy load non-critical pages
-const Legal = lazy(() => import("./pages/Legal"));
-const Auth = lazy(() => import("./pages/Auth"));
-const Admin = lazy(() => import("./pages/Admin"));
-const Cart = lazy(() => import("./pages/Cart"));
-const Checkout = lazy(() => import("./pages/Checkout"));
-const OrderConfirmed = lazy(() => import("./pages/OrderConfirmed"));
-const CategoryPage = lazy(() => import("./pages/CategoryPage"));
-const ProductPage = lazy(() => import("./pages/ProductPage"));
+const Legal = lazyWithRetry(() => import("./pages/Legal"));
+const Auth = lazyWithRetry(() => import("./pages/Auth"));
+const Admin = lazyWithRetry(() => import("./pages/Admin"));
+const Cart = lazyWithRetry(() => import("./pages/Cart"));
+const Checkout = lazyWithRetry(() => import("./pages/Checkout"));
+const OrderConfirmed = lazyWithRetry(() => import("./pages/OrderConfirmed"));
+const CategoryPage = lazyWithRetry(() => import("./pages/CategoryPage"));
+const ProductPage = lazyWithRetry(() => import("./pages/ProductPage"));
 // [2026-07-02] CATARSIS — Redirige URLs antiguas /producto/:slug a /{categoria}/{slug}
-const ProductRedirect = lazy(() => import("./pages/ProductRedirect"));
-const MenuLocal = lazy(() => import("./pages/MenuLocal"));
+const ProductRedirect = lazyWithRetry(() => import("./pages/ProductRedirect"));
+const MenuLocal = lazyWithRetry(() => import("./pages/MenuLocal"));
 // Página de menú — URL independiente para SEO e indexación por IA
-const Menu = lazy(() => import("./pages/Menu"));
+const Menu = lazyWithRetry(() => import("./pages/Menu"));
 // [MCP OAUTH] Consentimiento OAuth para clientes MCP externos (ChatGPT, Claude, etc.)
-const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
+const OAuthConsent = lazyWithRetry(() => import("./pages/OAuthConsent"));
 
 // Configure QueryClient with optimized defaults
 const queryClient = new QueryClient({
