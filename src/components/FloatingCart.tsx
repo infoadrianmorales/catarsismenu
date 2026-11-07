@@ -5,12 +5,15 @@ import { useCurrency } from '@/hooks/useCurrency';
 import { CartDrawer } from '@/components/cart/CartDrawer';
 import { cn } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 
 export const FloatingCart = () => {
   const { totalItems, subtotal } = useCart();
   const { currency, displayMode, getPrices } = useCurrency();
   const [bounce, setBounce] = useState(false);
   const prevItems = useRef(totalItems);
+  // [2026-11-07] Oculto en carrito/checkout: ahí ya hay barra fija de acción
+  const { pathname } = useLocation();
 
   // Bounce animation when items change
   useEffect(() => {
@@ -23,7 +26,7 @@ export const FloatingCart = () => {
     prevItems.current = totalItems;
   }, [totalItems]);
 
-  if (totalItems === 0) return null;
+  if (totalItems === 0 || pathname === '/carrito' || pathname === '/checkout') return null;
 
   const prices = getPrices(subtotal);
   const formattedPrice = displayMode === 'solo_usd'

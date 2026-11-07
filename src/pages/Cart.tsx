@@ -13,7 +13,6 @@ import { useCart } from '@/contexts/CartContext';
 import { useCurrency } from '@/hooks/useCurrency';
 import { MenuHeader } from '@/components/MenuHeader';
 import { Footer } from '@/components/Footer';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { useProductExtras } from '@/hooks/useProductExtras';
 import { ProductExtras } from '@/components/cart/ProductExtras';
 import { UpsellSuggestions } from '@/components/cart/UpsellSuggestions';
@@ -26,7 +25,6 @@ const Cart = () => {
   // [2026-06-05] EXTRAS DROPDOWN: estado para colapsar/expandir extras por item.
   // Se inicializa abierto si el item ya tiene extras seleccionados.
   const [expandedExtras, setExpandedExtras] = useState<Record<string, boolean>>({});
-  const isMobile = useIsMobile();
   // FEATURE [EXTRAS]: cargar extras disponibles
   const { getExtrasForProduct, categoryHasExtras } = useProductExtras();
 
@@ -92,7 +90,7 @@ const Cart = () => {
   }
 
   return (
-    <div className={`bg-background ${isMobile ? 'h-[100dvh] flex flex-col overflow-hidden' : 'min-h-screen'}`}>
+    <div className="bg-background min-h-screen pb-[calc(96px+env(safe-area-inset-bottom))] lg:pb-0">
       <MenuHeader 
         currency={currency} 
         onCurrencyToggle={toggleCurrency}
@@ -100,7 +98,7 @@ const Cart = () => {
       />
       
       {/* [2026-04-10] Contenido principal — en mobile ocupa el espacio restante */}
-      <div className={`${isMobile ? 'flex-1 flex flex-col overflow-hidden px-4 pt-2 pb-0' : 'container px-4 py-8'}`}>
+      <div className="container px-4 pt-2 pb-4 lg:py-8">
         {/* [2026-04-10] Header compacto */}
         <div className="flex items-center justify-between mb-2 md:mb-6 flex-shrink-0">
           <div className="flex items-center gap-2 md:gap-3">
@@ -119,9 +117,9 @@ const Cart = () => {
         </div>
 
 
-        <div className={`${isMobile ? 'flex-1 flex flex-col overflow-hidden min-h-0' : 'grid lg:grid-cols-3 gap-8'}`}>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
           {/* [2026-04-10] Items List — en mobile ocupa flex-1 con scroll interno */}
-          <div className={`${isMobile ? 'flex-1 overflow-y-auto min-h-0 pr-1' : 'lg:col-span-2 space-y-6'}`}>
+          <div className="lg:col-span-2 lg:space-y-6 min-w-0">
             <div className="space-y-2 md:space-y-3">
               {items.map((item, index) => {
                 const isNotesExpanded = expandedNotes[item.id] || !!item.notes;
@@ -326,8 +324,9 @@ const Cart = () => {
 
             {/* [2026-06-06] Mobile: toggle "Complementar pedido" debajo de los items.
                 Pill llamativa con gradiente Xanthous, icono Sparkles y CTA circular. */}
-            {isMobile && (
-              <div className="mt-3 mb-2">
+            {/* [2026-11-07] Visibilidad por CSS (lg:hidden) en vez de useIsMobile */}
+            {(
+              <div className="mt-3 mb-2 lg:hidden">
                 <button
                   type="button"
                   onClick={() => setSuggestionsOpen(prev => !prev)}
@@ -369,7 +368,7 @@ const Cart = () => {
             )}
 
             {/* [2026-06-05] Sugerencias desktop debajo de los productos. */}
-            {!isMobile && <UpsellSuggestions maxItems={10} />}
+            <div className="hidden lg:block"><UpsellSuggestions maxItems={10} /></div>
           </div>
 
 
@@ -460,8 +459,9 @@ const Cart = () => {
       </div>
 
       {/* [2026-04-10] Mobile: barra inferior — flex-shrink-0 dentro del viewport */}
-      {isMobile && (
-        <div className="flex-shrink-0 bg-card/95 backdrop-blur-md border-t border-border z-50 md:hidden transition-all duration-300">
+      {/* [2026-11-07] Barra fija inferior visible bajo lg (sin hueco 768–1023px) */}
+      {(
+        <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-md border-t border-border z-50 lg:hidden transition-all duration-300">
           {/* [2026-04-10] Área expandida con desglose — solo visible si summaryExpanded */}
           {summaryExpanded && (
             <div className="px-4 pt-3 pb-1 border-b border-border/40 animate-in slide-in-from-bottom-2 duration-200">
@@ -542,7 +542,7 @@ const Cart = () => {
       )}
       
       {/* [2026-04-10] Footer oculto en mobile — la barra fija lo reemplaza */}
-      {!isMobile && <Footer />}
+      <Footer />
     </div>
   );
 };

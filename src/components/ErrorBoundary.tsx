@@ -50,8 +50,7 @@ export class ErrorBoundary extends Component<Props, State> {
           </p>
           <button
             onClick={() => {
-              // Limpiar storage potencialmente corrupto y recargar
-              localStorage.removeItem('catarsis_cart');
+              // [2026-11-07] Solo recargar: el carrito se valida al leerse en CartContext
               window.location.reload();
             }}
             style={{
