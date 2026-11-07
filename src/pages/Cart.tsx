@@ -90,7 +90,6 @@ const Cart = () => {
   }
 
   return (
-    {/* [2026-11-07] Scroll normal del documento; móvil reserva espacio para la barra fija */}
     <div className="bg-background min-h-screen pb-[calc(96px+env(safe-area-inset-bottom))] lg:pb-0">
       <MenuHeader 
         currency={currency} 
