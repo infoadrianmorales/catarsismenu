@@ -596,9 +596,9 @@ Correo: ${formData.email.toLowerCase()}`;
         <h1 className="text-2xl font-display font-bold">Checkout</h1>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Form */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-6 min-w-0">
           {/* Contact Info */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
@@ -886,7 +886,7 @@ Correo: ${formData.email.toLowerCase()}`;
         </div>
 
         {/* Order Summary */}
-        <div className="lg:col-span-1">
+        <div className="lg:col-span-1 min-w-0">
           <Card className="sticky top-4">
             <CardHeader>
               <CardTitle>Resumen del Pedido</CardTitle>
